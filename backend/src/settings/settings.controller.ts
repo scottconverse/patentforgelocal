@@ -2,11 +2,15 @@ import { Controller, Get, Put, Post, Body, HttpCode, HttpStatus } from '@nestjs/
 import { Throttle, ThrottlerGuard } from '@nestjs/throttler';
 import { UseGuards } from '@nestjs/common';
 import { SettingsService } from './settings.service';
+import { SystemService } from '../system/system.service';
 import { UpdateSettingsDto } from './dto/update-settings.dto';
 
 @Controller('settings')
 export class SettingsController {
-  constructor(private readonly settingsService: SettingsService) {}
+  constructor(
+    private readonly settingsService: SettingsService,
+    private readonly systemService: SystemService,
+  ) {}
 
   @Get()
   getSettings() {
@@ -22,6 +26,11 @@ export class SettingsController {
   @HttpCode(HttpStatus.OK)
   updateSettings(@Body() dto: UpdateSettingsDto) {
     return this.settingsService.updateSettings(dto);
+  }
+
+  @Get('validate-ollama')
+  async validateOllama() {
+    return this.systemService.validateOllamaConnection();
   }
 
   @Post('validate-api-key')

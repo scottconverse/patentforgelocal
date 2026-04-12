@@ -12,6 +12,7 @@ import { ClaimDraftModule } from './claim-draft/claim-draft.module';
 import { ComplianceModule } from './compliance/compliance.module';
 import { ApplicationModule } from './application/application.module';
 import { HealthController } from './health.controller';
+import { SystemModule } from './system/system.module';
 
 @Module({
   controllers: [HealthController],
@@ -36,6 +37,7 @@ import { HealthController } from './health.controller';
     ClaimDraftModule,
     ComplianceModule,
     ApplicationModule,
+    SystemModule,
   ],
 })
 export class AppModule {}
