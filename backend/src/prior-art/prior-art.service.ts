@@ -1,7 +1,7 @@
 import { Injectable } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
 import { PriorArtSseService } from './prior-art-sse.service';
-import { PatentsViewPatent } from './patentsview-client';
+import { PatentsViewPatent, setPatentSearchApiKey } from './patentsview-client';
 import { searchODPMulti } from './odp-client';
 
 @Injectable()
@@ -98,6 +98,8 @@ export class PriorArtService {
       let rawResults: PatentsViewPatent[];
       let source: string;
       if (usptoApiKey) {
+        // Configure PatentSearch client with the API key for authenticated requests
+        setPatentSearchApiKey(usptoApiKey);
         const odpResult = await searchODPMulti(queries, usptoApiKey);
         rawResults = odpResult.results;
         source = 'USPTO ODP';
