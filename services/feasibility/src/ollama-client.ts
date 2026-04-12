@@ -322,16 +322,56 @@ async function nonStreamingToolCall(
     }];
   }
 
-  const response = await fetch(url, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify(body),
-    signal,
-  });
+  let lastError: Error | null = null;
+  let response!: Response;
 
-  if (!response.ok) {
-    const errBody = await response.text();
-    throw new Error(`Ollama API error ${response.status}: ${errBody}`);
+  for (let attempt = 0; attempt < MAX_RETRIES; attempt++) {
+    if (signal?.aborted) {
+      throw new DOMException('Aborted', 'AbortError');
+    }
+
+    try {
+      response = await fetch(url, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(body),
+        signal,
+      });
+    } catch (err: any) {
+      if (err.name === 'AbortError') throw err;
+      lastError = err;
+      if (attempt < MAX_RETRIES - 1) {
+        const delay = RETRY_DELAYS[attempt];
+        onStatus?.(`Connection error: ${err.message}. Retrying in ${delay / 1000}s... (attempt ${attempt + 1}/${MAX_RETRIES})`);
+        await sleep(delay, signal);
+        continue;
+      }
+      throw new Error(`Ollama connection failed after ${MAX_RETRIES} attempts: ${err.message}`);
+    }
+
+    // Retry on 5xx server errors
+    if (response.status >= 500) {
+      if (attempt < MAX_RETRIES - 1) {
+        const delay = RETRY_DELAYS[attempt];
+        onStatus?.(`Server error ${response.status}. Retrying in ${delay / 1000}s... (attempt ${attempt + 1}/${MAX_RETRIES})`);
+        await sleep(delay, signal);
+        continue;
+      }
+      const errBody = await response.text();
+      throw new Error(`Ollama server error ${response.status} after ${MAX_RETRIES} attempts: ${errBody}`);
+    }
+
+    // Non-retryable errors
+    if (!response.ok) {
+      const errBody = await response.text();
+      throw new Error(`Ollama API error ${response.status}: ${errBody}`);
+    }
+
+    break;
+  }
+
+  if (!response || !response.ok) {
+    throw lastError ?? new Error('Max retries exceeded');
   }
 
   const result = await response.json() as any;
