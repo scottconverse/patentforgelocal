@@ -16,7 +16,7 @@ export default function App() {
     api.settings
       .get()
       .then((s: any) => {
-        setShowWizard(!s.anthropicApiKey);
+        setShowWizard(!s.modelReady);
       })
       .catch(() => {
         // Backend not ready — skip wizard, let user configure later via Settings
