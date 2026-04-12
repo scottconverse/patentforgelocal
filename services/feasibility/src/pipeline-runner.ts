@@ -4,10 +4,17 @@ import {
   STAGE_DEFINITIONS,
   InventionInput,
   toNarrative,
-  estimateCost,
 } from './models';
-import { streamMessage } from './anthropic-client';
+import { streamMessage } from './ollama-client';
+import { ContextManager } from './context-manager';
 import { loadSystemPrompt } from './prompts/loader';
+import path from 'path';
+
+const STAGE_SEARCH_QUERIES: Record<number, string[]> = {
+  4: ['novel features invention', 'prior art patents found', 'patentability assessment novelty', 'technical claims scope'],
+  5: ['patentability conclusion', 'claim strategy recommendations', 'prior art gaps opportunities', 'IP protection filing strategy'],
+  6: ['invention technical summary', 'prior art key findings', 'patentability analysis results', 'deep dive conclusions', 'IP strategy recommendations'],
+};
 
 export type PipelineEvent =
   | { type: 'stage_start'; stage: number; name: string }
@@ -137,13 +144,12 @@ async function* runStage(
 
   // Kick off the stream in the background
   const streamPromise = streamMessage({
-    apiKey: settings.apiKey,
+    ollamaUrl: settings.ollamaUrl,
     systemPrompt,
     userMessage,
     model: modelToUse,
     maxTokens: settings.maxTokens,
     useWebSearch: stageDef.usesWebSearch,
-    webSearchMaxUses: stageDef.webSearchMaxUses,
     onToken: (text) => {
       enqueue({ type: 'token', text });
     },
@@ -184,7 +190,7 @@ async function* runStage(
   const result = await streamPromise;
   if (!result) return null;
 
-  const estimatedCostUsd = estimateCost(modelToUse, result.inputTokens, result.outputTokens);
+  const estimatedCostUsd = 0;
 
   return {
     stageNumber: stageDef.number,
@@ -213,6 +219,13 @@ export async function* runPipeline(
   const previousOutputs = new Map<number, string>(seedOutputs);
   let finalReport = '';
 
+  const dataDir = process.env.CONTEXT_DB_DIR || path.join(process.cwd(), 'data', 'context-db');
+  const contextMgr = await ContextManager.create(path.join(dataDir, 'pipeline.db'));
+  if (startFromStage === 1) {
+    contextMgr.clear();
+  }
+
+  try {
   for (const stageDef of STAGE_DEFINITIONS) {
     // Skip stages already completed in a previous run (resume mode)
     if (stageDef.number < startFromStage) {
@@ -242,12 +255,20 @@ export async function* runPipeline(
       }
     }
 
+    // Context compression for later stages
+    let stageOutputs = previousOutputs;
+    const searchQueries = STAGE_SEARCH_QUERIES[stageDef.number];
+    if (searchQueries && stageDef.number >= 4) {
+      const compressed = contextMgr.buildStageContext(stageDef.number, searchQueries);
+      stageOutputs = new Map([...previousOutputs, ...compressed]);
+    }
+
     yield { type: 'stage_start', stage: stageDef.number, name: stageDef.name };
 
     let stageResult: StageResult | null = null;
 
     try {
-      const stageGen = runStage(stageDef, input, previousOutputs, settings, signal);
+      const stageGen = runStage(stageDef, input, stageOutputs, settings, signal);
       let next = await stageGen.next();
       while (!next.done) {
         yield next.value as PipelineEvent;
@@ -283,6 +304,7 @@ export async function* runPipeline(
     }
 
     previousOutputs.set(stageDef.number, stageResult.outputText);
+    contextMgr.indexStageOutput(stageDef.number, stageDef.name, stageResult.outputText);
 
     if (stageDef.number === 6) {
       finalReport = stageResult.outputText;
@@ -302,9 +324,13 @@ export async function* runPipeline(
     };
   }
 
+  contextMgr.close();
   yield {
     type: 'pipeline_complete',
     finalReport,
     stages: completedStages,
   };
+  } finally {
+    contextMgr.close();
+  }
 }
