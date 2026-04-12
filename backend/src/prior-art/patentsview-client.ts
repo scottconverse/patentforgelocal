@@ -16,6 +16,13 @@ const FIELDS = ['patent_id', 'patent_title', 'patent_abstract', 'patent_date', '
 const TIMEOUT_MS = 10_000;
 const DELAY_BETWEEN_QUERIES_MS = 500;
 
+let _apiKey: string = '';
+
+/** Set the PatentSearch API key for authenticated requests. */
+export function setPatentSearchApiKey(key: string): void {
+  _apiKey = key;
+}
+
 /** Error thrown when PatentsView API has been shut down / migrated */
 export class PatentsViewMigrationError extends Error {
   constructor(message: string) {
@@ -26,22 +33,31 @@ export class PatentsViewMigrationError extends Error {
 
 async function queryPatentsView(queryStr: string, size = 15): Promise<PatentsViewPatent[]> {
   const body = {
-    q: { _text_phrase: { _all: queryStr } },
+    q: { _text_any: { patent_abstract: queryStr } },
     f: FIELDS,
-    o: { size },
+    o: { per_page: size },
   };
 
   const controller = new AbortController();
   const timer = setTimeout(() => controller.abort(), TIMEOUT_MS);
 
   try {
+    const headers: Record<string, string> = { 'Content-Type': 'application/json' };
+    if (_apiKey) {
+      headers['X-Api-Key'] = _apiKey;
+    }
+
     const res = await fetch(BASE_URL, {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
+      headers,
       body: JSON.stringify(body),
       signal: controller.signal,
     });
-    if (!res.ok) throw new Error(`PatentsView HTTP ${res.status}`);
+    if (!res.ok) {
+      let snippet = '';
+      try { snippet = (await res.text()).slice(0, 200); } catch { /* ignore */ }
+      throw new Error(`PatentsView HTTP ${res.status}${snippet ? ': ' + snippet : ''}`);
+    }
     const data = (await res.json()) as PatentsViewResponse & { error?: boolean; message?: string };
     // Detect PatentsView migration/shutdown response
     if (data.error === true && typeof data.message === 'string' && data.message.includes('migrating')) {
