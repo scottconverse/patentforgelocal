@@ -3,8 +3,8 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>PatentForge — AI-Powered Full-Lifecycle Patent Platform</title>
-  <meta name="description" content="Open-source, self-hosted AI patent landscape research tool. Explore your invention's patent landscape, discover prior art, and prepare for your patent attorney consultation.">
+  <title>PatentForgeLocal — Private Patent Analysis, Entirely on Your Machine</title>
+  <meta name="description" content="Open-source, fully local AI patent analysis tool. 6-stage feasibility analysis, claim drafting, application generation, and compliance checking — all running on your hardware with Ollama + Gemma 4. No cloud, no API keys, no cost.">
   <style>
     :root {
       --bg: #0f172a;
@@ -67,9 +67,8 @@
       text-align: left;
     }
     .quickstart h3 { font-size: 0.9rem; color: var(--text-muted); margin-bottom: 1rem; text-transform: uppercase; letter-spacing: 0.05em; }
-    .quickstart pre {
-      background: var(--bg); border-radius: 0.5rem; padding: 1rem 1.25rem;
-      overflow-x: auto; font-size: 0.85rem; line-height: 1.7; color: var(--green);
+    .quickstart ol {
+      padding-left: 1.25rem; font-size: 0.95rem; line-height: 2;
     }
 
     .features {
@@ -106,14 +105,35 @@
     }
     .stage h4 { font-size: 0.85rem; line-height: 1.3; }
 
+    .requirements {
+      max-width: 700px; margin: 0 auto; padding: 2rem;
+    }
+    .requirements h2 { text-align: center; font-size: 1.4rem; margin-bottom: 1.5rem; }
+    .requirements table {
+      width: 100%; border-collapse: collapse; font-size: 0.9rem;
+    }
+    .requirements th, .requirements td {
+      padding: 0.6rem 1rem; text-align: left; border-bottom: 1px solid var(--border);
+    }
+    .requirements th { color: var(--text-muted); font-weight: 600; }
+
+    .comparison {
+      max-width: 800px; margin: 0 auto; padding: 3rem 2rem;
+    }
+    .comparison h2 { text-align: center; font-size: 1.4rem; margin-bottom: 1.5rem; }
+    .comparison table {
+      width: 100%; border-collapse: collapse; font-size: 0.9rem;
+    }
+    .comparison th, .comparison td {
+      padding: 0.6rem 1rem; text-align: left; border-bottom: 1px solid var(--border);
+    }
+    .comparison th { color: var(--text-muted); font-weight: 600; }
+
     .architecture {
       max-width: 1100px; margin: 0 auto; padding: 3rem 2rem 4rem;
     }
     .architecture h2 { text-align: center; font-size: 1.8rem; margin-bottom: 1rem; }
     .architecture .desc { text-align: center; color: var(--text-muted); max-width: 700px; margin: 0 auto 2rem; }
-    .arch-svg-wrap {
-      max-width: 900px; margin: 0 auto 2.5rem; overflow-x: auto;
-    }
     .arch-details {
       display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
       gap: 1.5rem; max-width: 900px; margin: 0 auto 2rem;
@@ -145,6 +165,13 @@
     }
     .disclaimer strong { color: var(--text); }
 
+    .credits {
+      max-width: 700px; margin: 0 auto; padding: 2rem;
+      text-align: center;
+    }
+    .credits h2 { font-size: 1.4rem; margin-bottom: 1rem; }
+    .credits p { color: var(--text-muted); font-size: 0.9rem; line-height: 1.8; }
+
     .links {
       max-width: 1100px; margin: 0 auto; padding: 3rem 2rem;
       border-top: 1px solid var(--border);
@@ -170,98 +197,82 @@
 <body>
 
   <header class="header">
-    <div class="logo">Patent<span>Forge</span></div>
+    <div class="logo">PatentForge<span>Local</span></div>
     <nav class="nav-links">
-      <a href="https://github.com/scottconverse/patentforge">GitHub</a>
-      <a href="https://github.com/scottconverse/patentforge/blob/master/README.md">Docs</a>
-      <a href="https://github.com/scottconverse/patentforge/blob/master/CHANGELOG.md">Changelog</a>
+      <a href="https://github.com/scottconverse/patentforgelocal">GitHub</a>
+      <a href="https://github.com/scottconverse/patentforgelocal/blob/master/README.md">Docs</a>
+      <a href="https://github.com/scottconverse/patentforgelocal/blob/master/CHANGELOG.md">Changelog</a>
     </nav>
   </header>
 
   <section class="hero">
-    <h1>Prepare for your patent attorney<br>with <span class="highlight">AI-powered research</span></h1>
+    <h1>Private patent analysis,<br><span class="highlight">entirely on your machine</span></h1>
     <p class="subtitle">
-      PatentForge is an open-source, self-hosted patent platform
-      that takes inventors from "I have an idea" through feasibility analysis,
-      prior art research, claim drafting, compliance pre-screening, and a complete
-      USPTO-formatted patent application draft — all before your first attorney meeting.
+      PatentForgeLocal runs a complete AI patent analysis pipeline -- feasibility research,
+      prior art search, claim drafting, compliance checking, and USPTO-formatted application
+      generation -- using local AI. No cloud. No API keys. No cost. Your inventions never leave your computer.
     </p>
     <div class="hero-cta">
-      <a href="https://github.com/scottconverse/patentforge/releases/latest/download/PatentForge-1.0.0-Setup.exe" class="btn btn-primary">Download for Windows</a>
-      <a href="https://github.com/scottconverse/patentforge/releases/latest/download/PatentForge-1.0.0.dmg" class="btn btn-secondary">Mac (Beta)</a>
-      <a href="https://github.com/scottconverse/patentforge/releases/latest/download/PatentForge-1.0.0.AppImage" class="btn btn-secondary">Linux (Beta)</a>
+      <a href="https://github.com/scottconverse/patentforgelocal/releases/latest" class="btn btn-primary">Download Latest Release</a>
+      <a href="https://github.com/scottconverse/patentforgelocal" class="btn btn-secondary">View on GitHub</a>
     </div>
     <p style="margin-top: 1rem; font-size: 0.85rem; color: var(--text-muted);">
-      Windows .exe (~100 MB) &bull; Mac .dmg (~100 MB) &bull; Linux .AppImage (~120 MB)<br>
-      No Node.js, Python, or git required. Everything is bundled.
+      Windows, macOS, and Linux. Bundles Ollama + Gemma 4 26B.<br>
+      No Node.js, Python, or git required. Everything is included.
     </p>
     <div style="margin-top: 1rem; display: flex; gap: 1rem; justify-content: center;">
-      <a href="https://github.com/scottconverse/patentforge" style="color: var(--text-muted); font-size: 0.9rem;">GitHub</a>
-      <a href="https://github.com/scottconverse/patentforge/blob/master/USER-MANUAL.md" style="color: var(--text-muted); font-size: 0.9rem;">User Manual</a>
+      <a href="https://github.com/scottconverse/patentforgelocal/blob/master/USER-MANUAL.md" style="color: var(--text-muted); font-size: 0.9rem;">User Manual</a>
+      <a href="https://github.com/scottconverse/patentforgelocal/blob/master/README.md" style="color: var(--text-muted); font-size: 0.9rem;">README</a>
     </div>
   </section>
 
   <section class="quickstart">
     <h3>Quick Start</h3>
-    <pre>git clone https://github.com/scottconverse/patentforge.git
-cd patentforge
-cd backend && npm install && cd ..
-cd services/feasibility && npm install && cd ../..
-cd services/claim-drafter && pip install -e . && cd ../..
-cd services/compliance-checker && pip install -e . && cd ../..
-cd services/application-generator && pip install -e . && cd ../..
-cd frontend && npm install && cd ..
-cd backend && npx prisma db push && npx prisma generate && cd ..
-# Start: PatentForge.bat (Windows) or start each service manually
-# Open http://localhost:8080</pre>
+    <ol>
+      <li><strong>Download</strong> the installer from <a href="https://github.com/scottconverse/patentforgelocal/releases/latest">GitHub Releases</a></li>
+      <li><strong>Run</strong> the installer -- it bundles Ollama, the AI model, and all services</li>
+      <li><strong>Follow the wizard</strong> -- system check verifies hardware, downloads the model, and launches the app</li>
+    </ol>
   </section>
 
   <section class="features">
-    <h2>What PatentForge Does</h2>
+    <h2>What PatentForgeLocal Does</h2>
     <div class="features-grid">
       <div class="feature-card">
-        <h3>Structured Technical Analysis</h3>
-        <p>6-stage AI pipeline restates your invention in patent terminology, searches for related art, identifies potential issues, and organizes findings into a structured report.</p>
+        <h3>Fully Local AI</h3>
+        <p>All AI inference runs on your hardware via Ollama + Gemma 4 26B. No data leaves your machine. No API keys, no cloud accounts, no recurring costs.</p>
       </div>
       <div class="feature-card">
-        <h3>Prior Art &amp; Claims Discovery</h3>
-        <p>Automated patent search via USPTO Open Data Portal with stop-word filtering and title-weighted scoring. Lazy-load actual patent claims text from the USPTO Documents API on demand.</p>
+        <h3>6-Stage Feasibility Analysis</h3>
+        <p>AI pipeline restates your invention in patent terminology, searches for related art, identifies potential issues, and organizes findings into a structured report.</p>
       </div>
       <div class="feature-card">
-        <h3>Real-Time Streaming</h3>
-        <p>Watch the AI write its findings in real time. Stage progress indicators show exactly where you are in the pipeline. Re-run individual stages without restarting.</p>
+        <h3>Prior Art Discovery</h3>
+        <p>USPTO PatentSearch API integration with stop-word filtering and title-weighted scoring. Lazy-load actual patent claims text on demand.</p>
       </div>
       <div class="feature-card">
-        <h3>Cost Transparency</h3>
-        <p>Pre-run cost estimate based on historical run data (within 25% of actual). Configurable cost cap with per-stage token tracking. ODP API usage tracking with weekly summary in Settings.</p>
-      </div>
-      <div class="feature-card">
-        <h3>Self-Hosted &amp; Secure</h3>
-        <p>Runs on your machine. Hardened security: API keys encrypted at rest (AES-256-GCM). Optional Bearer token auth for network deployments. Invention data stays local.</p>
-      </div>
-      <div class="feature-card">
-        <h3>Attorney-Ready Exports</h3>
-        <p>Download findings as styled HTML, Word (.docx with full formatting), or Markdown. Word export for claims and compliance results. CSV export for prior art. Bring structured research to your first attorney meeting.</p>
-      </div>
-      <div class="feature-card">
-        <h3>Compliance Checking</h3>
-        <p>Four automated checks validate claim drafts against 35 USC 112(a) written description, 112(b) definiteness, MPEP 608 formalities, and 101 eligibility. Traffic-light PASS/FAIL/WARN results with MPEP citations and fix suggestions.</p>
-      </div>
-      <div class="feature-card">
-        <h3>Claim Drafting</h3>
-        <p>Multi-agent AI pipeline (Planner, Writer, Examiner) generates independent and dependent patent claims informed by feasibility analysis and prior art. Edit individual claims, view as dependency tree, export to Word.</p>
+        <h3>AI Claim Drafting</h3>
+        <p>3-agent pipeline (Planner, Writer, Examiner) generates independent and dependent patent claims. Edit individual claims, view as dependency tree, export to Word.</p>
       </div>
       <div class="feature-card">
         <h3>Application Generation</h3>
-        <p>5-agent sequential pipeline generates a complete USPTO-formatted patent application: background, summary, detailed description, abstract, and figure descriptions. Word export follows 37 CFR 1.52 with paragraph numbering, page numbers, and draft watermark.</p>
+        <p>5-agent pipeline generates complete USPTO-formatted patent applications: background, summary, detailed description, abstract, and figure descriptions. Word export follows 37 CFR 1.52.</p>
       </div>
       <div class="feature-card">
-        <h3>835 Automated Tests</h3>
-        <p>Jest backend tests with supertest API integration coverage, Vitest component tests, pytest for claim-drafter, compliance-checker, and application-generator, Playwright browser E2E with screenshots and console checks, responsive viewport testing, and automated doc/version auditing. ESLint + Prettier enforcement, TypeScript strict mode across all services, and coverage thresholds enforced in CI. GitHub Actions CI on every push.</p>
+        <h3>Compliance Checking</h3>
+        <p>Four automated checks validate claims against 35 USC 112(a), 112(b), MPEP 608, and 101. Traffic-light PASS/FAIL/WARN results with MPEP citations and fix suggestions.</p>
       </div>
       <div class="feature-card">
-        <h3>Prompt Integrity</h3>
-        <p>SHA-256 hashes of all AI prompt files verified at startup. Drift detection warns if prompts are modified. Prompts licensed CC BY-SA 4.0 so disclaimers survive forks.</p>
+        <h3>Real-Time Streaming</h3>
+        <p>Watch the AI write its findings in real time. Stage progress indicators show exactly where you are in the pipeline. Re-run individual stages.</p>
+      </div>
+      <div class="feature-card">
+        <h3>Attorney-Ready Exports</h3>
+        <p>Download findings as styled HTML, Word (.docx with full formatting), or Markdown. CSV export for prior art. Bring structured research to your first attorney meeting.</p>
+      </div>
+      <div class="feature-card">
+        <h3>System Check</h3>
+        <p>Pre-flight validation of hardware (RAM, disk, CPU), Ollama availability, model download status, and GPU detection. One-click model download from the Settings panel.</p>
       </div>
     </div>
   </section>
@@ -296,85 +307,58 @@ cd backend && npx prisma db push && npx prisma generate && cd ..
     </div>
   </section>
 
-  <section class="pipeline">
-    <h2>AI Claim Drafting Pipeline</h2>
-    <p style="text-align: center; color: var(--text-muted); max-width: 700px; margin: 0 auto 2rem; font-size: 0.95rem;">After the research pipeline completes, generate patent claim drafts using a 3-agent AI pipeline. Each agent specializes in one phase of claim development.</p>
-    <div class="pipeline-stages" style="max-width: 700px;">
-      <div class="stage" style="border-color: var(--green);">
-        <div class="stage-num" style="background: var(--green);">P</div>
-        <h4>Planner</h4>
-        <p style="font-size: 0.75rem; color: var(--text-muted); margin-top: 0.3rem;">Analyzes prior art &amp; feasibility to create a claim strategy</p>
-      </div>
-      <div class="stage" style="border-color: var(--green);">
-        <div class="stage-num" style="background: var(--green);">W</div>
-        <h4>Writer</h4>
-        <p style="font-size: 0.75rem; color: var(--text-muted); margin-top: 0.3rem;">Drafts 3 independent claims + dependents, capped at 20 total</p>
-      </div>
-      <div class="stage" style="border-color: var(--green);">
-        <div class="stage-num" style="background: var(--green);">E</div>
-        <h4>Examiner</h4>
-        <p style="font-size: 0.75rem; color: var(--text-muted); margin-top: 0.3rem;">Reviews claims for &sect;101/102/103/112 issues, requests revisions</p>
-      </div>
-    </div>
+  <section class="requirements">
+    <h2>System Requirements</h2>
+    <table>
+      <thead>
+        <tr><th></th><th>Minimum</th><th>Recommended</th></tr>
+      </thead>
+      <tbody>
+        <tr><td><strong>RAM</strong></td><td>16 GB</td><td>32 GB+</td></tr>
+        <tr><td><strong>Disk</strong></td><td>25 GB free</td><td>50 GB free</td></tr>
+        <tr><td><strong>CPU</strong></td><td>4 cores, 2018+</td><td>8+ cores</td></tr>
+        <tr><td><strong>GPU</strong></td><td>Not required</td><td>Any with 8 GB+ VRAM</td></tr>
+        <tr><td><strong>OS</strong></td><td>Win 10+, macOS 12+, Ubuntu 22+</td><td>Same</td></tr>
+      </tbody>
+    </table>
+    <p style="text-align: center; color: var(--text-muted); font-size: 0.85rem; margin-top: 1rem;">GPU acceleration is optional. Ollama auto-detects NVIDIA (CUDA), AMD (ROCm), and Apple Silicon (Metal).</p>
+  </section>
+
+  <section class="comparison">
+    <h2>PatentForgeLocal vs PatentForge</h2>
+    <table>
+      <thead>
+        <tr><th></th><th>PatentForge</th><th>PatentForgeLocal</th></tr>
+      </thead>
+      <tbody>
+        <tr><td><strong>AI</strong></td><td>Anthropic Claude (cloud)</td><td>Ollama + Gemma 4 (local)</td></tr>
+        <tr><td><strong>Cost</strong></td><td>~$2-5 per analysis</td><td>Free</td></tr>
+        <tr><td><strong>Privacy</strong></td><td>Data sent to cloud</td><td>Everything stays local</td></tr>
+        <tr><td><strong>API Key</strong></td><td>Required</td><td>None</td></tr>
+        <tr><td><strong>Internet</strong></td><td>Required</td><td>Optional (USPTO only)</td></tr>
+        <tr><td><strong>Hardware</strong></td><td>Any computer</td><td>16 GB+ RAM</td></tr>
+      </tbody>
+    </table>
   </section>
 
   <section style="max-width: 1100px; margin: 0 auto; padding: 0 2rem 4rem;">
     <div class="disclaimer">
-      <strong>PatentForge is a research tool, not a legal service.</strong> The author of this tool is not a lawyer.
+      <strong>PatentForgeLocal is a research tool, not a legal service.</strong> The author of this tool is not a lawyer.
       The AI systems that execute these prompts are not lawyers. No attorney-client relationship is created
-      by using this tool. The output is intended for informational and educational purposes only — to help
+      by using this tool. The output is intended for informational and educational purposes only -- to help
       you prepare for a consultation with a registered patent attorney, not to replace one.<br><br>
       AI-generated analysis may contain errors, omissions, or hallucinated references. Always consult
       qualified legal counsel before making patent filing decisions.<br><br>
-      <strong>Legal guardrails built in:</strong> first-run clickwrap agreement, API key usage disclosure,
-      embedded disclaimers on every stage output, and persistent disclaimer watermarks on every
-      generated report. See <a href="https://github.com/scottconverse/patentforge/blob/master/LEGAL_NOTICE.md">LEGAL_NOTICE.md</a> for full details.
-    </div>
-  </section>
-
-  <section style="max-width: 1100px; margin: 0 auto; padding: 0 2rem 3rem;">
-    <div style="background: var(--surface); border: 1px solid var(--border); border-radius: 0.75rem; padding: 1.5rem 2rem;">
-      <h3 style="font-size: 1.1rem; margin-bottom: 0.75rem;">Current Release: v1.0.0</h3>
-      <ul style="color: var(--text-muted); font-size: 0.9rem; line-height: 1.8; padding-left: 1.25rem;">
-        <li><strong>v1.0.0:</strong> <strong>First stable release</strong> — Settings save now shows a toast notification instead of a silent banner. Mobile and tablet Playwright E2E tests added (375px + 768px), clearing QA debt from v0.9.2 (StepProgress component now verified live at mobile width). Documentation v1.0 pass: all version numbers, download links, and diagrams current. 835 automated tests.</li>
-        <li><strong>v0.9.3:</strong> <strong>Security &amp; reliability hardening</strong> — NestJS v11 + Vite v8 upgrade eliminates all npm vulnerabilities (0 across all packages, down from 21). Retry/backoff standardized across all 3 Python pipeline services: 60s/90s/120s on rate limits, 30s/45s/60s on server errors — previously these services had no retry logic. 829 automated tests.</li>
-        <li><strong>v0.9.2:</strong> <strong>Real-time SSE progress &amp; UX completion</strong> — Claims, Compliance, and Application tabs show step-by-step progress during generation. Cross-references populated in patent applications. Claims lazy-load reduces initial payload from 152KB to ~15KB. 802 automated tests.</li>
-        <li><strong>v0.9.1:</strong> <strong>Legal posture alignment &amp; input validation</strong> — Assessment labels aligned to v1.2.0 across all three repos. Enhanced AI disclaimers in all 4 services. 50-word minimum description validation (frontend + backend). 665 automated tests.</li>
-        <li><strong>v0.9.0:</strong> <strong>Application sections fix &amp; E2E hardening</strong> — Application tab's 9-section structured navigation now works end-to-end (astream state accumulation bug fixed). Application tab elapsed timer added. Streaming horizontal scrollbar eliminated. 7 new Playwright E2E scenarios (multi-project, cancel, resume, edit-after-feasibility, draft persistence, downloads). 628 automated tests.</li>
-        <li><strong>v0.8.5:</strong> <strong>Critical installer fix &amp; UX overhaul</strong> — CRITICAL: Python services (Claims, Compliance, Application) returned 403 on every fresh install due to trailing space in env var; fixed. Claims tab collapse-by-default prevents browser freeze (37 claims). Compliance sections collapsed by default (154 results). Stage data preserved through view transitions. Elapsed timers on Claims/Compliance spinners. Settings save confirmation banner. Error detail surfacing for failed claim/compliance runs. Pipeline interrupted message fix for stages that never ran. 11 bugs fixed total. 599 automated tests.</li>
-        <li><strong>v0.8.4:</strong> Windows installer fixes — cross-platform build script (cp → Node.js inline copy), PATHEXT enforcement for npm.cmd resolution in stripped shell environments.</li>
-        <li><strong>v0.8.3:</strong> <strong>Bug fixes, Docker hardening &amp; code quality</strong> — CI fix (package-lock.json version mismatch), decrypt() now throws DecryptionError instead of silent failure, report auth works with PATENTFORGE_TOKEN, Docker healthchecks on all 7 services and log rotation, API key rate limiting (5 req/60s), all <code>any</code> types replaced with proper interfaces, shared utility extraction (slugify, disclaimer), auto-export opt-in setting, Node 24 CI migration.</li>
-        <li><strong>v0.8.2:</strong> <strong>Security hardening &amp; architecture cleanup</strong> — Helmet security headers, DOMPurify HTML sanitization, Prisma dual-schema drift eliminated (single source of truth derived for Docker), cost tracking across all services (claim-drafter included in cumulative totals), ProjectDetail refactored into 6 focused components, CI expanded with application-generator tests, Jest ESM transformation fixed (49 tests recovered). 592 automated tests.</li>
-        <li><strong>v0.8.1:</strong> <strong>Back button fix during streaming</strong> — Fixed issue where navigating to sidebar tabs during active pipeline would lose live output view; Back button now returns to streaming view when pipeline is active. Documentation consistency audit (version numbers, roadmap, installation links).</li>
-        <li><strong>v0.8.0:</strong> <strong>Code quality &amp; UI polish</strong> — ESLint + Prettier enforcement across all services, TypeScript strict mode (backend + frontend strictNullChecks), backend API integration tests with supertest, coverage thresholds enforced in CI, sidebar status badges for pipeline steps, mobile-responsive sidebar accordion, pre-push git hook for release verification.</li>
-        <li><strong>v0.7.1:</strong> Polish patch — 18 bug fixes including run targeting, API key security, cost cap scope, SSE resilience, and DOCX export quality</li>
-        <li><strong>v0.7.0:</strong> <strong>One-click installer</strong> — Windows (.exe via Inno Setup), Mac (.dmg, beta), Linux (.AppImage, beta). System tray app (Go) manages all 6 services with health monitoring and auto-restart. Node SEA binaries for backend and feasibility (no Node.js runtime needed). Portable Python 3.12 bundled. First-run API key setup wizard. CI release workflow builds all platforms on tag push.</li>
-        <li><strong>v0.6.1:</strong> Hardening patch — removed Docker <code>--accept-data-loss</code>, configurable backend port, startup env validation with actionable errors, runtime source maps, form/modal accessibility fixes, real disclaimer-flow E2E test</li>
-        <li><strong>v0.6.0:</strong> Patent application generator — 5-agent LangGraph pipeline produces complete USPTO-formatted applications. Word export with 37 CFR 1.52 compliance (Times New Roman 12pt, 1.5 spacing, [NNNN] paragraph numbering, page breaks, draft watermark). Section navigation with inline editing. IDS auto-populated from prior art. 9 bug fixes including mobile layout, cost tracking, and React Router deprecation warnings.</li>
-        <li><strong>v0.5.2:</strong> Quality patch — 13 items from external tech/UI/QA review: shared Alert component, styled delete modal, claim edit discoverability (pencil icon), tablet layout, encryption self-test, 60s API timeout, Docker secret hardening, CI compliance-checker tests</li>
-        <li><strong>v0.5.0–0.5.1:</strong> Compliance checking (112a, 112b, MPEP 608, 101), claims + compliance Word export, accurate cost estimates, ODP usage tracking, individual claim regeneration, prior art overlap warnings</li>
-        <li><strong>v0.4.x:</strong> AI-assisted claim drafting (3-agent pipeline), claim tree visualization, patent family tree lookup</li>
-        <li>835 automated tests — GitHub Actions CI (Jest + Vitest + pytest + Playwright E2E)</li>
-      </ul>
-      <p style="margin-top: 0.75rem; font-size: 0.85rem;"><a href="https://github.com/scottconverse/patentforge/blob/master/CHANGELOG.md">Full changelog &rarr;</a></p>
+      <strong>Legal guardrails built in:</strong> first-run clickwrap agreement, embedded disclaimers on every
+      stage output, and persistent disclaimer watermarks on every generated report.
+      See <a href="https://github.com/scottconverse/patentforgelocal/blob/master/LEGAL_NOTICE.md">LEGAL_NOTICE.md</a> for full details.
     </div>
   </section>
 
   <section class="architecture">
     <h2>Architecture</h2>
-    <p class="desc">Six-service federated architecture managed by a Go system tray app. The installer bundles Node SEA binaries and portable Python — no runtime dependencies required. Internal services authenticated via shared secret. SSE streaming proxied through the backend. SQLite for development, PostgreSQL for Docker.</p>
+    <p class="desc">Six-service federated architecture managed by a Go system tray app. All AI inference routes through a local Ollama instance running Gemma 4 26B. The installer bundles Node SEA binaries, portable Python, and Ollama -- no runtime dependencies required.</p>
 
-    <div style="margin: 2rem 0; text-align: center;">
-      <img src="../diagrams/architecture.png" alt="PatentForge System Architecture — 6 services" style="max-width: 100%; border-radius: 0.5rem; border: 1px solid #334155;" />
-      <p style="color: #94a3b8; font-size: 0.8rem; margin-top: 0.5rem; font-style: italic;">Figure 1: System Architecture (v1.0.0) — 6 services + system tray + 3 external APIs</p>
-    </div>
-
-    <div style="margin: 2rem 0; text-align: center;">
-      <img src="../diagrams/docker-topology.png" alt="PatentForge Docker Deployment" style="max-width: 100%; border-radius: 0.5rem; border: 1px solid #334155;" />
-      <p style="color: #94a3b8; font-size: 0.8rem; margin-top: 0.5rem; font-style: italic;">Figure 2: Docker Compose Deployment Topology (7 containers)</p>
-    </div>
-
-    <!-- Service details -->
     <div class="arch-details">
       <div class="arch-card">
         <h4>React Frontend</h4>
@@ -385,67 +369,78 @@ cd backend && npx prisma db push && npx prisma generate && cd ..
       <div class="arch-card">
         <h4>NestJS Backend</h4>
         <div class="port">:3000</div>
-        <p>Project CRUD, settings management, feasibility run tracking, claim draft orchestration, SSE event forwarding, prior art search via USPTO ODP, Word export. API keys encrypted at rest. Optional Bearer token auth.</p>
+        <p>Project CRUD, settings management, feasibility run tracking, claim draft orchestration, SSE event forwarding, prior art search via USPTO, Word export.</p>
         <div class="tech">NestJS &bull; Prisma ORM &bull; SQLite (dev) / PostgreSQL (Docker)</div>
       </div>
       <div class="arch-card">
         <h4>Feasibility Service</h4>
         <div class="port">:3001</div>
-        <p>6-stage sequential AI analysis pipeline. Each stage uses a markdown prompt template with the Anthropic Claude API. Streams tokens in real time via SSE.</p>
-        <div class="tech">Express &bull; Anthropic SSE &bull; 6 prompt templates (CC BY-SA 4.0)</div>
+        <p>6-stage sequential AI analysis pipeline. Each stage uses a markdown prompt template with the local Ollama API. Streams tokens in real time via SSE.</p>
+        <div class="tech">Express &bull; Ollama HTTP API &bull; 6 prompt templates (CC BY-SA 4.0)</div>
       </div>
       <div class="arch-card">
         <h4>Claim Drafter</h4>
         <div class="port">:3002</div>
-        <p>3-agent claim drafting pipeline: Planner (strategy), Writer (claims), Examiner (review). LangGraph state machine with conditional revision loop. Generates up to 20 claims per draft.</p>
-        <div class="tech">Python &bull; FastAPI &bull; LangGraph &bull; Anthropic SDK</div>
+        <p>3-agent claim drafting pipeline: Planner (strategy), Writer (claims), Examiner (review). LangGraph state machine with conditional revision loop.</p>
+        <div class="tech">Python &bull; FastAPI &bull; LangGraph &bull; Ollama HTTP API</div>
       </div>
       <div class="arch-card">
         <h4>Application Generator</h4>
         <div class="port">:3003</div>
-        <p>5-agent sequential LangGraph pipeline generates a complete USPTO-formatted patent application: background, summary, detailed description, abstract, and figure descriptions. Word export follows 37 CFR 1.52.</p>
-        <div class="tech">Python &bull; FastAPI &bull; LangGraph &bull; Anthropic SDK &bull; python-docx</div>
+        <p>5-agent sequential LangGraph pipeline generates complete USPTO-formatted patent applications. Word export follows 37 CFR 1.52.</p>
+        <div class="tech">Python &bull; FastAPI &bull; LangGraph &bull; Ollama HTTP API &bull; python-docx</div>
       </div>
       <div class="arch-card">
         <h4>Compliance Checker</h4>
         <div class="port">:3004</div>
-        <p>4 specialized checker agents validate claims against 35 USC 112(a), 112(b), MPEP 608, and 101. LLM-native approach using Claude with structured prompts. Per-check cost tracking.</p>
-        <div class="tech">Python &bull; FastAPI &bull; LangGraph &bull; Anthropic SDK</div>
+        <p>4 specialized checker agents validate claims against 35 USC 112(a), 112(b), MPEP 608, and 101. Per-check structured output.</p>
+        <div class="tech">Python &bull; FastAPI &bull; LangGraph &bull; Ollama HTTP API</div>
       </div>
     </div>
 
     <div class="arch-ext">
       <div class="arch-ext-item">
-        <h5>Anthropic Claude API</h5>
-        <p>LLM processing + web search</p>
+        <h5>Ollama (Local)</h5>
+        <p>Gemma 4 26B inference</p>
       </div>
       <div class="arch-ext-item">
-        <h5>USPTO Open Data Portal</h5>
+        <h5>USPTO PatentSearch</h5>
         <p>Patent search + claims retrieval</p>
       </div>
       <div class="arch-ext-item">
-        <h5>LiteLLM Pricing</h5>
-        <p>Dynamic model cost estimation</p>
+        <h5>Ollama Cloud (Optional)</h5>
+        <p>Web search API</p>
       </div>
     </div>
+  </section>
+
+  <section class="credits">
+    <h2>Built With</h2>
+    <p>
+      <a href="https://ollama.com">Ollama</a> -- local LLM runtime<br>
+      <a href="https://blog.google/innovation-and-ai/technology/developers-tools/gemma-4/">Google Gemma 4</a> -- open-weight language model<br>
+      <a href="https://github.com/scottconverse/context-mode">context-mode</a> -- context window compression<br>
+      <a href="https://github.com/scottconverse/patentforge">PatentForge</a> -- upstream patent analysis platform
+    </p>
   </section>
 
   <section class="links">
     <h2>Resources</h2>
     <div class="links-grid">
-      <a href="https://github.com/scottconverse/patentforge/blob/master/README.md">README</a>
-      <a href="https://github.com/scottconverse/patentforge/blob/master/USER-MANUAL.md">User Manual</a>
-      <a href="https://github.com/scottconverse/patentforge/blob/master/ARCHITECTURE.md">Architecture</a>
-      <a href="https://github.com/scottconverse/patentforge/blob/master/CHANGELOG.md">Changelog</a>
-      <a href="https://github.com/scottconverse/patentforge/blob/master/CONTRIBUTING.md">Contributing</a>
-      <a href="https://github.com/scottconverse/patentforge/blob/master/LEGAL_NOTICE.md">Legal Notice</a>
-      <a href="https://github.com/scottconverse/patentforge/blob/master/LICENSE">MIT License (Code)</a>
-      <a href="https://github.com/scottconverse/patentforge/blob/master/LICENSE-PROMPTS">CC BY-SA 4.0 (Prompts)</a>
+      <a href="https://github.com/scottconverse/patentforgelocal/blob/master/README.md">README</a>
+      <a href="https://github.com/scottconverse/patentforgelocal/blob/master/USER-MANUAL.md">User Manual</a>
+      <a href="https://github.com/scottconverse/patentforgelocal/blob/master/ARCHITECTURE.md">Architecture</a>
+      <a href="https://github.com/scottconverse/patentforgelocal/blob/master/CHANGELOG.md">Changelog</a>
+      <a href="https://github.com/scottconverse/patentforgelocal/blob/master/CONTRIBUTING.md">Contributing</a>
+      <a href="https://github.com/scottconverse/patentforgelocal/blob/master/LEGAL_NOTICE.md">Legal Notice</a>
+      <a href="https://github.com/scottconverse/patentforgelocal/blob/master/LICENSE">MIT License (Code)</a>
+      <a href="https://github.com/scottconverse/patentforgelocal/blob/master/LICENSE-PROMPTS">CC BY-SA 4.0 (Prompts)</a>
+      <a href="https://github.com/scottconverse/patentforge">Upstream: PatentForge</a>
     </div>
   </section>
 
   <footer class="footer">
-    PatentForge is a research tool, not a legal service. The author is not a lawyer. Always consult a patent attorney before making filing decisions.<br>
+    PatentForgeLocal is a research tool, not a legal service. The author is not a lawyer. Always consult a patent attorney before making filing decisions.<br>
     &copy; 2026 Scott Converse. Code: MIT License. Prompt content: CC BY-SA 4.0.
   </footer>
 
