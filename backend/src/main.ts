@@ -24,11 +24,11 @@ function validateEnvironment(): void {
     );
   }
 
-  // Optional but important — warn if missing so operators know
-  if (!process.env.ANTHROPIC_API_KEY) {
+  // Optional — Ollama API key enables web search (not required for local inference)
+  if (!process.env.OLLAMA_API_KEY) {
     warnings.push(
-      'ANTHROPIC_API_KEY is not set. Users can set it via the Settings page, ' +
-        'but pipeline runs will fail until an API key is configured.',
+      'OLLAMA_API_KEY is not set. Web search during analysis will be unavailable. ' +
+        'Users can set it via the Settings page (optional — analysis works without it).',
     );
   }
 
