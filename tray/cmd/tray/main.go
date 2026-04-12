@@ -18,7 +18,7 @@ import (
 )
 
 var (
-	version    = "0.1.0-dev"
+	version    = "0.1.0"
 	cfg        *config.Config
 	mgr        *services.Manager
 	healthMon  *services.HealthMonitor
