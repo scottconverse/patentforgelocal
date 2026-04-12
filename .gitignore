@@ -1,0 +1,55 @@
+# Dependencies
+node_modules/
+__pycache__/
+*.pyc
+.venv/
+venv/
+
+# Build artifacts
+dist/
+build/
+*.exe
+*.dmg
+*.AppImage
+*.sea
+
+# Runtime bundles (downloaded during build, not committed)
+runtime/ollama/
+runtime/python/
+models/
+
+# Environment & secrets
+.env
+.env.*
+config/.env
+*.key
+*.pem
+
+# Database
+*.db
+*.db-journal
+context-db/
+
+# IDE
+.idea/
+.vscode/
+*.swp
+*.swo
+
+# OS
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# Logs
+logs/
+*.log
+
+# Test coverage
+coverage/
+.coverage
+htmlcov/
+
+# Temporary
+tmp/
+*.tmp
