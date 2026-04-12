@@ -31,7 +31,7 @@ function requireInternalSecret(req: express.Request, res: express.Response, next
 
 // ── Health check (no auth — used for Docker health checks) ───────────────────
 app.get('/health', (_req, res) => {
-  res.json({ status: 'ok', service: 'patentforge-feasibility', promptHashes: getPromptHashes() });
+  res.json({ status: 'ok', service: 'patentforgelocal-feasibility', promptHashes: getPromptHashes() });
 });
 
 // ── Main analysis endpoint — SSE stream (requires internal auth) ─────────────
@@ -46,11 +46,6 @@ app.post('/analyze', requireInternalSecret, async (req, res) => {
 
   if (!inventionNarrative || typeof inventionNarrative !== 'string') {
     res.status(400).json({ error: 'inventionNarrative is required and must be a string' });
-    return;
-  }
-
-  if (!settings?.apiKey) {
-    res.status(400).json({ error: 'settings.apiKey is required' });
     return;
   }
 
@@ -89,12 +84,14 @@ app.post('/analyze', requireInternalSecret, async (req, res) => {
   }
 
   // Apply defaults to settings — model is required, no silent fallback to expensive model
+  const ollamaHost = settings.ollamaUrl || (process.env.OLLAMA_HOST ? `http://${process.env.OLLAMA_HOST}` : 'http://127.0.0.1:11434');
+
   const resolvedSettings: AnalysisSettings = {
     model: settings.model,
     researchModel: settings.researchModel,
-    maxTokens: settings.maxTokens || 32000,
-    interStageDelaySeconds: settings.interStageDelaySeconds ?? 5,
-    apiKey: settings.apiKey,
+    maxTokens: settings.maxTokens || 16384,
+    interStageDelaySeconds: settings.interStageDelaySeconds ?? 2,
+    ollamaUrl: ollamaHost,
     priorArtContext: priorArtContext || undefined,
   };
 
