@@ -7,6 +7,7 @@ import (
 	"os/exec"
 	"path/filepath"
 	"runtime"
+	"time"
 
 	"fyne.io/systray"
 	"github.com/scottconverse/patentforgelocal/tray/internal/assets"
@@ -21,6 +22,7 @@ var (
 	cfg        *config.Config
 	mgr        *services.Manager
 	healthMon  *services.HealthMonitor
+	ollamaMgr  *services.OllamaManager
 	mStatus    *systray.MenuItem
 	logger     *log.Logger
 )
@@ -92,6 +94,36 @@ func onReady() {
 			updateStatus()
 			return
 		}
+
+		// Check if the default model is available; pull if not
+		ollamaMgr = services.NewOllamaManager(cfg.OllamaURL(), cfg.OllamaModel)
+		available, err := ollamaMgr.IsModelAvailable()
+		if err != nil {
+			logger.Printf("Warning: could not check model availability: %v", err)
+		} else if !available {
+			logger.Printf("Model %s not found — starting pull...", cfg.OllamaModel)
+			mStatus.SetTitle("Status: Downloading model...")
+			systray.SetTooltip("PatentForgeLocal — Downloading model...")
+			if err := ollamaMgr.PullModel(); err != nil {
+				logger.Printf("Failed to start model pull: %v", err)
+			}
+			for {
+				time.Sleep(2 * time.Second)
+				prog := ollamaMgr.GetProgress()
+				if prog.Status == "complete" {
+					logger.Printf("Model %s downloaded successfully", cfg.OllamaModel)
+					break
+				}
+				if prog.Status == "error" {
+					logger.Printf("Model pull failed: %s", prog.Error)
+					break
+				}
+				logger.Printf("Model pull: %.1f%% (%d/%d bytes)", prog.Percent, prog.Completed, prog.Total)
+			}
+		} else {
+			logger.Printf("Model %s is available", cfg.OllamaModel)
+		}
+
 		updateStatus()
 		// Begin background health monitoring
 		healthMon = services.NewHealthMonitor(mgr, logger, func(status string) {
