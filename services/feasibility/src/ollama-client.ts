@@ -269,7 +269,7 @@ async function parseStream(
 }
 
 async function parseNonStreaming(response: Response): Promise<StreamResult> {
-  const body = await response.json();
+  const body: any = await response.json();
 
   const choices = body.choices ?? [];
   const text = choices.length > 0 ? (choices[0].message?.content ?? '') : '';

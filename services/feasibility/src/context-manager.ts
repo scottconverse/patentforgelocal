@@ -1,5 +1,4 @@
-import initSqlJs, { Database as SqlJsDatabase } from 'sql.js';
-import { readFileSync, writeFileSync, existsSync } from 'fs';
+import Database from 'better-sqlite3';
 
 interface SearchResult {
   stageNumber: number;
@@ -8,32 +7,24 @@ interface SearchResult {
 }
 
 export class ContextManager {
-  private db: SqlJsDatabase;
+  private db: Database.Database;
   private dbPath: string;
 
-  private constructor(db: SqlJsDatabase, dbPath: string) {
+  private constructor(db: Database.Database, dbPath: string) {
     this.db = db;
     this.dbPath = dbPath;
   }
 
   /**
-   * Create a new ContextManager. Loads or creates the SQLite database at dbPath.
-   * sql.js requires async WASM initialization, so this is a static factory.
+   * Create a new ContextManager. Opens or creates the SQLite database at dbPath.
+   * Kept as async factory for API compatibility (callers already use `await`).
    */
   static async create(dbPath: string): Promise<ContextManager> {
-    const SQL = await initSqlJs();
+    const db = new Database(dbPath);
 
-    let db: SqlJsDatabase;
-    if (existsSync(dbPath)) {
-      const buffer = readFileSync(dbPath);
-      db = new SQL.Database(buffer);
-    } else {
-      db = new SQL.Database();
-    }
+    db.pragma('journal_mode = WAL');
 
-    db.run('PRAGMA journal_mode = WAL;');
-
-    db.run(`
+    db.exec(`
       CREATE TABLE IF NOT EXISTS stage_outputs (
         stage_number INTEGER PRIMARY KEY,
         stage_name TEXT NOT NULL,
@@ -42,8 +33,8 @@ export class ContextManager {
       );
     `);
 
-    // sql.js bundles FTS5 support in the default WASM build
-    db.run(`
+    // better-sqlite3 bundles FTS5 support by default
+    db.exec(`
       CREATE VIRTUAL TABLE IF NOT EXISTS stage_chunks USING fts5(
         stage_number,
         chunk_index,
@@ -52,15 +43,7 @@ export class ContextManager {
       );
     `);
 
-    const mgr = new ContextManager(db, dbPath);
-    mgr.persist();
-    return mgr;
-  }
-
-  /** Write the in-memory database to disk. */
-  private persist(): void {
-    const data = this.db.export();
-    writeFileSync(this.dbPath, Buffer.from(data));
+    return new ContextManager(db, dbPath);
   }
 
   /**
@@ -71,49 +54,38 @@ export class ContextManager {
     const now = new Date().toISOString();
 
     // Upsert raw output
-    this.db.run(
+    this.db.prepare(
       `INSERT INTO stage_outputs (stage_number, stage_name, output, indexed_at)
        VALUES (?, ?, ?, ?)
        ON CONFLICT(stage_number) DO UPDATE SET
          stage_name = excluded.stage_name,
          output = excluded.output,
          indexed_at = excluded.indexed_at`,
-      [stageNumber, stageName, output, now],
-    );
+    ).run(stageNumber, stageName, output, now);
 
     // Remove old chunks for this stage
-    this.db.run(
+    this.db.prepare(
       `DELETE FROM stage_chunks WHERE stage_number = ?`,
-      [String(stageNumber)],
-    );
+    ).run(String(stageNumber));
 
     // Insert new chunks
     const chunks = this.chunkText(output, 2000);
+    const insertStmt = this.db.prepare(
+      `INSERT INTO stage_chunks (stage_number, chunk_index, content)
+       VALUES (?, ?, ?)`,
+    );
     for (let i = 0; i < chunks.length; i++) {
-      this.db.run(
-        `INSERT INTO stage_chunks (stage_number, chunk_index, content)
-         VALUES (?, ?, ?)`,
-        [String(stageNumber), String(i), chunks[i]],
-      );
+      insertStmt.run(String(stageNumber), String(i), chunks[i]);
     }
-
-    this.persist();
   }
 
   /** Retrieve the full raw output for a stage, or null if not indexed. */
   getFullOutput(stageNumber: number): string | null {
-    const stmt = this.db.prepare(
+    const row = this.db.prepare(
       `SELECT output FROM stage_outputs WHERE stage_number = ?`,
-    );
-    stmt.bind([stageNumber]);
+    ).get(stageNumber) as { output: string } | undefined;
 
-    if (stmt.step()) {
-      const row = stmt.getAsObject();
-      stmt.free();
-      return (row.output as string) ?? null;
-    }
-    stmt.free();
-    return null;
+    return row?.output ?? null;
   }
 
   /**
@@ -132,32 +104,29 @@ export class ContextManager {
       if (!sanitized) continue;
 
       try {
-        const stmt = this.db.prepare(`
+        const rows = this.db.prepare(`
           SELECT stage_number, content, rank
           FROM stage_chunks
           WHERE stage_chunks MATCH ?
           ORDER BY rank
           LIMIT ?
-        `);
-        stmt.bind([sanitized, limit]);
+        `).all(sanitized, limit) as Array<{
+          stage_number: string;
+          content: string;
+          rank: number;
+        }>;
 
-        while (stmt.step()) {
-          const row = stmt.getAsObject() as {
-            stage_number: string;
-            content: string;
-            rank: number;
-          };
-          const key = `${row.stage_number}:${(row.content as string).slice(0, 50)}`;
+        for (const row of rows) {
+          const key = `${row.stage_number}:${row.content.slice(0, 50)}`;
           if (!seen.has(key)) {
             seen.add(key);
             results.push({
               stageNumber: Number(row.stage_number),
-              content: row.content as string,
+              content: row.content,
               rank: row.rank,
             });
           }
         }
-        stmt.free();
       } catch {
         // FTS5 query syntax error -- skip this query
         continue;
@@ -183,18 +152,15 @@ export class ContextManager {
 
     if (currentStage <= 3) {
       // Return all prior stages in full
-      const stmt = this.db.prepare(
+      const rows = this.db.prepare(
         `SELECT stage_number, output FROM stage_outputs
          WHERE stage_number < ?
          ORDER BY stage_number`,
-      );
-      stmt.bind([currentStage]);
+      ).all(currentStage) as Array<{ stage_number: number; output: string }>;
 
-      while (stmt.step()) {
-        const row = stmt.getAsObject() as { stage_number: number; output: string };
+      for (const row of rows) {
         context.set(row.stage_number, row.output);
       }
-      stmt.free();
     } else {
       // Full previous stage
       const prevOutput = this.getFullOutput(currentStage - 1);
@@ -222,14 +188,12 @@ export class ContextManager {
 
   /** Delete all indexed data. */
   clear(): void {
-    this.db.run('DELETE FROM stage_outputs');
-    this.db.run('DELETE FROM stage_chunks');
-    this.persist();
+    this.db.exec('DELETE FROM stage_outputs');
+    this.db.exec('DELETE FROM stage_chunks');
   }
 
-  /** Close the database connection and persist to disk. */
+  /** Close the database connection. */
   close(): void {
-    this.persist();
     this.db.close();
   }
 
