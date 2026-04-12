@@ -4,35 +4,21 @@ import { api } from '../api';
 import { AppSettings } from '../types';
 import Toast from '../components/Toast';
 
-const MODELS = [
-  { value: '', label: '— Select a model —' },
-  { value: 'claude-sonnet-4-20250514', label: 'Claude Sonnet 4' },
-  { value: 'claude-opus-4-20250514', label: 'Claude Opus 4' },
-  { value: 'claude-haiku-4-5-20251001', label: 'Claude Haiku 4.5' },
-];
-
-const RESEARCH_MODELS = [
-  { value: '', label: 'Same as default' },
-  { value: 'claude-haiku-4-5-20251001', label: 'Claude Haiku 4.5' },
-  { value: 'claude-sonnet-4-20250514', label: 'Claude Sonnet 4' },
-];
-
 export default function Settings() {
   const [settings, setSettings] = useState<Partial<AppSettings>>({
-    anthropicApiKey: '',
-    defaultModel: '',
-    researchModel: '',
+    ollamaApiKey: '',
+    ollamaModel: '',
+    modelReady: false,
     maxTokens: 32000,
     interStageDelaySeconds: 5,
     exportPath: '',
-    costCapUsd: 5.0,
     usptoApiKey: '',
   });
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [toast, setToast] = useState<{ message: string; type: 'success' | 'error' } | null>(null);
-  const [showApiKey, setShowApiKey] = useState(false);
+  const [showOllamaKey, setShowOllamaKey] = useState(false);
   const [showUsptoKey, setShowUsptoKey] = useState(false);
   const [odpUsage, setOdpUsage] = useState<{
     thisWeek: {
@@ -126,41 +112,55 @@ export default function Settings() {
         {/* Hidden dummy input to prevent Chrome autofill */}
         <input type="text" name="prevent-autofill" style={{ display: 'none' }} autoComplete="username" />
 
+        {/* AI Model Status */}
+        <div className="bg-gray-900 border border-gray-800 rounded-lg p-5 space-y-4">
+          <h2 className="text-sm font-semibold text-gray-300 uppercase tracking-wider">AI Model</h2>
+          <div className="mb-6">
+            <label className="block text-sm font-medium text-gray-300 mb-1">AI Model</label>
+            <div className="flex items-center gap-3 px-3 py-2 bg-gray-800 border border-gray-600 rounded-lg">
+              <span className={`w-2 h-2 rounded-full ${settings.modelReady ? 'bg-green-400' : 'bg-red-400'}`} />
+              <span className="text-white">{settings.ollamaModel || 'gemma4:26b'}</span>
+              <span className="text-sm text-gray-400 ml-auto">{settings.modelReady ? 'Running' : 'Not loaded'}</span>
+            </div>
+          </div>
+        </div>
+
         {/* API Keys */}
         <div className="bg-gray-900 border border-gray-800 rounded-lg p-5 space-y-4">
           <h2 className="text-sm font-semibold text-gray-300 uppercase tracking-wider">API Keys</h2>
 
           <div>
-            <label className="block text-sm font-medium text-gray-300 mb-1">Anthropic API Key</label>
+            <label className="block text-sm font-medium text-gray-300 mb-1">
+              Ollama API Key <span className="text-gray-500">(optional — enables web search)</span>
+            </label>
             <div className="flex gap-2">
               <input
-                type={showApiKey ? 'text' : 'password'}
-                value={settings.anthropicApiKey || ''}
-                onChange={(e) => update('anthropicApiKey', e.target.value)}
-                placeholder="sk-ant-..."
+                type={showOllamaKey ? 'text' : 'password'}
+                value={settings.ollamaApiKey || ''}
+                onChange={(e) => update('ollamaApiKey', e.target.value)}
+                placeholder="Optional — for web search"
                 autoComplete="new-password"
                 className="flex-1 bg-gray-800 border border-gray-700 rounded px-3 py-2 text-gray-100 placeholder-gray-500 focus:outline-none focus:border-blue-500 text-sm font-mono"
               />
               <button
                 type="button"
-                onClick={() => setShowApiKey((v) => !v)}
+                onClick={() => setShowOllamaKey((v) => !v)}
                 className="px-3 py-2 bg-gray-700 hover:bg-gray-600 text-gray-300 rounded text-sm transition-colors"
               >
-                {showApiKey ? 'Hide' : 'Show'}
+                {showOllamaKey ? 'Hide' : 'Show'}
               </button>
             </div>
             <p className="text-xs text-gray-500 mt-1">
-              You are connecting to your own Anthropic API account. AI processing is performed by Anthropic's servers
-              under their{' '}
+              Create a free account at{' '}
               <a
-                href="https://www.anthropic.com/policies/terms"
+                href="https://ollama.com/signup"
                 target="_blank"
                 rel="noopener noreferrer"
                 className="text-blue-400 hover:underline"
               >
-                terms of service
-              </a>
-              . Review their data privacy policies before submitting invention details.
+                ollama.com
+              </a>{' '}
+              for web search during analysis.
             </p>
           </div>
 
@@ -233,44 +233,6 @@ export default function Settings() {
           </div>
         )}
 
-        {/* Models */}
-        <div className="bg-gray-900 border border-gray-800 rounded-lg p-5 space-y-4">
-          <h2 className="text-sm font-semibold text-gray-300 uppercase tracking-wider">Models</h2>
-
-          <div>
-            <label className="block text-sm font-medium text-gray-300 mb-1">Default Model</label>
-            <select
-              value={settings.defaultModel || ''}
-              onChange={(e) => update('defaultModel', e.target.value)}
-              className="w-full bg-gray-800 border border-gray-700 rounded px-3 py-2 text-gray-100 focus:outline-none focus:border-blue-500 text-sm"
-            >
-              {MODELS.map((m) => (
-                <option key={m.value} value={m.value}>
-                  {m.label}
-                </option>
-              ))}
-            </select>
-          </div>
-
-          <div>
-            <label className="block text-sm font-medium text-gray-300 mb-1">Research Model</label>
-            <select
-              value={settings.researchModel || ''}
-              onChange={(e) => update('researchModel', e.target.value)}
-              className="w-full bg-gray-800 border border-gray-700 rounded px-3 py-2 text-gray-100 focus:outline-none focus:border-blue-500 text-sm"
-            >
-              {RESEARCH_MODELS.map((m) => (
-                <option key={m.value} value={m.value}>
-                  {m.label}
-                </option>
-              ))}
-            </select>
-            <p className="text-xs text-gray-500 mt-1">
-              Used for prior art search stages. Defaults to the main model if not set.
-            </p>
-          </div>
-        </div>
-
         {/* Analysis Parameters */}
         <div className="bg-gray-900 border border-gray-800 rounded-lg p-5 space-y-4">
           <h2 className="text-sm font-semibold text-gray-300 uppercase tracking-wider">Analysis Parameters</h2>
@@ -304,9 +266,9 @@ export default function Settings() {
           </div>
         </div>
 
-        {/* Export & Cost */}
+        {/* Export */}
         <div className="bg-gray-900 border border-gray-800 rounded-lg p-5 space-y-4">
-          <h2 className="text-sm font-semibold text-gray-300 uppercase tracking-wider">Export & Cost</h2>
+          <h2 className="text-sm font-semibold text-gray-300 uppercase tracking-wider">Export</h2>
           <div className="flex items-center gap-3">
             <input
               type="checkbox"
@@ -330,20 +292,6 @@ export default function Settings() {
             />
             <p className="text-xs text-gray-500 mt-1">
               Server folder for MD/HTML file export. Word downloads go to your browser's download folder.
-            </p>
-          </div>
-          <div>
-            <label className="block text-sm font-medium text-gray-300 mb-1">Cost Cap (USD)</label>
-            <input
-              type="number"
-              min={0}
-              step={0.5}
-              value={settings.costCapUsd ?? 5.0}
-              onChange={(e) => update('costCapUsd', parseFloat(e.target.value) || 0)}
-              className="w-full bg-gray-800 border border-gray-700 rounded px-3 py-2 text-gray-100 focus:outline-none focus:border-blue-500 text-sm"
-            />
-            <p className="text-xs text-gray-500 mt-1">
-              Show a warning before running if estimated cost exceeds this amount. Set 0 to disable.
             </p>
           </div>
         </div>
