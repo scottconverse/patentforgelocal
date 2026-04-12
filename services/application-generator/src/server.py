@@ -27,15 +27,14 @@ from .models import ApplicationGenerateRequest, ApplicationGenerateResult, Expor
 app = FastAPI(title="PatentForge Application Generator", version="0.6.0")
 
 INTERNAL_SECRET = os.environ.get("INTERNAL_SERVICE_SECRET", "")
-ANTHROPIC_API_KEY_ENV = os.environ.get("ANTHROPIC_API_KEY", "")
+OLLAMA_HOST = os.environ.get("OLLAMA_HOST", "http://127.0.0.1:11434")
 
 
-def resolve_api_key(request_key: str) -> str:
-    # Prefer the explicitly-configured key from Settings (passed in the request body).
-    # Fall back to the ANTHROPIC_API_KEY environment variable only when no key was provided
-    # in the request. This prevents a stale or incorrect env var from silently overriding
-    # the key the user configured through the UI.
-    return request_key or ANTHROPIC_API_KEY_ENV
+def resolve_ollama_url(request_url: str) -> str:
+    # Prefer the explicitly-configured URL from Settings (passed in the request body).
+    # Fall back to the OLLAMA_HOST environment variable only when no URL was provided
+    # in the request.
+    return request_url or OLLAMA_HOST
 
 
 api_key_header = APIKeyHeader(name="X-Internal-Secret", auto_error=False)
@@ -141,7 +140,7 @@ async def generate_application(request: ApplicationGenerateRequest):
                 prior_art_results=request.prior_art_results,
                 claims_text=request.claims_text,
                 spec_language=request.spec_language,
-                api_key=resolve_api_key(request.settings.api_key),
+                ollama_url=resolve_ollama_url(request.settings.ollama_url),
                 default_model=request.settings.default_model,
                 research_model=request.settings.research_model,
                 max_tokens=request.settings.max_tokens,
@@ -186,7 +185,7 @@ async def generate_application_sync(request: ApplicationGenerateRequest):
         prior_art_results=request.prior_art_results,
         claims_text=request.claims_text,
         spec_language=request.spec_language,
-        api_key=resolve_api_key(request.settings.api_key),
+        ollama_url=resolve_ollama_url(request.settings.ollama_url),
         default_model=request.settings.default_model,
         research_model=request.settings.research_model,
         max_tokens=request.settings.max_tokens,

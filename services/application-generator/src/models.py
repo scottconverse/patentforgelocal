@@ -16,7 +16,7 @@ class PriorArtItem(BaseModel):
 
 
 class GenerateSettings(BaseModel):
-    api_key: str = ""
+    ollama_url: str = "http://127.0.0.1:11434"
     default_model: str
     research_model: str = ""
     max_tokens: int = 32000
@@ -77,7 +77,7 @@ class GraphState(BaseModel):
     prior_art_context: str = ""
     claims_text: str = ""
     spec_language: str = ""
-    api_key: str = ""
+    ollama_url: str = "http://127.0.0.1:11434"
     default_model: str = ""
     research_model: str = ""
     max_tokens: int = 32000

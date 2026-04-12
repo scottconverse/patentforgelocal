@@ -37,9 +37,8 @@ async def finalize(state: GraphState) -> GraphState:
             text = text[1:]
         return text
 
-    # Scrub API key from state — this propagates back into state_dict via the astream loop.
-    # state_dict["api_key"] will be empty string after finalize runs. Do not access it downstream.
-    state.api_key = ""
+    # Clear ollama_url from state after pipeline completes — no downstream access needed.
+    state.ollama_url = ""
     state.background = clean_section(state.background)
     state.summary = clean_section(state.summary)
     state.detailed_description = clean_section(state.detailed_description)
@@ -84,8 +83,8 @@ async def run_application_pipeline(
     prior_art_results: list[PriorArtItem],
     claims_text: str,
     spec_language: str,
-    api_key: str,
-    default_model: str = "claude-sonnet-4-20250514",
+    ollama_url: str,
+    default_model: str = "gemma4:26b",
     research_model: str = "",
     max_tokens: int = 32000,
     on_step: Callable[[str, str], None] | None = None,
@@ -107,7 +106,7 @@ async def run_application_pipeline(
         prior_art_context=prior_art_context,
         claims_text=claims_text,
         spec_language=spec_language,
-        api_key=api_key,
+        ollama_url=ollama_url,
         default_model=default_model,
         research_model=research_model,
         max_tokens=max_tokens,
