@@ -77,6 +77,7 @@ export async function streamMessage(params: {
   model: string;
   maxTokens: number;
   useWebSearch?: boolean;
+  ollamaApiKey?: string;
   onToken?: (text: string) => void;
   onStatus?: (status: string) => void;
   signal?: AbortSignal;
@@ -107,11 +108,16 @@ export async function streamMessage(params: {
   // Use non-streaming for tool-call turns (Gemma 4 streaming bug workaround)
   const shouldStream = !useWebSearch;
 
+  // Non-streaming tool-call path handles its own request (needs to inject tools array)
+  if (!shouldStream) {
+    return await nonStreamingToolCall(endpoint, messages, model, maxTokens, params.ollamaApiKey, onToken, onStatus, signal);
+  }
+
   const requestBody: Record<string, unknown> = {
     model,
     messages,
     max_tokens: maxTokens,
-    stream: shouldStream,
+    stream: true,
   };
 
   let lastError: Error | null = null;
@@ -159,11 +165,7 @@ export async function streamMessage(params: {
       throw new Error(`Ollama API error ${response.status}: ${body}`);
     }
 
-    if (shouldStream) {
-      return await parseStream(response, onToken, onStatus, signal);
-    } else {
-      return await parseNonStreaming(response);
-    }
+    return await parseStream(response, onToken, onStatus, signal);
   }
 
   throw lastError ?? new Error('Max retries exceeded');
@@ -268,16 +270,123 @@ async function parseStream(
   return { text, webSearchUsed: false, inputTokens, outputTokens };
 }
 
-async function parseNonStreaming(response: Response): Promise<StreamResult> {
-  const body: any = await response.json();
+async function executeWebSearch(query: string, apiKey: string): Promise<string> {
+  try {
+    const resp = await fetch('https://ollama.com/api/web_search', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${apiKey}` },
+      body: JSON.stringify({ query }),
+    });
+    if (!resp.ok) return `Web search failed (HTTP ${resp.status}). Proceeding without web results.`;
+    const data = await resp.json() as any;
+    if (data.results && Array.isArray(data.results)) {
+      return data.results.slice(0, 5)
+        .map((r: any, i: number) => `${i + 1}. **${r.title || 'Untitled'}**\n   ${r.url || ''}\n   ${r.snippet || r.content || ''}`)
+        .join('\n\n');
+    }
+    return JSON.stringify(data).slice(0, 2000);
+  } catch (err) {
+    return `Web search unavailable: ${(err as Error).message}. Proceeding without web results.`;
+  }
+}
 
-  const choices = body.choices ?? [];
-  const text = choices.length > 0 ? (choices[0].message?.content ?? '') : '';
-  const usage = body.usage ?? {};
+async function nonStreamingToolCall(
+  url: string,
+  messages: Array<{ role: string; content: string }>,
+  model: string,
+  maxTokens: number,
+  ollamaApiKey?: string,
+  onToken?: (text: string) => void,
+  onStatus?: (status: string) => void,
+  signal?: AbortSignal,
+): Promise<StreamResult> {
+  const body: Record<string, unknown> = {
+    model,
+    messages,
+    max_tokens: maxTokens,
+    stream: false,
+  };
+
+  if (ollamaApiKey) {
+    body.tools = [{
+      type: 'function',
+      function: {
+        name: 'web_search',
+        description: 'Search the web for current information about a topic',
+        parameters: {
+          type: 'object',
+          properties: { query: { type: 'string', description: 'The search query' } },
+          required: ['query'],
+        },
+      },
+    }];
+  }
+
+  const response = await fetch(url, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(body),
+    signal,
+  });
+
+  if (!response.ok) {
+    const errBody = await response.text();
+    throw new Error(`Ollama API error ${response.status}: ${errBody}`);
+  }
+
+  const result = await response.json() as any;
+  const choice = result.choices?.[0];
+  const message = choice?.message;
+
+  if (message?.tool_calls?.length > 0 && ollamaApiKey) {
+    let fullContent = message.content || '';
+
+    for (const toolCall of message.tool_calls) {
+      if (toolCall.function?.name === 'web_search') {
+        const args = typeof toolCall.function.arguments === 'string'
+          ? JSON.parse(repairJSON(toolCall.function.arguments))
+          : toolCall.function.arguments;
+
+        onStatus?.(`Searching: "${args.query}"...`);
+        const searchResult = await executeWebSearch(args.query, ollamaApiKey);
+
+        // Send result back to model
+        const followUpMessages = [...messages, message, {
+          role: 'tool',
+          tool_call_id: toolCall.id,
+          content: searchResult,
+        }];
+
+        const followUpResp = await fetch(url, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ model, messages: followUpMessages, max_tokens: maxTokens, stream: false }),
+          signal,
+        });
+
+        if (followUpResp.ok) {
+          const followUp = await followUpResp.json() as any;
+          fullContent = followUp.choices?.[0]?.message?.content || fullContent;
+          result.usage = {
+            prompt_tokens: (result.usage?.prompt_tokens ?? 0) + (followUp.usage?.prompt_tokens ?? 0),
+            completion_tokens: (result.usage?.completion_tokens ?? 0) + (followUp.usage?.completion_tokens ?? 0),
+          };
+        }
+      }
+    }
+
+    if (fullContent) onToken?.(fullContent);
+    return { text: fullContent, webSearchUsed: true, inputTokens: result.usage?.prompt_tokens ?? 0, outputTokens: result.usage?.completion_tokens ?? 0 };
+  }
+
+  // No tool calls — standard non-streaming response
+  const text = message?.content ?? '';
+  const usage = result.usage ?? {};
+  if (text) onToken?.(text);
 
   return {
     text,
-    webSearchUsed: true,
+    webSearchUsed: false,
     inputTokens: typeof usage.prompt_tokens === 'number' ? usage.prompt_tokens : 0,
     outputTokens: typeof usage.completion_tokens === 'number' ? usage.completion_tokens : 0,
   };

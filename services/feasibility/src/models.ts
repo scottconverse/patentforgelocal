@@ -84,6 +84,7 @@ export interface AnalysisSettings {
   maxTokens: number;
   interStageDelaySeconds: number;
   ollamaUrl: string;
+  ollamaApiKey?: string;
   priorArtContext?: string;
 }
 
