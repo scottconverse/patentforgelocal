@@ -4,7 +4,7 @@ import { Type } from 'class-transformer';
 export class UpdateSettingsDto {
   @IsOptional()
   @IsString()
-  anthropicApiKey?: string;
+  ollamaApiKey?: string;
 
   @IsOptional()
   @IsString()

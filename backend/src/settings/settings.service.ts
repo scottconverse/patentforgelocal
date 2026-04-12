@@ -74,10 +74,10 @@ export class SettingsService implements OnModuleInit {
       update: {},
     });
 
-    let anthropicApiKey = '';
+    let ollamaApiKey = '';
     let usptoApiKey = '';
     try {
-      anthropicApiKey = decrypt(raw.anthropicApiKey, this.salt);
+      ollamaApiKey = decrypt(raw.ollamaApiKey, this.salt);
       usptoApiKey = decrypt(raw.usptoApiKey, this.salt);
     } catch (err) {
       if (err instanceof DecryptionError) {
@@ -90,7 +90,7 @@ export class SettingsService implements OnModuleInit {
 
     return {
       ...raw,
-      anthropicApiKey,
+      ollamaApiKey,
       usptoApiKey,
       encryptionHealthy: this.encryptionHealthy,
     };
@@ -101,7 +101,7 @@ export class SettingsService implements OnModuleInit {
    */
   async updateSettings(dto: UpdateSettingsDto) {
     const data: Record<string, unknown> = {};
-    if (dto.anthropicApiKey !== undefined) data.anthropicApiKey = encrypt(dto.anthropicApiKey, this.salt);
+    if (dto.ollamaApiKey !== undefined) data.ollamaApiKey = encrypt(dto.ollamaApiKey, this.salt);
     if (dto.defaultModel !== undefined) data.defaultModel = dto.defaultModel;
     if (dto.researchModel !== undefined) data.researchModel = dto.researchModel;
     if (dto.maxTokens !== undefined) data.maxTokens = dto.maxTokens;
@@ -120,10 +120,10 @@ export class SettingsService implements OnModuleInit {
     // After a successful update, encryption should be healthy (new keys just encrypted)
     this.encryptionHealthy = true;
 
-    let anthropicApiKey = '';
+    let ollamaApiKey = '';
     let usptoApiKey = '';
     try {
-      anthropicApiKey = decrypt(raw.anthropicApiKey, this.salt);
+      ollamaApiKey = decrypt(raw.ollamaApiKey, this.salt);
       usptoApiKey = decrypt(raw.usptoApiKey, this.salt);
     } catch (err) {
       if (err instanceof DecryptionError) {
@@ -135,7 +135,7 @@ export class SettingsService implements OnModuleInit {
 
     return {
       ...raw,
-      anthropicApiKey,
+      ollamaApiKey,
       usptoApiKey,
       encryptionHealthy: this.encryptionHealthy,
     };
