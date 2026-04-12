@@ -64,17 +64,18 @@ export interface FeasibilityStage {
 }
 
 export interface AppSettings {
-  id: string;
-  anthropicApiKey: string;
+  ollamaApiKey: string;
+  ollamaModel: string;
+  ollamaUrl: string;
+  modelReady: boolean;
   defaultModel: string;
   researchModel: string;
   maxTokens: number;
   interStageDelaySeconds: number;
+  usptoApiKey: string;
   exportPath: string;
   autoExport: boolean;
-  costCapUsd: number;
-  usptoApiKey: string;
-  encryptionHealthy?: boolean;
+  encryptionHealthy: boolean;
 }
 
 export interface FeasibilityRunSummary {
