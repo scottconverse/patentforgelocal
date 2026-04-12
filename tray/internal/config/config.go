@@ -1,4 +1,4 @@
-// Package config handles PatentForge configuration loading and generation.
+// Package config handles PatentForgeLocal configuration loading and generation.
 // On first run it creates config/.env with a generated service secret,
 // database URL, and default settings.
 package config
@@ -12,7 +12,7 @@ import (
 	"strings"
 )
 
-// Config holds all PatentForge runtime configuration.
+// Config holds all PatentForgeLocal runtime configuration.
 type Config struct {
 	BaseDir   string
 	DataDir   string
@@ -31,7 +31,7 @@ type Config struct {
 	PortResearch   int // 3004 — Research service
 }
 
-// Load reads or creates the PatentForge configuration.
+// Load reads or creates the PatentForgeLocal configuration.
 // If config/.env does not exist, it generates one with secure defaults.
 func Load(baseDir string) (*Config, error) {
 	cfg := &Config{
@@ -78,7 +78,7 @@ func (c *Config) generate() error {
 		return fmt.Errorf("failed to generate service secret: %w", err)
 	}
 
-	c.DatabaseURL = fmt.Sprintf("file:%s", filepath.Join(c.DataDir, "patentforge.db"))
+	c.DatabaseURL = fmt.Sprintf("file:%s", filepath.Join(c.DataDir, "patentforgelocal.db"))
 	c.ServiceSecret = secret
 
 	content := fmt.Sprintf(`DATABASE_URL=%s

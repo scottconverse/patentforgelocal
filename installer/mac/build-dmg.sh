@@ -7,7 +7,7 @@ ROOT_DIR="$(cd "$SCRIPT_DIR/../.." && pwd)"
 cd "$ROOT_DIR"
 
 VERSION=$(node -e "console.log(require('./backend/package.json').version)")
-APP_NAME="PatentForge"
+APP_NAME="PatentForgeLocal"
 APP_DIR="build/${APP_NAME}.app"
 
 # Create .app bundle structure
@@ -15,13 +15,13 @@ mkdir -p "${APP_DIR}/Contents/MacOS"
 mkdir -p "${APP_DIR}/Contents/Resources"
 
 # Copy tray binary
-cp patentforge-tray "${APP_DIR}/Contents/MacOS/"
+cp patentforgelocal-tray "${APP_DIR}/Contents/MacOS/"
 
 # Copy resources
-cp patentforge-backend "${APP_DIR}/Contents/Resources/"
-cp patentforge-feasibility "${APP_DIR}/Contents/Resources/"
-cp -r patentforge-backend-prisma "${APP_DIR}/Contents/Resources/"
-cp -r patentforge-feasibility-prompts "${APP_DIR}/Contents/Resources/"
+cp patentforgelocal-backend "${APP_DIR}/Contents/Resources/"
+cp patentforgelocal-feasibility "${APP_DIR}/Contents/Resources/"
+cp -r patentforgelocal-backend-prisma "${APP_DIR}/Contents/Resources/"
+cp -r patentforgelocal-feasibility-prompts "${APP_DIR}/Contents/Resources/"
 cp -r runtime "${APP_DIR}/Contents/Resources/"
 cp -r services "${APP_DIR}/Contents/Resources/"
 
@@ -36,13 +36,13 @@ cat > "${APP_DIR}/Contents/Info.plist" << EOF
     <key>CFBundleDisplayName</key>
     <string>${APP_NAME}</string>
     <key>CFBundleIdentifier</key>
-    <string>com.scottconverse.patentforge</string>
+    <string>com.scottconverse.patentforgelocal</string>
     <key>CFBundleVersion</key>
     <string>${VERSION}</string>
     <key>CFBundleShortVersionString</key>
     <string>${VERSION}</string>
     <key>CFBundleExecutable</key>
-    <string>patentforge-tray</string>
+    <string>patentforgelocal-tray</string>
     <key>LSMinimumSystemVersion</key>
     <string>11.0</string>
     <key>LSUIElement</key>

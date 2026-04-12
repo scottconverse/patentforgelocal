@@ -1,15 +1,15 @@
-; PatentForge Windows Installer
+; PatentForgeLocal Windows Installer
 ; Built with Inno Setup 6.x
 ; https://jrsoftware.org/ishelp/
 
-#define MyAppName "PatentForge"
-#define MyAppVersion "0.9.2"
+#define MyAppName "PatentForgeLocal"
+#define MyAppVersion "0.1.0"
 #define MyAppPublisher "Scott Converse"
-#define MyAppURL "https://scottconverse.github.io/patentforge/"
-#define MyAppExeName "patentforge-tray.exe"
+#define MyAppURL "https://scottconverse.github.io/patentforgelocal/"
+#define MyAppExeName "patentforgelocal-tray.exe"
 
 [Setup]
-AppId={{PATENTFORGE-A1B2C3D4-E5F6-7890-ABCD-EF1234567890}
+AppId={{PATENTFORGELOCAL-A1B2C3D4-E5F6-7890-ABCD-EF1234567890}
 AppName={#MyAppName}
 AppVersion={#MyAppVersion}
 AppPublisher={#MyAppPublisher}
@@ -19,7 +19,7 @@ AppUpdatesURL={#MyAppURL}
 DefaultDirName={autopf}\{#MyAppName}
 DefaultGroupName={#MyAppName}
 OutputDir=..\..\build
-OutputBaseFilename=PatentForge-{#MyAppVersion}-Setup
+OutputBaseFilename=PatentForgeLocal-{#MyAppVersion}-Setup
 Compression=lzma2/ultra64
 SolidCompression=yes
 WizardStyle=modern
@@ -39,15 +39,15 @@ Name: "desktopicon"; Description: "{cm:CreateDesktopIcon}"; GroupDescription: "{
 
 [Files]
 ; Executables
-Source: "..\..\patentforge-tray.exe"; DestDir: "{app}"; Flags: ignoreversion
-Source: "..\..\patentforge-backend.exe"; DestDir: "{app}"; Flags: ignoreversion
-Source: "..\..\patentforge-feasibility.exe"; DestDir: "{app}"; Flags: ignoreversion
+Source: "..\..\patentforgelocal-tray.exe"; DestDir: "{app}"; Flags: ignoreversion
+Source: "..\..\patentforgelocal-backend.exe"; DestDir: "{app}"; Flags: ignoreversion
+Source: "..\..\patentforgelocal-feasibility.exe"; DestDir: "{app}"; Flags: ignoreversion
 
 ; Prisma runtime files
-Source: "..\..\patentforge-backend-prisma\*"; DestDir: "{app}\patentforge-backend-prisma"; Flags: ignoreversion recursesubdirs createallsubdirs
+Source: "..\..\patentforgelocal-backend-prisma\*"; DestDir: "{app}\patentforgelocal-backend-prisma"; Flags: ignoreversion recursesubdirs createallsubdirs
 
 ; Feasibility prompts
-Source: "..\..\patentforge-feasibility-prompts\*"; DestDir: "{app}\patentforge-feasibility-prompts"; Flags: ignoreversion recursesubdirs createallsubdirs
+Source: "..\..\patentforgelocal-feasibility-prompts\*"; DestDir: "{app}\patentforgelocal-feasibility-prompts"; Flags: ignoreversion recursesubdirs createallsubdirs
 
 ; Portable Python 3.12
 Source: "..\..\runtime\python\*"; DestDir: "{app}\runtime\python"; Flags: ignoreversion recursesubdirs createallsubdirs
@@ -72,7 +72,7 @@ Name: "{group}\Uninstall {#MyAppName}"; Filename: "{uninstallexe}"
 Name: "{autodesktop}\{#MyAppName}"; Filename: "{app}\{#MyAppExeName}"; Tasks: desktopicon
 
 [Run]
-Filename: "{app}\{#MyAppExeName}"; Description: "Launch PatentForge"; Flags: nowait postinstall skipifsilent
+Filename: "{app}\{#MyAppExeName}"; Description: "Launch PatentForgeLocal"; Flags: nowait postinstall skipifsilent
 
 [UninstallDelete]
 ; Application files are removed automatically by the uninstaller.
@@ -83,7 +83,7 @@ procedure CurUninstallStepChanged(CurUninstallStep: TUninstallStep);
 begin
   if CurUninstallStep = usUninstall then
   begin
-    if MsgBox('Do you want to remove your PatentForge data (projects, settings, database)?' + #13#10 +
+    if MsgBox('Do you want to remove your PatentForgeLocal data (projects, settings, database)?' + #13#10 +
               'This cannot be undone.',
               mbConfirmation, MB_YESNO) = IDYES then
     begin

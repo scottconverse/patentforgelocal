@@ -1,4 +1,4 @@
-# PatentForge — Docker Compose
+# PatentForgeLocal — Docker Compose
 #
 # Usage:
 #   docker compose up --build          # first run (builds all images)
@@ -25,14 +25,14 @@ services:
   postgres:
     image: postgres:16-alpine
     environment:
-      POSTGRES_DB: patentforge
-      POSTGRES_USER: patentforge
+      POSTGRES_DB: patentforgelocal
+      POSTGRES_USER: patentforgelocal
       POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?Set POSTGRES_PASSWORD — run: export POSTGRES_PASSWORD=$$(openssl rand -hex 32)}
     volumes:
       - pgdata:/var/lib/postgresql/data
     # No external port — only reachable by backend within the Docker network
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U patentforge"]
+      test: ["CMD-SHELL", "pg_isready -U patentforgelocal"]
       interval: 5s
       timeout: 5s
       retries: 5
@@ -50,7 +50,7 @@ services:
       postgres:
         condition: service_healthy
     environment:
-      DATABASE_URL: postgresql://patentforge:${POSTGRES_PASSWORD}@postgres:5432/patentforge
+      DATABASE_URL: postgresql://patentforgelocal:${POSTGRES_PASSWORD}@postgres:5432/patentforgelocal
       FEASIBILITY_URL: http://feasibility:3001
       CLAIM_DRAFTER_URL: http://claim-drafter:3002
       COMPLIANCE_CHECKER_URL: http://compliance-checker:3004

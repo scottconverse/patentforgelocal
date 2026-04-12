@@ -9,10 +9,10 @@ import (
 	"strings"
 	"time"
 
-	"github.com/scottconverse/patentforge/tray/internal/config"
+	"github.com/scottconverse/patentforgelocal/tray/internal/config"
 )
 
-// Manager owns and orchestrates the lifecycle of all PatentForge services.
+// Manager owns and orchestrates the lifecycle of all PatentForgeLocal services.
 type Manager struct {
 	cfg      *config.Config
 	services []*Service
@@ -20,7 +20,7 @@ type Manager struct {
 	cancel   context.CancelFunc
 }
 
-// NewManager creates a Manager with all 5 PatentForge services configured.
+// NewManager creates a Manager with all 5 PatentForgeLocal services configured.
 func NewManager(cfg *config.Config) *Manager {
 	ctx, cancel := context.WithCancel(context.Background())
 	m := &Manager{
@@ -74,7 +74,7 @@ func (m *Manager) buildServices() []*Service {
 
 	backend := &Service{
 		Name:      "backend",
-		Command:   filepath.Join(baseDir, "patentforge-backend"+ext),
+		Command:   filepath.Join(baseDir, "patentforgelocal-backend"+ext),
 		WorkDir:   baseDir,
 		Port:      m.cfg.PortUI,
 		HealthURL: fmt.Sprintf("http://localhost:%d/api/health", m.cfg.PortUI),
@@ -90,7 +90,7 @@ func (m *Manager) buildServices() []*Service {
 
 	feasibility := &Service{
 		Name:      "feasibility",
-		Command:   filepath.Join(baseDir, "patentforge-feasibility"+ext),
+		Command:   filepath.Join(baseDir, "patentforgelocal-feasibility"+ext),
 		WorkDir:   baseDir,
 		Port:      m.cfg.PortAPI,
 		HealthURL: fmt.Sprintf("http://localhost:%d/health", m.cfg.PortAPI),
@@ -150,16 +150,10 @@ func (m *Manager) buildServices() []*Service {
 }
 
 // buildBaseEnv constructs the base environment variable slice that all
-// services inherit. Includes PATH from the host and ANTHROPIC_API_KEY
-// if set.
+// services inherit. Includes PATH from the host.
 func (m *Manager) buildBaseEnv() []string {
 	env := []string{
 		fmt.Sprintf("PATH=%s", os.Getenv("PATH")),
-	}
-
-	// Pass through ANTHROPIC_API_KEY from host environment
-	if apiKey := os.Getenv("ANTHROPIC_API_KEY"); apiKey != "" {
-		env = append(env, fmt.Sprintf("ANTHROPIC_API_KEY=%s", apiKey))
 	}
 
 	return env
@@ -251,10 +245,10 @@ func (m *Manager) Services() []*Service {
 }
 
 // findPrismaEngine locates the Prisma query engine library in the
-// patentforge-backend-prisma directory. The filename varies by platform
+// patentforgelocal-backend-prisma directory. The filename varies by platform
 // (e.g. query_engine-windows.dll.node on Windows).
 func findPrismaEngine(baseDir string) string {
-	prismaDir := filepath.Join(baseDir, "patentforge-backend-prisma")
+	prismaDir := filepath.Join(baseDir, "patentforgelocal-backend-prisma")
 	entries, err := os.ReadDir(prismaDir)
 	if err != nil {
 		return filepath.Join(prismaDir, "query_engine-windows.dll.node") // fallback

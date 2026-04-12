@@ -1,4 +1,4 @@
-module github.com/scottconverse/patentforge/tray
+module github.com/scottconverse/patentforgelocal/tray
 
 go 1.26.1
 

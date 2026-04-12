@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 #
-# PatentForge Release Verification Script
+# PatentForgeLocal Release Verification Script
 # Run before every push. Exits non-zero if any check fails.
 # Usage: bash scripts/verify-release.sh
 #
@@ -24,7 +24,7 @@ ROOT="$(cd "$(dirname "$0")/.." && pwd)"
 cd "$ROOT"
 
 echo "========================================"
-echo "PatentForge Release Verification"
+echo "PatentForgeLocal Release Verification"
 echo "========================================"
 echo ""
 

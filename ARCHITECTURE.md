@@ -1,4 +1,4 @@
-# PatentForge — Architecture & Design Document
+# PatentForgeLocal — Architecture & Design Document
 
 **Version**: 1.0.0
 **Last Updated**: 2026-04-08
@@ -8,18 +8,18 @@
 
 ## 1. Vision
 
-PatentForge is an open-source, full-lifecycle patent platform that takes an inventor from "I have an idea" to "here's a draft patent application with prior art citations, compliance checks, and a filing strategy" — then tracks the patent through prosecution. It is the only open-source tool that covers the entire patent lifecycle in one platform.
+PatentForgeLocal is an open-source, full-lifecycle patent platform that takes an inventor from "I have an idea" to "here's a draft patent application with prior art citations, compliance checks, and a filing strategy" — then tracks the patent through prosecution. It is the only open-source tool that covers the entire patent lifecycle in one platform.
 
 ---
 
 ## 2. System Architecture
 
 ![System Architecture](diagrams/architecture.png)
-*Figure 1: PatentForge System Architecture (v1.0.0)*
+*Figure 1: PatentForgeLocal System Architecture (v1.0.0)*
 
 ### 2.1 Federated Service Model
 
-PatentForge uses a **federated architecture**: a central backend orchestrates independent specialized services that each own one capability. Services communicate over HTTP/JSON and can be developed, deployed, scaled, and replaced independently.
+PatentForgeLocal uses a **federated architecture**: a central backend orchestrates independent specialized services that each own one capability. Services communicate over HTTP/JSON and can be developed, deployed, scaled, and replaced independently.
 
 The current service topology as of v1.0.0:
 
@@ -620,7 +620,7 @@ GET /patent/:number/office-actions     → Office Action text (via pyUSPTO)
 
 ```
 ┌─────────────────────────────────────────────────────────────────┐
-│  PatentForge                                    [Settings] [?]  │
+│  PatentForgeLocal                                    [Settings] [?]  │
 ├────────────┬────────────────────────────────────────────────────┤
 │            │                                                    │
 │  PROJECTS  │              MAIN CONTENT AREA                     │

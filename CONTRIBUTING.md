@@ -1,6 +1,6 @@
-# Contributing to PatentForge
+# Contributing to PatentForgeLocal
 
-Thank you for your interest in contributing to PatentForge! This guide will help you get set up and submitting changes.
+Thank you for your interest in contributing to PatentForgeLocal! This guide will help you get set up and submitting changes.
 
 ## Development Setup
 
@@ -20,8 +20,8 @@ Optional:
 
 1. **Clone the repo**
    ```bash
-   git clone https://github.com/scottconverse/patentforge.git
-   cd patentforge
+   git clone https://github.com/scottconverse/patentforgelocal.git
+   cd patentforgelocal
    ```
 
 2. **Install git hooks** (required — blocks pushes that fail verification)
@@ -56,7 +56,7 @@ Optional:
 
    On Windows, run the launcher from the project root:
    ```
-   PatentForge.bat
+   PatentForgeLocal.bat
    ```
 
    Or start each service manually in separate terminals:
@@ -86,7 +86,7 @@ Optional:
 
 ### Docker Setup (optional alternative)
 
-Docker is not required for local development. The `PatentForge.bat` launcher handles starting all services locally. Docker is available as an alternative if you prefer containerized deployment.
+Docker is not required for local development. The `PatentForgeLocal.bat` launcher handles starting all services locally. Docker is available as an alternative if you prefer containerized deployment.
 
 ```bash
 docker compose up --build
@@ -97,7 +97,7 @@ This starts the backend, feasibility service, frontend, and PostgreSQL. Open htt
 ## Project Structure
 
 ```
-patentforge/
+patentforgelocal/
 ├── backend/              # NestJS + Prisma central backend (port 3000)
 │   ├── prisma/           # Database schema and migrations
 │   └── src/              # Controllers, services, modules
@@ -163,7 +163,7 @@ E2E tests capture screenshots to `frontend/e2e-screenshots/` (gitignored), check
 
 ## Building the Installer
 
-PatentForge v0.7.0+ includes platform-specific installers. To build them locally:
+PatentForgeLocal v0.7.0+ includes platform-specific installers. To build them locally:
 
 ### Prerequisites
 
@@ -176,7 +176,7 @@ PatentForge v0.7.0+ includes platform-specific installers. To build them locally
 
 ```bash
 # 1. Build the system tray app (Go)
-cd tray && go build -o ../build/patentforge-tray.exe . && cd ..
+cd tray && go build -o ../build/patentforgelocal-tray.exe . && cd ..
 
 # 2. Build Node SEA binaries (backend + feasibility)
 cd backend && node --experimental-sea-config sea-config.json && cd ..
@@ -186,7 +186,7 @@ cd services/feasibility && node --experimental-sea-config sea-config.json && cd 
 cd frontend && npm run build && cd ..
 
 # 4. Build the Windows installer (requires Inno Setup)
-iscc installer/patentforge.iss
+iscc installer/patentforgelocal.iss
 ```
 
 The CI release workflow (`.github/workflows/release.yml`) automates this for all 3 platforms on tag push.
@@ -195,7 +195,7 @@ The CI release workflow (`.github/workflows/release.yml`) automates this for all
 
 ```
 build/
-├── patentforge-tray.exe    # Go tray app (service manager)
+├── patentforgelocal-tray.exe    # Go tray app (service manager)
 ├── backend.exe             # Node SEA binary (NestJS backend)
 ├── feasibility.exe         # Node SEA binary (feasibility service)
 ├── python/                 # Portable Python 3.12
@@ -279,7 +279,7 @@ When adding new code, add tests. When the baseline increases, update the thresho
 
 ## Architecture Notes
 
-PatentForge uses a federated service architecture. Each capability (feasibility analysis, prior art search, claim drafting, etc.) is an independent service that communicates with the central backend over HTTP/SSE. See [ARCHITECTURE.md](ARCHITECTURE.md) for full details.
+PatentForgeLocal uses a federated service architecture. Each capability (feasibility analysis, prior art search, claim drafting, etc.) is an independent service that communicates with the central backend over HTTP/SSE. See [ARCHITECTURE.md](ARCHITECTURE.md) for full details.
 
 When adding a new service:
 1. Create a new directory under `services/`
@@ -289,7 +289,7 @@ When adding a new service:
 
 ## Reporting Issues
 
-Use [GitHub Issues](https://github.com/scottconverse/patentforge/issues) for bug reports and feature requests. Include:
+Use [GitHub Issues](https://github.com/scottconverse/patentforgelocal/issues) for bug reports and feature requests. Include:
 - What you expected to happen
 - What actually happened
 - Steps to reproduce

@@ -9,15 +9,15 @@ import (
 	"runtime"
 
 	"fyne.io/systray"
-	"github.com/scottconverse/patentforge/tray/internal/assets"
-	"github.com/scottconverse/patentforge/tray/internal/config"
-	"github.com/scottconverse/patentforge/tray/internal/instance"
-	"github.com/scottconverse/patentforge/tray/internal/logging"
-	"github.com/scottconverse/patentforge/tray/internal/services"
+	"github.com/scottconverse/patentforgelocal/tray/internal/assets"
+	"github.com/scottconverse/patentforgelocal/tray/internal/config"
+	"github.com/scottconverse/patentforgelocal/tray/internal/instance"
+	"github.com/scottconverse/patentforgelocal/tray/internal/logging"
+	"github.com/scottconverse/patentforgelocal/tray/internal/services"
 )
 
 var (
-	version    = "0.7.0-dev"
+	version    = "0.1.0-dev"
 	cfg        *config.Config
 	mgr        *services.Manager
 	healthMon  *services.HealthMonitor
@@ -49,7 +49,7 @@ func main() {
 		os.Exit(1)
 	}
 	defer logCleanup()
-	logger.Println("PatentForge tray starting...")
+	logger.Println("PatentForgeLocal tray starting...")
 
 	// Load or generate configuration
 	cfg, err = config.Load(baseDir)
@@ -71,17 +71,17 @@ func onReady() {
 	} else {
 		systray.SetIcon(assets.IconPNG)
 	}
-	systray.SetTitle("PatentForge")
-	systray.SetTooltip("PatentForge — Starting...")
+	systray.SetTitle("PatentForgeLocal")
+	systray.SetTooltip("PatentForgeLocal — Starting...")
 
 	// Menu items
-	mOpen := systray.AddMenuItem("Open PatentForge", "Open in browser")
+	mOpen := systray.AddMenuItem("Open PatentForgeLocal", "Open in browser")
 	mStatus = systray.AddMenuItem("Status: Starting...", "")
 	mStatus.Disable()
 	systray.AddSeparator()
 	mLogs := systray.AddMenuItem("View Logs", "Open logs directory")
 	mRestart := systray.AddMenuItem("Restart Services", "Restart all services")
-	mAbout := systray.AddMenuItem(fmt.Sprintf("About PatentForge v%s", version), "")
+	mAbout := systray.AddMenuItem(fmt.Sprintf("About PatentForgeLocal v%s", version), "")
 	systray.AddSeparator()
 	mQuit := systray.AddMenuItem("Quit", "Stop all services and exit")
 
@@ -96,7 +96,7 @@ func onReady() {
 		// Begin background health monitoring
 		healthMon = services.NewHealthMonitor(mgr, logger, func(status string) {
 			mStatus.SetTitle(fmt.Sprintf("Status: %s", status))
-			systray.SetTooltip(fmt.Sprintf("PatentForge — %s", status))
+			systray.SetTooltip(fmt.Sprintf("PatentForgeLocal — %s", status))
 		})
 		healthMon.Start()
 		// Open browser once all services are ready
@@ -120,7 +120,7 @@ func onReady() {
 			case <-mRestart.ClickedCh:
 				go func() {
 					mStatus.SetTitle("Status: Restarting...")
-					systray.SetTooltip("PatentForge — Restarting...")
+					systray.SetTooltip("PatentForgeLocal — Restarting...")
 					if healthMon != nil {
 						healthMon.Stop()
 					}
@@ -133,12 +133,12 @@ func onReady() {
 					updateStatus()
 					healthMon = services.NewHealthMonitor(mgr, logger, func(status string) {
 						mStatus.SetTitle(fmt.Sprintf("Status: %s", status))
-						systray.SetTooltip(fmt.Sprintf("PatentForge — %s", status))
+						systray.SetTooltip(fmt.Sprintf("PatentForgeLocal — %s", status))
 					})
 					healthMon.Start()
 				}()
 			case <-mAbout.ClickedCh:
-				if err := openBrowser("https://github.com/scottconverse/patentforge/releases"); err != nil {
+				if err := openBrowser("https://github.com/scottconverse/patentforgelocal/releases"); err != nil {
 					logger.Printf("Failed to open browser: %v", err)
 				}
 			case <-mQuit.ClickedCh:
@@ -149,7 +149,7 @@ func onReady() {
 }
 
 func onExit() {
-	logger.Println("PatentForge shutting down...")
+	logger.Println("PatentForgeLocal shutting down...")
 	if healthMon != nil {
 		healthMon.Stop()
 	}
@@ -165,7 +165,7 @@ func updateStatus() {
 	}
 	status := mgr.OverallStatus()
 	mStatus.SetTitle(fmt.Sprintf("Status: %s", status))
-	systray.SetTooltip(fmt.Sprintf("PatentForge — %s", status))
+	systray.SetTooltip(fmt.Sprintf("PatentForgeLocal — %s", status))
 }
 
 func openBrowser(url string) error {
@@ -204,7 +204,7 @@ func getLogsDir() string {
 	exe, err := os.Executable()
 	if err != nil {
 		if home, homeErr := os.UserHomeDir(); homeErr == nil {
-			return filepath.Join(home, "PatentForge", "logs")
+			return filepath.Join(home, "PatentForgeLocal", "logs")
 		}
 		return "."
 	}

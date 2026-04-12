@@ -1,9 +1,9 @@
-# PatentForge launcher — installs, builds, and starts all services, then opens the browser
+# PatentForgeLocal launcher — installs, builds, and starts all services, then opens the browser
 param()
 
 $root = Split-Path -Parent $MyInvocation.MyCommand.Path
 
-Write-Host "PatentForge starting..." -ForegroundColor Cyan
+Write-Host "PatentForgeLocal starting..." -ForegroundColor Cyan
 
 # ─── Find Node.js ─────────────────────────────────────────────────────────────
 $node = $null
@@ -242,7 +242,7 @@ foreach ($svc in $services) {
 
 Write-Host ""
 if ($backendOk -and $frontendOk) {
-    Write-Host "PatentForge is running at http://localhost:8080" -ForegroundColor Green
+    Write-Host "PatentForgeLocal is running at http://localhost:8080" -ForegroundColor Green
     Start-Process "http://localhost:8080"
 } else {
     Write-Host "One or more required services failed to start." -ForegroundColor Red

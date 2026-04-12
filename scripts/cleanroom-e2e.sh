@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # ============================================================================
-# PatentForge — Cleanroom E2E Test Suite
+# PatentForgeLocal — Cleanroom E2E Test Suite
 # Run before every push / release.
 #
 # Usage:  bash scripts/cleanroom-e2e.sh
