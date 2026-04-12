@@ -92,6 +92,7 @@ app.post('/analyze', requireInternalSecret, async (req, res) => {
     maxTokens: settings.maxTokens || 16384,
     interStageDelaySeconds: settings.interStageDelaySeconds ?? 2,
     ollamaUrl: ollamaHost,
+    ollamaApiKey: settings.ollamaApiKey || process.env.OLLAMA_API_KEY || '',
     priorArtContext: priorArtContext || undefined,
   };
 

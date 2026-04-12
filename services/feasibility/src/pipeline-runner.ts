@@ -150,6 +150,7 @@ async function* runStage(
     model: modelToUse,
     maxTokens: settings.maxTokens,
     useWebSearch: stageDef.usesWebSearch,
+    ollamaApiKey: settings.ollamaApiKey,
     onToken: (text) => {
       enqueue({ type: 'token', text });
     },
