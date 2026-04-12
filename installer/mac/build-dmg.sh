@@ -25,6 +25,13 @@ cp -r patentforgelocal-feasibility-prompts "${APP_DIR}/Contents/Resources/"
 cp -r runtime "${APP_DIR}/Contents/Resources/"
 cp -r services "${APP_DIR}/Contents/Resources/"
 
+# Bundle Ollama
+echo "  Copying Ollama runtime..."
+mkdir -p "${APP_DIR}/Contents/Resources/runtime/ollama"
+if [ -d "runtime/ollama" ]; then
+  cp -r runtime/ollama/* "${APP_DIR}/Contents/Resources/runtime/ollama/"
+fi
+
 # Create Info.plist
 cat > "${APP_DIR}/Contents/Info.plist" << EOF
 <?xml version="1.0" encoding="UTF-8"?>

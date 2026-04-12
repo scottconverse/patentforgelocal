@@ -24,6 +24,13 @@ cp -r patentforgelocal-feasibility-prompts "${APP_DIR}/usr/bin/"
 cp -r runtime "${APP_DIR}/usr/bin/"
 cp -r services "${APP_DIR}/usr/bin/"
 
+# Bundle Ollama
+echo "  Copying Ollama runtime..."
+mkdir -p "${APP_DIR}/usr/lib/patentforgelocal/runtime/ollama"
+if [ -d "runtime/ollama" ]; then
+  cp -r runtime/ollama/* "${APP_DIR}/usr/lib/patentforgelocal/runtime/ollama/"
+fi
+
 # Copy icon
 cp tray/internal/assets/icon.png "${APP_DIR}/usr/share/icons/hicolor/256x256/apps/patentforgelocal.png"
 cp tray/internal/assets/icon.png "${APP_DIR}/patentforgelocal.png"
