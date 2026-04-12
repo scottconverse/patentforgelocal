@@ -197,8 +197,8 @@ export const api = {
   settings: {
     get: () => req<any>('GET', '/settings'),
     update: (data: unknown) => req<any>('PUT', '/settings', data),
-    validateKey: (apiKey: string) =>
-      req<{ valid: boolean; error?: string }>('POST', '/settings/validate-api-key', { apiKey }),
+    validateOllamaConnection: () =>
+      req<{ connected: boolean; model: string; error?: string }>('GET', '/settings/validate-ollama'),
     odpUsage: () =>
       req<{
         thisWeek: {
@@ -212,4 +212,7 @@ export const api = {
         weeklyLimits: { patentFileWrapperDocs: number; metadataRetrievals: number };
       }>('GET', '/settings/odp-usage'),
   },
+  systemCheck: () => req<any>('GET', '/system-check'),
+  modelPullProgress: () => req<any>('GET', '/model-pull-progress'),
+  startModelPull: () => req<any>('POST', '/model-pull'),
 };
