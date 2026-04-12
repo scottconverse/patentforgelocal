@@ -52,6 +52,9 @@ Source: "..\..\patentforgelocal-feasibility-prompts\*"; DestDir: "{app}\patentfo
 ; Portable Python 3.12
 Source: "..\..\runtime\python\*"; DestDir: "{app}\runtime\python"; Flags: ignoreversion recursesubdirs createallsubdirs
 
+; Ollama runtime (portable, bundled)
+Source: "..\..\runtime\ollama\*"; DestDir: "{app}\runtime\ollama"; Flags: ignoreversion recursesubdirs createallsubdirs
+
 ; Python services
 Source: "..\..\services\claim-drafter\src\*"; DestDir: "{app}\services\claim-drafter\src"; Flags: ignoreversion recursesubdirs createallsubdirs
 Source: "..\..\services\application-generator\src\*"; DestDir: "{app}\services\application-generator\src"; Flags: ignoreversion recursesubdirs createallsubdirs
@@ -65,6 +68,9 @@ Source: "..\..\frontend\dist\*"; DestDir: "{app}\frontend\dist"; Flags: ignoreve
 Name: "{app}\data"; Flags: uninsneveruninstall
 Name: "{app}\logs"; Flags: uninsneveruninstall
 Name: "{app}\config"; Flags: uninsneveruninstall
+
+; Model directory (persists on uninstall — user keeps their 18GB download)
+Name: "{app}\models"; Flags: uninsneveruninstall
 
 [Icons]
 Name: "{group}\{#MyAppName}"; Filename: "{app}\{#MyAppExeName}"
