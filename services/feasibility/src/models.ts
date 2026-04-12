@@ -83,7 +83,7 @@ export interface AnalysisSettings {
   researchModel?: string;
   maxTokens: number;
   interStageDelaySeconds: number;
-  apiKey: string;
+  ollamaUrl: string;
   priorArtContext?: string;
 }
 
@@ -94,20 +94,6 @@ export interface StreamResult {
   outputTokens: number;
 }
 
-// Approximate pricing per million tokens (update as Anthropic changes rates)
-export const MODEL_PRICING: Record<string, { inputPer1M: number; outputPer1M: number }> = {
-  'claude-haiku-4-5-20251001': { inputPer1M: 0.80,  outputPer1M: 4.00  },
-  'claude-haiku-3-20240307':   { inputPer1M: 0.25,  outputPer1M: 1.25  },
-  'claude-sonnet-4-20250514':  { inputPer1M: 3.00,  outputPer1M: 15.00 },
-  'claude-opus-4-20250514':    { inputPer1M: 15.00, outputPer1M: 75.00 },
-};
-
-export function estimateCost(model: string, inputTokens: number, outputTokens: number): number {
-  // Find pricing — try exact match first, then partial match
-  const pricing =
-    MODEL_PRICING[model] ??
-    Object.entries(MODEL_PRICING).find(([k]) => model.includes(k.split('-').slice(0, 3).join('-')))?.[1] ??
-    { inputPer1M: 3.00, outputPer1M: 15.00 }; // fallback to Sonnet pricing
-  return (inputTokens / 1_000_000) * pricing.inputPer1M +
-         (outputTokens / 1_000_000) * pricing.outputPer1M;
+export function formatTokenUsage(inputTokens: number, outputTokens: number): string {
+  return `${inputTokens.toLocaleString()} in / ${outputTokens.toLocaleString()} out`;
 }
