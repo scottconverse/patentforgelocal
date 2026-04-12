@@ -12,6 +12,8 @@ build/
 *.dmg
 *.AppImage
 *.sea
+*.gguf
+tray/cmd/tray/tray
 
 # Runtime bundles (downloaded during build, not committed)
 runtime/ollama/
