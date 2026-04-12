@@ -18,7 +18,7 @@ pydantic==2.12.4
 sse-starlette==3.3.4
 
 # === AI / LLM ===
-anthropic==0.88.0
+openai>=1.0
 langgraph==1.1.4
 langchain-core==1.2.25
 langsmith==0.7.24
