@@ -23,12 +23,17 @@ type Config struct {
 	DatabaseURL   string
 	ServiceSecret string
 
-	// Port assignments for the 5 services
+	// Port assignments for the 6 services
+	PortOllama     int // 11434 — Ollama inference server
 	PortUI         int // 3000 — Next.js frontend
 	PortAPI        int // 3001 — API server
 	PortGeneration int // 3002 — Generation service
 	PortAnalysis   int // 3003 — Analysis service
 	PortResearch   int // 3004 — Research service
+
+	// Ollama configuration
+	OllamaModel string // gemma4:26b
+	ModelsDir   string // <baseDir>/models
 }
 
 // Load reads or creates the PatentForgeLocal configuration.
@@ -39,16 +44,19 @@ func Load(baseDir string) (*Config, error) {
 		DataDir:        filepath.Join(baseDir, "data"),
 		LogsDir:        filepath.Join(baseDir, "logs"),
 		ConfigDir:      filepath.Join(baseDir, "config"),
+		PortOllama:     11434,
 		PortUI:         3000,
 		PortAPI:        3001,
 		PortGeneration: 3002,
 		PortAnalysis:   3003,
 		PortResearch:   3004,
+		OllamaModel:    "gemma4:26b",
+		ModelsDir:      filepath.Join(baseDir, "models"),
 	}
 	cfg.EnvFile = filepath.Join(cfg.ConfigDir, ".env")
 
 	// Create directories
-	for _, dir := range []string{cfg.DataDir, cfg.LogsDir, cfg.ConfigDir} {
+	for _, dir := range []string{cfg.DataDir, cfg.LogsDir, cfg.ConfigDir, cfg.ModelsDir} {
 		if err := os.MkdirAll(dir, 0755); err != nil {
 			return nil, fmt.Errorf("failed to create directory %s: %w", dir, err)
 		}
@@ -86,7 +94,9 @@ INTERNAL_SERVICE_SECRET=%s
 ALLOWED_ORIGINS=http://localhost:%d
 NODE_ENV=production
 PORT=%d
-`, c.DatabaseURL, c.ServiceSecret, c.PortUI, c.PortUI)
+OLLAMA_HOST=127.0.0.1:%d
+OLLAMA_MODEL=%s
+`, c.DatabaseURL, c.ServiceSecret, c.PortUI, c.PortUI, c.PortOllama, c.OllamaModel)
 
 	// Write with owner-only permissions (0600)
 	if err := os.WriteFile(c.EnvFile, []byte(content), 0600); err != nil {
@@ -110,6 +120,9 @@ func (c *Config) read() error {
 	}
 	if v, ok := env["INTERNAL_SERVICE_SECRET"]; ok {
 		c.ServiceSecret = v
+	}
+	if v, ok := env["OLLAMA_MODEL"]; ok {
+		c.OllamaModel = v
 	}
 
 	return nil
