@@ -27,14 +27,15 @@ app = FastAPI(title="PatentForge Claim Drafter", version="0.5.0")
 # Set INTERNAL_SERVICE_SECRET env var to enable. When not set, auth is disabled (dev mode).
 INTERNAL_SECRET = os.environ.get("INTERNAL_SERVICE_SECRET", "")
 
-# API key: prefer environment variable over request body.
-# This prevents the key from flowing through HTTP request bodies.
-ANTHROPIC_API_KEY_ENV = os.environ.get("ANTHROPIC_API_KEY", "")
+# Ollama host: prefer environment variable over request body.
+OLLAMA_HOST = os.environ.get("OLLAMA_HOST", "127.0.0.1:11434")
 
 
-def resolve_api_key(request_key: str) -> str:
-    """Use env var if set, otherwise fall back to request body value."""
-    return ANTHROPIC_API_KEY_ENV or request_key
+def resolve_ollama_url(request_url: str) -> str:
+    """Resolve Ollama URL: request body takes precedence, env var is fallback."""
+    if request_url:
+        return request_url
+    return f"http://{OLLAMA_HOST}"
 
 api_key_header = APIKeyHeader(name="X-Internal-Secret", auto_error=False)
 
@@ -119,7 +120,7 @@ async def draft_claims(request: ClaimDraftRequest):
                 feasibility_stage_5=request.feasibility_stage_5,
                 feasibility_stage_6=request.feasibility_stage_6,
                 prior_art_context=prior_art_context,
-                api_key=resolve_api_key(request.settings.api_key),
+                ollama_url=resolve_ollama_url(request.settings.ollama_url),
                 default_model=request.settings.default_model,
                 research_model=request.settings.research_model,
                 max_tokens=request.settings.max_tokens,
@@ -200,7 +201,7 @@ async def draft_claims_sync(request: ClaimDraftRequest):
         feasibility_stage_5=request.feasibility_stage_5,
         feasibility_stage_6=request.feasibility_stage_6,
         prior_art_context=prior_art_context,
-        api_key=resolve_api_key(request.settings.api_key),
+        ollama_url=resolve_ollama_url(request.settings.ollama_url),
         default_model=request.settings.default_model,
         research_model=request.settings.research_model,
         max_tokens=request.settings.max_tokens,
