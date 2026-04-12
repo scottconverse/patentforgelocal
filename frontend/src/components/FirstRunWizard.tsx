@@ -1,51 +1,48 @@
-import { useState, useRef, useEffect } from 'react';
+import { useState, useCallback } from 'react';
 import { api } from '../api';
-import Alert from './Alert';
+import SystemCheck from './SystemCheck';
+import ModelDownload from './ModelDownload';
+
+type Step = 'welcome' | 'system-check' | 'model-download' | 'ollama-account' | 'disclaimer' | 'ready';
+
+const STEPS: Step[] = ['welcome', 'system-check', 'model-download', 'ollama-account', 'disclaimer', 'ready'];
 
 interface FirstRunWizardProps {
-  onComplete: (keyConfigured: boolean) => void;
+  onComplete: (success: boolean) => void;
 }
 
 export default function FirstRunWizard({ onComplete }: FirstRunWizardProps) {
-  const [apiKey, setApiKey] = useState('');
-  const [error, setError] = useState<string | null>(null);
-  const [validating, setValidating] = useState(false);
-  const [success, setSuccess] = useState(false);
-  const timerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const [step, setStep] = useState<Step>('welcome');
+  const [modelDownloaded, setModelDownloaded] = useState(false);
+  const [ollamaApiKey, setOllamaApiKey] = useState('');
+  const [usptoApiKey, setUsptoApiKey] = useState('');
+  const [saving, setSaving] = useState(false);
 
-  // Clean up the redirect timer on unmount
-  useEffect(() => {
-    return () => {
-      if (timerRef.current) clearTimeout(timerRef.current);
-    };
-  }, []);
+  const stepIndex = STEPS.indexOf(step);
 
-  async function handleValidate() {
-    const trimmed = apiKey.trim();
-    if (!trimmed) {
-      setError('Please enter an API key. You can get one from console.anthropic.com.');
-      return;
-    }
-
-    setError(null);
-    setValidating(true);
-
-    try {
-      const result = await api.settings.validateKey(trimmed);
-
-      if (result.valid) {
-        await api.settings.update({ anthropicApiKey: trimmed });
-        setSuccess(true);
-        timerRef.current = setTimeout(() => {
-          onComplete(true);
-        }, 1200);
-      } else {
-        setError(result.error || 'Validation failed. Please try again.');
+  const goNext = useCallback(() => {
+    const idx = STEPS.indexOf(step);
+    if (idx < STEPS.length - 1) {
+      let next = STEPS[idx + 1];
+      // Skip model-download if already downloaded
+      if (next === 'model-download' && modelDownloaded) {
+        next = STEPS[idx + 2];
       }
+      setStep(next);
+    }
+  }, [step, modelDownloaded]);
+
+  async function handleFinish() {
+    setSaving(true);
+    try {
+      await api.settings.update({
+        ollamaApiKey: ollamaApiKey.trim(),
+        usptoApiKey: usptoApiKey.trim(),
+      });
+      onComplete(true);
     } catch {
-      setError('Could not reach the PatentForge server. Make sure the application is running.');
-    } finally {
-      setValidating(false);
+      // Still complete even if save fails -- settings page can fix it
+      onComplete(true);
     }
   }
 
@@ -57,78 +54,177 @@ export default function FirstRunWizard({ onComplete }: FirstRunWizardProps) {
       aria-labelledby="wizard-title"
     >
       <div className="bg-gray-900 border border-gray-700 rounded-xl shadow-2xl max-w-lg w-full mx-4 p-6">
-        <h2 id="wizard-title" className="text-xl font-bold text-gray-100 mb-2">
-          Welcome to PatentForge!
-        </h2>
-        <p className="text-sm text-gray-400 mb-5">
-          To get started, you need an Anthropic API key. PatentForge uses Claude to analyze patents and generate
-          reports.
-        </p>
+        {/* Step: Welcome */}
+        {step === 'welcome' && (
+          <div>
+            <h2 id="wizard-title" className="text-xl font-bold text-gray-100 mb-2">
+              Welcome to PatentForgeLocal
+            </h2>
+            <p className="text-sm text-gray-400 mb-4">
+              Patent analysis powered by AI running entirely on your computer.
+              Your inventions never leave your machine.
+            </p>
+            <div className="bg-green-900/30 border border-green-700 rounded-lg p-4 mb-6">
+              <p className="text-green-300 text-sm font-medium mb-1">100% Private</p>
+              <p className="text-green-400/80 text-sm">
+                All AI processing happens locally using Ollama. No cloud APIs, no data sharing,
+                no usage tracking. Your intellectual property stays on your hardware.
+              </p>
+            </div>
+            <button
+              onClick={goNext}
+              className="w-full py-3 bg-blue-600 text-white rounded-lg font-medium hover:bg-blue-500 transition-colors"
+            >
+              Get Started
+            </button>
+          </div>
+        )}
 
-        <div className="text-sm text-gray-300 space-y-2 mb-5">
-          <p className="font-medium text-gray-200">How to get your API key:</p>
-          <ol className="list-decimal ml-5 space-y-1 text-gray-400">
-            <li>
-              Go to{' '}
-              <a
-                href="https://console.anthropic.com/"
-                target="_blank"
-                rel="noopener noreferrer"
-                className="text-blue-400 hover:underline"
-              >
-                console.anthropic.com
-              </a>
-            </li>
-            <li>Create an account or sign in</li>
-            <li>Navigate to API Keys and create a new key</li>
-            <li>Copy the key and paste it below</li>
-          </ol>
-        </div>
-
-        <div className="mb-4">
-          <label htmlFor="wizard-api-key" className="block text-sm font-medium text-gray-300 mb-1">
-            Anthropic API Key
-          </label>
-          <input
-            id="wizard-api-key"
-            type="password"
-            value={apiKey}
-            onChange={(e) => setApiKey(e.target.value)}
-            placeholder="sk-ant-..."
-            autoComplete="off"
-            className="w-full bg-gray-800 border border-gray-700 rounded px-3 py-2 text-gray-100 placeholder-gray-500 focus:outline-none focus:border-blue-500 text-sm font-mono"
+        {/* Step: System Check */}
+        {step === 'system-check' && (
+          <SystemCheck
+            onPass={(result) => {
+              setModelDownloaded(result.modelDownloaded);
+              goNext();
+            }}
+            onFail={() => onComplete(false)}
           />
-        </div>
-
-        {error && (
-          <Alert variant="error" className="mb-4">
-            {error}
-          </Alert>
         )}
 
-        {success && (
-          <Alert variant="success" className="mb-4">
-            API key validated and saved. Starting PatentForge...
-          </Alert>
+        {/* Step: Model Download */}
+        {step === 'model-download' && (
+          <ModelDownload
+            modelName="gemma4:26b"
+            onComplete={() => {
+              setModelDownloaded(true);
+              goNext();
+            }}
+            onSkip={goNext}
+          />
         )}
 
-        <div className="flex gap-3">
-          <button
-            type="button"
-            onClick={handleValidate}
-            disabled={validating || success}
-            className="flex-1 py-2.5 bg-blue-600 hover:bg-blue-700 disabled:opacity-50 text-white font-semibold rounded-lg transition-colors text-sm"
-          >
-            {validating ? 'Validating...' : 'Validate Key'}
-          </button>
-          <button
-            type="button"
-            onClick={() => onComplete(false)}
-            disabled={validating || success}
-            className="px-4 py-2.5 bg-gray-700 hover:bg-gray-600 disabled:opacity-50 text-gray-300 font-medium rounded-lg transition-colors text-sm"
-          >
-            Skip for Now
-          </button>
+        {/* Step: Ollama Account + USPTO Key */}
+        {step === 'ollama-account' && (
+          <div>
+            <h2 className="text-xl font-semibold text-white mb-2">Optional API Keys</h2>
+            <p className="text-sm text-gray-400 mb-6">
+              These are optional. PatentForgeLocal works fully offline without them.
+            </p>
+
+            <div className="mb-5">
+              <label className="block text-sm font-medium text-gray-300 mb-1">
+                Ollama API Key <span className="text-gray-500">(optional)</span>
+              </label>
+              <input
+                type="password"
+                value={ollamaApiKey}
+                onChange={(e) => setOllamaApiKey(e.target.value)}
+                placeholder="Enables web search during analysis"
+                autoComplete="new-password"
+                className="w-full bg-gray-800 border border-gray-700 rounded px-3 py-2 text-gray-100 placeholder-gray-500 focus:outline-none focus:border-blue-500 text-sm font-mono"
+              />
+              <p className="text-xs text-gray-500 mt-1">
+                Free account at{' '}
+                <a
+                  href="https://ollama.com/signup"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="text-blue-400 hover:underline"
+                >
+                  ollama.com
+                </a>{' '}
+                for web search during patent analysis.
+              </p>
+            </div>
+
+            <div className="mb-6">
+              <label className="block text-sm font-medium text-gray-300 mb-1">
+                USPTO API Key <span className="text-gray-500">(optional)</span>
+              </label>
+              <input
+                type="password"
+                value={usptoApiKey}
+                onChange={(e) => setUsptoApiKey(e.target.value)}
+                placeholder="30-character key from data.uspto.gov"
+                autoComplete="new-password"
+                className="w-full bg-gray-800 border border-gray-700 rounded px-3 py-2 text-gray-100 placeholder-gray-500 focus:outline-none focus:border-blue-500 text-sm font-mono"
+              />
+              <p className="text-xs text-gray-500 mt-1">
+                Free at{' '}
+                <a
+                  href="https://data.uspto.gov/myodp"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="text-blue-400 hover:underline"
+                >
+                  data.uspto.gov
+                </a>
+                . Adds structured patent search results.
+              </p>
+            </div>
+
+            <button
+              onClick={goNext}
+              className="w-full py-3 bg-blue-600 text-white rounded-lg font-medium hover:bg-blue-500 transition-colors"
+            >
+              {ollamaApiKey || usptoApiKey ? 'Continue' : 'Skip for Now'}
+            </button>
+          </div>
+        )}
+
+        {/* Step: Disclaimer */}
+        {step === 'disclaimer' && (
+          <div>
+            <h2 className="text-xl font-semibold text-white mb-2">Important Notice</h2>
+            <div className="bg-amber-900/30 border border-amber-700 rounded-lg p-4 mb-6">
+              <p className="text-amber-200 font-medium text-sm mb-2">Research Tool Only</p>
+              <p className="text-sm text-amber-300/80 mb-3">
+                PatentForgeLocal is a research and analysis tool. It does not provide legal advice
+                and is not a substitute for a registered patent attorney.
+              </p>
+              <p className="text-sm text-amber-300/80">
+                AI-generated patent analysis may contain errors or omissions. Always consult a
+                qualified patent professional before making filing decisions.
+              </p>
+            </div>
+            <button
+              onClick={goNext}
+              className="w-full py-3 bg-blue-600 text-white rounded-lg font-medium hover:bg-blue-500 transition-colors"
+            >
+              I Understand
+            </button>
+          </div>
+        )}
+
+        {/* Step: Ready */}
+        {step === 'ready' && (
+          <div className="text-center">
+            <div className="text-green-400 text-4xl mb-4">{'\u2713'}</div>
+            <h2 className="text-xl font-bold text-gray-100 mb-2">You're All Set</h2>
+            <p className="text-sm text-gray-400 mb-6">
+              PatentForgeLocal is ready to analyze your inventions. Everything runs locally on
+              your machine.
+            </p>
+            <button
+              onClick={handleFinish}
+              disabled={saving}
+              className="w-full py-3 bg-green-600 text-white rounded-lg font-medium hover:bg-green-500 disabled:opacity-50 transition-colors"
+            >
+              {saving ? 'Saving...' : 'Start Using PatentForgeLocal'}
+            </button>
+          </div>
+        )}
+
+        {/* Step indicator dots */}
+        <div className="flex justify-center gap-2 mt-6">
+          {STEPS.map((s, i) => (
+            <div
+              key={s}
+              className={`w-2 h-2 rounded-full transition-colors ${
+                i === stepIndex ? 'bg-blue-500' : i < stepIndex ? 'bg-blue-800' : 'bg-gray-700'
+              }`}
+            />
+          ))}
         </div>
       </div>
     </div>
