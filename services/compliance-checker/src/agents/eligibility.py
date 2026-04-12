@@ -10,11 +10,10 @@ import json
 import re
 from pathlib import Path
 
-import anthropic
+import openai
 
 from ..models import GraphState
-from ..cost import estimate_cost
-from ..retry import call_anthropic_with_retry
+from ..retry import call_ollama_with_retry
 
 PROMPTS_DIR = Path(__file__).parent.parent / "prompts"
 
@@ -60,10 +59,10 @@ async def run_eligibility(state: GraphState) -> GraphState:
 
 Check each independent claim against 35 USC 101 eligibility requirements (Alice/Mayo framework)."""
 
-    client = anthropic.AsyncAnthropic(api_key=state.api_key)
+    client = openai.AsyncOpenAI(base_url=f"{state.ollama_url}/v1", api_key="ollama")
 
     try:
-        response = await call_anthropic_with_retry(
+        response = await call_ollama_with_retry(
             client,
             model=model,
             max_tokens=state.max_tokens,
@@ -71,12 +70,11 @@ Check each independent claim against 35 USC 101 eligibility requirements (Alice/
             messages=[{"role": "user", "content": user_message}],
             timeout=300.0,
         )
-        output = response.content[0].text
-        input_tokens = response.usage.input_tokens
-        output_tokens = response.usage.output_tokens
+        output = response.choices[0].message.content or ""
+        input_tokens = response.usage.prompt_tokens if response.usage else 0
+        output_tokens = response.usage.completion_tokens if response.usage else 0
         state.total_input_tokens += input_tokens
         state.total_output_tokens += output_tokens
-        state.total_estimated_cost_usd += estimate_cost(model, input_tokens, output_tokens)
     except Exception as e:
         state.error = f"Eligibility check failed: {e}"
         return state

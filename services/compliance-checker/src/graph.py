@@ -18,8 +18,7 @@ from .agents.eligibility import run_eligibility
 
 
 async def finalize(state: GraphState) -> GraphState:
-    """Aggregate results from all checkers. Scrub API key."""
-    state.api_key = ""
+    """Aggregate results from all checkers."""
     state.step = "finalize_complete"
     return state
 
@@ -48,7 +47,7 @@ async def run_compliance_pipeline(
     claims_text: str,
     specification_text: str,
     invention_narrative: str,
-    api_key: str,
+    ollama_url: str,
     default_model: str,
     prior_art_context: str = "",
     max_tokens: int = 16000,
@@ -65,7 +64,7 @@ async def run_compliance_pipeline(
         specification_text=specification_text,
         invention_narrative=invention_narrative,
         prior_art_context=prior_art_context,
-        api_key=api_key,
+        ollama_url=ollama_url,
         default_model=default_model,
         max_tokens=max_tokens,
     )

@@ -24,12 +24,12 @@ from .graph import run_compliance_pipeline
 app = FastAPI(title="PatentForge Compliance Checker", version="0.5.0")
 
 INTERNAL_SECRET = os.environ.get("INTERNAL_SERVICE_SECRET", "")
-ANTHROPIC_API_KEY_ENV = os.environ.get("ANTHROPIC_API_KEY", "")
+OLLAMA_HOST = os.environ.get("OLLAMA_HOST", "")
 
 
-def resolve_api_key(request_key: str) -> str:
+def resolve_ollama_url(request_url: str) -> str:
     """Use env var if set, otherwise fall back to request body value."""
-    return ANTHROPIC_API_KEY_ENV or request_key
+    return OLLAMA_HOST or request_url
 
 
 api_key_header = APIKeyHeader(name="X-Internal-Secret", auto_error=False)
@@ -94,7 +94,7 @@ async def check_compliance(request: ComplianceRequest):
         specification_text=request.specification_text,
         invention_narrative=request.invention_narrative,
         prior_art_context=request.prior_art_context,
-        api_key=resolve_api_key(request.settings.api_key),
+        ollama_url=resolve_ollama_url(request.settings.ollama_url),
         default_model=request.settings.default_model,
         max_tokens=request.settings.max_tokens,
     )
@@ -151,7 +151,7 @@ async def check_compliance_stream(request: ComplianceRequest):
             specification_text=request.specification_text,
             invention_narrative=request.invention_narrative,
             prior_art_context=request.prior_art_context,
-            api_key=resolve_api_key(request.settings.api_key),
+            ollama_url=resolve_ollama_url(request.settings.ollama_url),
             default_model=request.settings.default_model,
             max_tokens=request.settings.max_tokens,
         )
@@ -210,7 +210,7 @@ async def check_compliance_stream(request: ComplianceRequest):
                 except (json.JSONDecodeError, TypeError):
                     pass
 
-            # Scrub API key from state before final response
+            # Build final response
             response = ComplianceResponse(
                 results=all_results,
                 total_input_tokens=state_dict.get("total_input_tokens", 0),

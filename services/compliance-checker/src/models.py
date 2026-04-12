@@ -20,7 +20,7 @@ class ClaimItem(BaseModel):
 
 class ComplianceSettings(BaseModel):
     """User settings forwarded from the backend."""
-    api_key: str = ""
+    ollama_url: str = "http://127.0.0.1:11434"
     default_model: str
     research_model: str = ""
     max_tokens: int = 16000
@@ -79,7 +79,7 @@ class GraphState(BaseModel):
     specification_text: str = ""
     invention_narrative: str = ""
     prior_art_context: str = ""
-    api_key: str = ""
+    ollama_url: str = "http://127.0.0.1:11434"
     default_model: str = ""
     max_tokens: int = 16000
 
