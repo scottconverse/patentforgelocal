@@ -68,6 +68,10 @@ jobs:
         run: bash scripts/bundle-python.sh windows
         shell: bash
 
+      - name: Bundle Ollama
+        run: bash scripts/bundle-ollama.sh windows
+        shell: bash
+
       # Build installer
       - name: Install Inno Setup
         run: choco install innosetup -y
@@ -132,6 +136,9 @@ jobs:
       - name: Bundle Python (Mac)
         run: bash scripts/bundle-python.sh mac
 
+      - name: Bundle Ollama (Mac)
+        run: bash scripts/bundle-ollama.sh mac
+
       - name: Create .app bundle and .dmg
         run: bash installer/mac/build-dmg.sh
 
@@ -193,6 +200,9 @@ jobs:
 
       - name: Bundle Python (Linux)
         run: bash scripts/bundle-python.sh linux
+
+      - name: Bundle Ollama (Linux)
+        run: bash scripts/bundle-ollama.sh linux
 
       - name: Create AppImage
         run: bash installer/linux/build-appimage.sh
