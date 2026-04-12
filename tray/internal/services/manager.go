@@ -20,7 +20,7 @@ type Manager struct {
 	cancel   context.CancelFunc
 }
 
-// NewManager creates a Manager with all 5 PatentForgeLocal services configured.
+// NewManager creates a Manager with all 6 PatentForgeLocal services configured.
 func NewManager(cfg *config.Config) *Manager {
 	ctx, cancel := context.WithCancel(context.Background())
 	m := &Manager{
@@ -32,7 +32,7 @@ func NewManager(cfg *config.Config) *Manager {
 	return m
 }
 
-// buildServices constructs the 5 Service structs with correct commands,
+// buildServices constructs the 6 Service structs with correct commands,
 // paths, environment variables, and health endpoints.
 func (m *Manager) buildServices() []*Service {
 	baseDir := m.cfg.BaseDir
@@ -50,6 +50,26 @@ func (m *Manager) buildServices() []*Service {
 
 	// Common env vars loaded from system environment + config
 	baseEnv := m.buildBaseEnv()
+
+	// Platform-specific Ollama binary
+	ollamaCmd := filepath.Join(baseDir, "runtime", "ollama", "ollama")
+	if runtime.GOOS == "windows" {
+		ollamaCmd = filepath.Join(baseDir, "runtime", "ollama", "ollama.exe")
+	}
+
+	// 0. Ollama — Local AI inference server (starts first)
+	ollamaEnv := append(copyEnv(baseEnv), m.cfg.OllamaEnv()...)
+
+	ollama := &Service{
+		Name:      "ollama",
+		Command:   ollamaCmd,
+		Args:      []string{"serve"},
+		WorkDir:   baseDir,
+		Port:      m.cfg.PortOllama,
+		HealthURL: fmt.Sprintf("http://127.0.0.1:%d/api/tags", m.cfg.PortOllama),
+		Env:       ollamaEnv,
+		LogFile:   filepath.Join(logsDir, "ollama.log"),
+	}
 
 	// Service URLs for cross-service communication
 	feasibilityURL := fmt.Sprintf("http://localhost:%d", m.cfg.PortAPI)
@@ -146,7 +166,7 @@ func (m *Manager) buildServices() []*Service {
 		LogFile:   filepath.Join(logsDir, "compliance-checker.log"),
 	}
 
-	return []*Service{backend, feasibility, claimDrafter, appGenerator, complianceChecker}
+	return []*Service{ollama, backend, feasibility, claimDrafter, appGenerator, complianceChecker}
 }
 
 // buildBaseEnv constructs the base environment variable slice that all
