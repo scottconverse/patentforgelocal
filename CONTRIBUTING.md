@@ -6,15 +6,31 @@ Thank you for your interest in contributing to PatentForgeLocal! This guide will
 
 ### Prerequisites
 
-- **Node.js** 18+ (recommended: 20 LTS)
-- **Python** 3.11+ (for the claim-drafter, compliance-checker, and application-generator services)
+- **Node.js** 20+ LTS
+- **Go** 1.22+ (for the system tray app)
+- **Python** 3.12+ (for the claim-drafter, compliance-checker, and application-generator services)
 - **npm** 9+
 - **Git**
-- **Anthropic API key** (for running the feasibility and claim drafting pipelines)
 
 Optional:
 - **Docker** and **Docker Compose** (for containerized deployment)
 - **PostgreSQL 16** (if not using SQLite for development)
+
+### Ollama Setup
+
+PatentForgeLocal uses Ollama for local AI inference. No API keys required.
+
+1. **Bundle Ollama** (downloads the portable binary for your platform):
+   ```bash
+   bash scripts/bundle-ollama.sh windows   # or: macos, linux
+   ```
+   This places the Ollama binary in `runtime/ollama/`.
+
+2. **Pull the default model**:
+   ```bash
+   runtime/ollama/ollama pull gemma4:26b
+   ```
+   The model is ~18 GB. First pull takes a few minutes depending on your connection.
 
 ### Getting Started
 
@@ -82,7 +98,7 @@ Optional:
 
 6. **Open the app** at http://localhost:8080
 
-7. **Configure your API key** in Settings (gear icon) before running any analysis.
+7. **Verify Ollama is running** -- the system check panel in Settings (gear icon) shows Ollama and model status.
 
 ### Docker Setup (optional alternative)
 
@@ -128,22 +144,31 @@ patentforgelocal/
 **GitHub Actions CI** runs backend, frontend, claim-drafter, and compliance-checker tests automatically on every push and PR.
 
 ```bash
+# Go tray app tests
+cd tray && go test ./... -v
+
 # Backend unit tests (Jest)
 cd backend && npm test
 
 # Frontend unit tests (Vitest)
 cd frontend && npm test
 
-# Claim drafter tests (pytest — use py on Windows)
+# Feasibility service tests (Jest)
+cd services/feasibility && npm test
+
+# Claim drafter tests (pytest -- use py on Windows)
 cd services/claim-drafter && py -m pytest tests/ -v
+
+# Application generator tests (pytest)
+cd services/application-generator && py -m pytest tests/ -v
 
 # Compliance checker tests (pytest)
 cd services/compliance-checker && py -m pytest tests/ -v
 
-# Browser E2E tests (Playwright — requires services running)
+# Browser E2E tests (Playwright -- requires services running)
 cd frontend && npx playwright test
 
-# Cleanroom E2E (full nuke-and-rebuild + API smoke tests)
+# Cleanroom E2E (full nuke-and-rebuild + smoke tests)
 bash scripts/cleanroom-e2e.sh
 ```
 
@@ -279,7 +304,7 @@ When adding new code, add tests. When the baseline increases, update the thresho
 
 ## Architecture Notes
 
-PatentForgeLocal uses a federated service architecture. Each capability (feasibility analysis, prior art search, claim drafting, etc.) is an independent service that communicates with the central backend over HTTP/SSE. See [ARCHITECTURE.md](ARCHITECTURE.md) for full details.
+PatentForgeLocal uses a federated service architecture. Each capability (feasibility analysis, prior art search, claim drafting, etc.) is an independent service that communicates with the central backend over HTTP/SSE. All AI inference routes through a local Ollama instance running Gemma 4 26B. See [ARCHITECTURE.md](ARCHITECTURE.md) for full details.
 
 When adding a new service:
 1. Create a new directory under `services/`
