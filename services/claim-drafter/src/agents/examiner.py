@@ -9,13 +9,12 @@ Determines whether claims need revision (one revision cycle max).
 from __future__ import annotations
 from pathlib import Path
 
-import anthropic
+import openai
 
 import json as json_module
 
 from ..models import GraphState
-from ..cost import estimate_cost
-from ..retry import call_anthropic_with_retry
+from ..retry import call_ollama_with_retry
 
 PROMPTS_DIR = Path(__file__).parent.parent / "prompts"
 
@@ -103,10 +102,10 @@ or
 ```
 Quality must be one of: STRONG, ADEQUATE, NEEDS WORK."""
 
-    client = anthropic.AsyncAnthropic(api_key=state.api_key)
+    client = openai.AsyncOpenAI(base_url=f"{state.ollama_url}/v1", api_key="ollama")
 
     try:
-        response = await call_anthropic_with_retry(
+        response = await call_ollama_with_retry(
             client,
             model=state.default_model,
             max_tokens=state.max_tokens,
@@ -114,12 +113,11 @@ Quality must be one of: STRONG, ADEQUATE, NEEDS WORK."""
             messages=[{"role": "user", "content": user_message}],
             timeout=300.0,  # 5 min — examiner review with full claim text can take 2-4 min
         )
-        feedback = response.content[0].text
-        input_tokens = response.usage.input_tokens
-        output_tokens = response.usage.output_tokens
+        feedback = response.choices[0].message.content or ""
+        input_tokens = response.usage.prompt_tokens if response.usage else 0
+        output_tokens = response.usage.completion_tokens if response.usage else 0
         state.total_input_tokens += input_tokens
         state.total_output_tokens += output_tokens
-        state.total_estimated_cost_usd += estimate_cost(state.default_model, input_tokens, output_tokens)
     except Exception as e:
         state.error = f"Examiner failed: {e}"
         return state
