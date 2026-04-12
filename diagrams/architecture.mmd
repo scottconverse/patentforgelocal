@@ -1,0 +1,48 @@
+%%{init: {'theme': 'dark', 'themeVariables': {'primaryColor': '#3b82f6', 'primaryTextColor': '#e2e8f0', 'primaryBorderColor': '#60a5fa', 'lineColor': '#94a3b8', 'secondaryColor': '#1e293b', 'tertiaryColor': '#0f172a', 'background': '#0f172a', 'mainBkg': '#1e293b', 'nodeBorder': '#60a5fa', 'clusterBkg': '#1e293b', 'clusterBorder': '#334155', 'titleColor': '#e2e8f0', 'edgeLabelBackground': '#1e293b'}}}%%
+
+flowchart TB
+    subgraph EXT["External Services"]
+        ANTH["Anthropic Claude API<br/><i>LLM + Web Search</i>"]
+        USPTO["USPTO Open Data Portal<br/><i>Patent Search + Claims</i>"]
+        LITE["LiteLLM Pricing<br/><i>Cost Estimation</i>"]
+    end
+
+    subgraph CORE["PatentForge v0.6.0"]
+        FE["<b>React Frontend</b><br/>TypeScript · Vite · Tailwind<br/><i>port 8080</i>"]
+        BE["<b>NestJS Backend</b><br/>Prisma · SQLite/PostgreSQL<br/><i>port 3000</i>"]
+        DB[("SQLite / PostgreSQL<br/><i>14 tables</i>")]
+
+        subgraph SERVICES["Microservices"]
+            FS["<b>Feasibility</b><br/>Express · TypeScript<br/>6-stage pipeline<br/><i>port 3001</i>"]
+            CD["<b>Claim Drafter</b><br/>FastAPI · LangGraph<br/>Planner → Writer → Examiner<br/><i>port 3002</i>"]
+            AG["<b>Application Generator</b><br/>FastAPI · LangGraph<br/>5 sequential agents<br/><i>port 3003</i>"]
+            CC["<b>Compliance Checker</b><br/>FastAPI · LangGraph<br/>4 USPTO checks<br/><i>port 3004</i>"]
+        end
+    end
+
+    FE -->|"HTTP + SSE"| BE
+    BE --> DB
+    BE -->|"HTTP"| FS
+    BE -->|"HTTP"| CD
+    BE -->|"HTTP"| AG
+    BE -->|"HTTP"| CC
+    FS -->|"SSE stream"| ANTH
+    CD --> ANTH
+    AG --> ANTH
+    CC --> ANTH
+    BE --> USPTO
+    FE -.->|"cost est."| LITE
+
+    style EXT fill:#0f172a,stroke:#334155,color:#e2e8f0
+    style CORE fill:#0f172a,stroke:#3b82f6,color:#e2e8f0
+    style SERVICES fill:#1e293b,stroke:#334155,color:#e2e8f0
+    style FE fill:#3b82f6,stroke:#60a5fa,color:#fff
+    style BE fill:#3b82f6,stroke:#60a5fa,color:#fff
+    style DB fill:#f59e0b,stroke:#fbbf24,color:#000
+    style FS fill:#22c55e,stroke:#4ade80,color:#000
+    style CD fill:#a78bfa,stroke:#c4b5fd,color:#000
+    style AG fill:#a78bfa,stroke:#c4b5fd,color:#000
+    style CC fill:#a78bfa,stroke:#c4b5fd,color:#000
+    style ANTH fill:#ef4444,stroke:#f87171,color:#fff
+    style USPTO fill:#f59e0b,stroke:#fbbf24,color:#000
+    style LITE fill:#94a3b8,stroke:#cbd5e1,color:#000

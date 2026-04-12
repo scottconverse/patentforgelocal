@@ -1,0 +1,27 @@
+# Frozen requirements for PatentForge portable Python runtime.
+# Union of all three Python services:
+#   - claim-drafter
+#   - application-generator
+#   - compliance-checker
+#
+# Generated for Python 3.12 embeddable (Windows amd64).
+# Regenerate when service dependencies change.
+#
+# Only direct dependencies are pinned here. Transitive dependencies
+# (pydantic-core, httpcore, h11, etc.) are resolved by pip to ensure
+# compatibility with the target Python version.
+
+# === Core service frameworks ===
+fastapi==0.135.3
+uvicorn[standard]==0.42.0
+pydantic==2.12.4
+sse-starlette==3.3.4
+
+# === AI / LLM ===
+anthropic==0.88.0
+langgraph==1.1.4
+langchain-core==1.2.25
+langsmith==0.7.24
+
+# === Document generation (application-generator) ===
+python-docx==1.2.0

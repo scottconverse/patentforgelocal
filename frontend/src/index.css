@@ -1,0 +1,90 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/*
+ * Honor OS color scheme preference (U1).
+ * PatentForge is dark-themed. We set color-scheme: dark so browser chrome
+ * (scrollbars, form controls, color-picker, select dropdowns) renders in
+ * dark mode to match. When the OS is in light mode, we apply a slightly
+ * lighter base surface so the app doesn't feel completely alien.
+ */
+:root {
+  color-scheme: dark;
+}
+
+@media (prefers-color-scheme: light) {
+  :root {
+    color-scheme: light dark;
+  }
+  body {
+    background-color: #1a1a2e; /* slightly lighter than gray-950 */
+  }
+}
+
+/* Accessible focus ring — visible on keyboard navigation, hidden on mouse click */
+*:focus-visible {
+  @apply ring-2 ring-blue-500 ring-offset-2 ring-offset-gray-950 outline-none;
+}
+
+/* Markdown content styling */
+.markdown-content h1 {
+  @apply text-2xl font-bold text-blue-400 border-b border-gray-700 pb-2 mt-6 mb-3;
+}
+.markdown-content h2 {
+  @apply text-xl font-semibold text-blue-300 border-b border-gray-800 pb-1 mt-5 mb-2;
+}
+.markdown-content h3 {
+  @apply text-lg font-semibold text-purple-300 mt-4 mb-2;
+}
+.markdown-content h4 {
+  @apply text-base font-semibold text-gray-200 mt-3 mb-1;
+}
+.markdown-content p {
+  @apply text-gray-300 my-2 leading-relaxed;
+}
+.markdown-content ul {
+  @apply list-disc list-inside text-gray-300 my-2 space-y-1 ml-4;
+}
+.markdown-content ol {
+  @apply list-decimal list-inside text-gray-300 my-2 space-y-1 ml-4;
+}
+.markdown-content li {
+  @apply text-gray-300;
+}
+.markdown-content table {
+  @apply w-full border-collapse text-sm my-4;
+}
+.markdown-content th {
+  @apply bg-gray-800 text-blue-300 font-semibold px-3 py-2 text-left border border-gray-700;
+}
+.markdown-content td {
+  @apply px-3 py-2 border border-gray-800 text-gray-300;
+}
+.markdown-content tr:nth-child(even) td {
+  @apply bg-gray-900;
+}
+.markdown-content code {
+  @apply bg-gray-800 text-blue-300 px-1.5 py-0.5 rounded text-sm font-mono;
+}
+.markdown-content pre {
+  @apply bg-gray-800 rounded p-4 overflow-x-auto my-3;
+}
+.markdown-content pre code {
+  @apply bg-transparent p-0 text-gray-300;
+}
+.markdown-content hr {
+  @apply border-gray-700 my-5;
+}
+.markdown-content strong {
+  @apply text-gray-100 font-semibold;
+}
+.markdown-content em {
+  @apply text-gray-400 italic;
+}
+.markdown-content blockquote {
+  @apply border-l-4 border-blue-500 pl-4 bg-gray-800/50 py-2 my-3 italic text-gray-400;
+}
+.markdown-content a {
+  @apply text-blue-400 underline hover:text-blue-300;
+}

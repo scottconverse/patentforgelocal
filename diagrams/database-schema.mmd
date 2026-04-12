@@ -1,0 +1,152 @@
+%%{init: {'theme': 'dark', 'themeVariables': {'primaryColor': '#3b82f6', 'primaryTextColor': '#e2e8f0', 'lineColor': '#94a3b8'}}}%%
+
+erDiagram
+    Project ||--o| InventionInput : "has"
+    Project ||--o{ FeasibilityRun : "has"
+    Project ||--o{ PriorArtSearch : "has"
+    Project ||--o{ ClaimDraft : "has"
+    Project ||--o{ ComplianceCheck : "has"
+    Project ||--o{ PatentApplication : "has"
+    Project ||--o{ ProsecutionEvent : "has"
+    Project ||--o{ OdpApiUsage : "tracks"
+    FeasibilityRun ||--o{ FeasibilityStage : "contains"
+    PriorArtSearch ||--o{ PriorArtResult : "contains"
+    ClaimDraft ||--o{ Claim : "contains"
+    ComplianceCheck ||--o{ ComplianceResult : "contains"
+
+    Project {
+        uuid id PK
+        string title
+        string status
+        datetime createdAt
+        datetime updatedAt
+    }
+
+    InventionInput {
+        uuid id PK
+        uuid projectId FK
+        string title
+        string description
+        string problemSolved
+        string howItWorks
+        string whatIsNovel
+    }
+
+    FeasibilityRun {
+        uuid id PK
+        uuid projectId FK
+        int version
+        string status
+        text finalReport
+    }
+
+    FeasibilityStage {
+        uuid id PK
+        uuid runId FK
+        int stageNumber
+        string stageName
+        string status
+        text outputText
+        float estimatedCostUsd
+    }
+
+    PriorArtSearch {
+        uuid id PK
+        uuid projectId FK
+        int version
+        string status
+    }
+
+    PriorArtResult {
+        uuid id PK
+        uuid searchId FK
+        string patentNumber
+        string title
+        float relevanceScore
+    }
+
+    ClaimDraft {
+        uuid id PK
+        uuid projectId FK
+        int version
+        string status
+        text specLanguage
+        text plannerStrategy
+    }
+
+    Claim {
+        uuid id PK
+        uuid draftId FK
+        int claimNumber
+        string claimType
+        string scopeLevel
+        text text
+    }
+
+    ComplianceCheck {
+        uuid id PK
+        uuid projectId FK
+        int version
+        string status
+        boolean overallPass
+        float estimatedCostUsd
+    }
+
+    ComplianceResult {
+        uuid id PK
+        uuid checkId FK
+        string rule
+        string status
+        string detail
+        string citation
+    }
+
+    PatentApplication {
+        uuid id PK
+        uuid projectId FK
+        int version
+        string status
+        text background
+        text summary
+        text detailedDescription
+        text claims
+        text abstract
+        text figureDescriptions
+        text idsTable
+        float estimatedCostUsd
+    }
+
+    PatentDetail {
+        uuid id PK
+        string patentNumber UK
+        string title
+        string abstract
+        datetime fetchedAt
+    }
+
+    PatentFamily {
+        uuid id PK
+        string patentNumber UK
+        text members
+    }
+
+    AppSettings {
+        string id PK
+        string anthropicApiKey
+        string defaultModel
+        float costCapUsd
+    }
+
+    OdpApiUsage {
+        uuid id PK
+        uuid projectId FK
+        int queriesAttempted
+        int resultsFound
+    }
+
+    ProsecutionEvent {
+        uuid id PK
+        uuid projectId FK
+        string eventType
+        datetime eventDate
+    }

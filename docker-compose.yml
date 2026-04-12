@@ -1,0 +1,184 @@
+# PatentForge — Docker Compose
+#
+# Usage:
+#   docker compose up --build          # first run (builds all images)
+#   docker compose up                  # subsequent runs
+#   docker compose down                # stop all services
+#   docker compose down -v             # stop and wipe database
+#
+# Required: generate secrets before first run:
+#   export INTERNAL_SERVICE_SECRET=$(openssl rand -hex 32)
+#   export POSTGRES_PASSWORD=$(openssl rand -hex 32)
+#
+# Optional: set your Anthropic API key in the environment before starting:
+#   export ANTHROPIC_API_KEY=sk-ant-...
+#
+# Then:
+#   docker compose up --build
+#
+# Or set it later via the Settings page at http://localhost:8080/settings
+#
+# Note: The backend uses 'prisma db push' on startup to sync the PostgreSQL schema.
+# Data persists in the 'pgdata' Docker volume between restarts.
+
+services:
+  postgres:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_DB: patentforge
+      POSTGRES_USER: patentforge
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?Set POSTGRES_PASSWORD — run: export POSTGRES_PASSWORD=$$(openssl rand -hex 32)}
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    # No external port — only reachable by backend within the Docker network
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U patentforge"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+    logging:
+      driver: json-file
+      options:
+        max-size: "10m"
+        max-file: "3"
+
+  backend:
+    build: ./backend
+    ports:
+      - "3000:3000"
+    depends_on:
+      postgres:
+        condition: service_healthy
+    environment:
+      DATABASE_URL: postgresql://patentforge:${POSTGRES_PASSWORD}@postgres:5432/patentforge
+      FEASIBILITY_URL: http://feasibility:3001
+      CLAIM_DRAFTER_URL: http://claim-drafter:3002
+      COMPLIANCE_CHECKER_URL: http://compliance-checker:3004
+      APPLICATION_GENERATOR_URL: http://application-generator:3003
+      # Set before first run: export INTERNAL_SERVICE_SECRET=$(openssl rand -hex 32)
+      INTERNAL_SERVICE_SECRET: ${INTERNAL_SERVICE_SECRET:?Set INTERNAL_SERVICE_SECRET — run: export INTERNAL_SERVICE_SECRET=$$(openssl rand -hex 32)}
+      ALLOWED_ORIGINS: ${ALLOWED_ORIGINS:-http://localhost:8080}
+      NODE_ENV: production
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "node", "-e", "fetch('http://localhost:3000/api/settings').then(r=>{process.exit(r.ok?0:1)}).catch(()=>process.exit(1))"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 15s
+    logging:
+      driver: json-file
+      options:
+        max-size: "10m"
+        max-file: "3"
+
+  feasibility:
+    build: ./services/feasibility
+    # No external port — only reachable by backend within the Docker network
+    environment:
+      PORT: 3001
+      NODE_ENV: production
+      # Set before first run: export INTERNAL_SERVICE_SECRET=$(openssl rand -hex 32)
+      INTERNAL_SERVICE_SECRET: ${INTERNAL_SERVICE_SECRET:?Set INTERNAL_SERVICE_SECRET — run: export INTERNAL_SERVICE_SECRET=$$(openssl rand -hex 32)}
+      ANTHROPIC_API_KEY: ${ANTHROPIC_API_KEY:-}
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "node", "-e", "fetch('http://localhost:3001/health').then(r=>{process.exit(r.ok?0:1)}).catch(()=>process.exit(1))"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 10s
+    logging:
+      driver: json-file
+      options:
+        max-size: "10m"
+        max-file: "3"
+
+  claim-drafter:
+    build: ./services/claim-drafter
+    # No external port — only reachable by backend within the Docker network
+    environment:
+      PORT: 3002
+      HOST: "0.0.0.0"
+      # Set before first run: export INTERNAL_SERVICE_SECRET=$(openssl rand -hex 32)
+      INTERNAL_SERVICE_SECRET: ${INTERNAL_SERVICE_SECRET:?Set INTERNAL_SERVICE_SECRET — run: export INTERNAL_SERVICE_SECRET=$$(openssl rand -hex 32)}
+      ANTHROPIC_API_KEY: ${ANTHROPIC_API_KEY:-}
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:3002/health')"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 15s
+    logging:
+      driver: json-file
+      options:
+        max-size: "10m"
+        max-file: "3"
+
+  compliance-checker:
+    build: ./services/compliance-checker
+    # No external port — only reachable by backend within the Docker network
+    environment:
+      PORT: 3004
+      HOST: "0.0.0.0"
+      # Set before first run: export INTERNAL_SERVICE_SECRET=$(openssl rand -hex 32)
+      INTERNAL_SERVICE_SECRET: ${INTERNAL_SERVICE_SECRET:?Set INTERNAL_SERVICE_SECRET — run: export INTERNAL_SERVICE_SECRET=$$(openssl rand -hex 32)}
+      ANTHROPIC_API_KEY: ${ANTHROPIC_API_KEY:-}
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:3004/health')"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 15s
+    logging:
+      driver: json-file
+      options:
+        max-size: "10m"
+        max-file: "3"
+
+  application-generator:
+    build: ./services/application-generator
+    # No external port — only reachable by backend within the Docker network
+    environment:
+      PORT: 3003
+      HOST: "0.0.0.0"
+      # Set before first run: export INTERNAL_SERVICE_SECRET=$(openssl rand -hex 32)
+      INTERNAL_SERVICE_SECRET: ${INTERNAL_SERVICE_SECRET:?Set INTERNAL_SERVICE_SECRET — run: export INTERNAL_SERVICE_SECRET=$$(openssl rand -hex 32)}
+      ANTHROPIC_API_KEY: ${ANTHROPIC_API_KEY:-}
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:3003/health')"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 15s
+    logging:
+      driver: json-file
+      options:
+        max-size: "10m"
+        max-file: "3"
+
+  frontend:
+    build: ./frontend
+    ports:
+      - "8080:8080"
+    depends_on:
+      backend:
+        condition: service_healthy
+    restart: unless-stopped
+    logging:
+      driver: json-file
+      options:
+        max-size: "10m"
+        max-file: "3"
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8080"]
+      interval: 10s
+      timeout: 5s
+      retries: 3
+      start_period: 10s
+
+volumes:
+  pgdata:

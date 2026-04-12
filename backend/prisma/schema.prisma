@@ -1,0 +1,235 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+model Project {
+  id               String              @id @default(uuid())
+  title            String
+  status           String              @default("INTAKE")
+  createdAt        DateTime            @default(now())
+  updatedAt        DateTime            @updatedAt
+  invention        InventionInput?
+  feasibility      FeasibilityRun[]
+  priorArtSearches PriorArtSearch[]
+  claimDrafts      ClaimDraft[]
+  complianceChecks ComplianceCheck[]
+  applications     PatentApplication[]
+  prosecutionEvents ProsecutionEvent[]
+  odpApiUsage      OdpApiUsage[]
+}
+
+model InventionInput {
+  id                    String  @id @default(uuid())
+  projectId             String  @unique
+  project               Project @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  title                 String
+  description           String
+  problemSolved         String  @default("")
+  howItWorks            String  @default("")
+  aiComponents          String  @default("")
+  threeDPrintComponents String  @default("")
+  whatIsNovel           String  @default("")
+  currentAlternatives   String  @default("")
+  whatIsBuilt           String  @default("")
+  whatToProtect         String  @default("")
+  additionalNotes       String  @default("")
+}
+
+model FeasibilityRun {
+  id          String             @id @default(uuid())
+  projectId   String
+  project     Project            @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  version     Int
+  status      String             @default("PENDING")
+  startedAt   DateTime?
+  completedAt DateTime?
+  finalReport String?
+  stages      FeasibilityStage[]
+}
+
+model FeasibilityStage {
+  id               String         @id @default(uuid())
+  feasibilityRunId String
+  feasibilityRun   FeasibilityRun @relation(fields: [feasibilityRunId], references: [id], onDelete: Cascade)
+  stageNumber      Int
+  stageName        String
+  status           String         @default("PENDING")
+  outputText       String?
+  model            String?
+  webSearchUsed    Boolean        @default(false)
+  startedAt        DateTime?
+  completedAt      DateTime?
+  errorMessage     String?
+  inputTokens      Int?
+  outputTokens     Int?
+  estimatedCostUsd Float?
+}
+
+model PriorArtSearch {
+  id               String           @id @default(uuid())
+  projectId        String
+  project          Project          @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  version          Int
+  status           String           @default("PENDING")
+  query            String?
+  startedAt        DateTime?
+  completedAt      DateTime?
+  feasibilityRunId String?
+  results          PriorArtResult[]
+}
+
+model PriorArtResult {
+  id             String         @id @default(uuid())
+  searchId       String
+  search         PriorArtSearch @relation(fields: [searchId], references: [id], onDelete: Cascade)
+  patentNumber   String
+  title          String
+  abstract       String?
+  relevanceScore Float
+  snippet        String?
+  claimMapping   String?
+  source         String         @default("PatentsView")
+}
+
+model ClaimDraft {
+  id               String   @id @default(uuid())
+  projectId        String
+  project          Project  @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  version          Int
+  status           String   @default("PENDING")
+  startedAt        DateTime?
+  completedAt      DateTime?
+  claims           Claim[]
+  specLanguage     String?
+  plannerStrategy  String?
+  examinerFeedback String?
+  revisionNotes    String?
+  estimatedCostUsd Float?
+}
+
+model Claim {
+  id                String     @id @default(uuid())
+  draftId           String
+  draft             ClaimDraft @relation(fields: [draftId], references: [id], onDelete: Cascade)
+  claimNumber       Int
+  claimType         String
+  scopeLevel        String?
+  statutoryType     String?
+  parentClaimNumber Int?
+  text              String
+  examinerNotes     String     @default("")
+}
+
+model ComplianceCheck {
+  id           String             @id @default(uuid())
+  projectId    String
+  project      Project            @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  version      Int
+  status       String             @default("PENDING")
+  draftVersion Int
+  startedAt    DateTime?
+  completedAt  DateTime?
+  results          ComplianceResult[]
+  overallPass      Boolean            @default(false)
+  estimatedCostUsd Float?
+}
+
+model ComplianceResult {
+  id          String          @id @default(uuid())
+  checkId     String
+  check       ComplianceCheck @relation(fields: [checkId], references: [id], onDelete: Cascade)
+  rule        String
+  status      String
+  claimNumber Int?
+  detail      String
+  citation    String?
+  suggestion  String?
+}
+
+model PatentApplication {
+  id                  String    @id @default(uuid())
+  projectId           String
+  project             Project   @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  version             Int
+  status              String    @default("PENDING")
+  title               String?
+  abstract            String?
+  background          String?
+  summary             String?
+  detailedDescription String?
+  claims              String?
+  figureDescriptions  String?
+  crossReferences     String?
+  idsTable            String?
+  estimatedCostUsd    Float?
+  completedAt         DateTime?
+  errorMessage        String?
+  createdAt           DateTime  @default(now())
+}
+
+model ProsecutionEvent {
+  id          String   @id @default(uuid())
+  projectId   String
+  project     Project  @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  eventType   String
+  eventDate   DateTime
+  description String
+  documentUrl String?
+  createdAt   DateTime @default(now())
+}
+
+model PatentDetail {
+  id                 String   @id @default(uuid())
+  patentNumber       String   @unique
+  title              String?
+  abstract           String?
+  filingDate         String?
+  grantDate          String?
+  assignee           String?  // JSON array of assignee names
+  inventors          String?  // JSON array of inventor names
+  cpcClassifications String?  // JSON array of CPC codes
+  claimsText         String?  // full concatenated claims text
+  claimCount         Int?
+  patentType         String?
+  fetchedAt          DateTime @default(now())
+}
+
+model PatentFamily {
+  id           String   @id @default(uuid())
+  patentNumber String   @unique
+  members      String   // JSON array of family members
+  fetchedAt    DateTime @default(now())
+}
+
+model OdpApiUsage {
+  id               String   @id @default(uuid())
+  projectId        String?
+  project          Project? @relation(fields: [projectId], references: [id], onDelete: SetNull)
+  queriesAttempted Int
+  resultsFound     Int
+  hadRateLimit     Boolean  @default(false)
+  hadError         Boolean  @default(false)
+  errorMessage     String?
+  calledAt         DateTime @default(now())
+
+  @@index([calledAt])
+}
+
+model AppSettings {
+  id                     String @id @default("singleton")
+  anthropicApiKey        String @default("")
+  defaultModel           String @default("claude-haiku-4-5-20251001")
+  researchModel          String @default("")
+  maxTokens              Int    @default(32000)
+  interStageDelaySeconds Int    @default(5)
+  exportPath             String  @default("")
+  autoExport             Boolean @default(true)
+  costCapUsd             Float   @default(5.00)
+  usptoApiKey            String @default("")
+  encryptionSalt         String @default("")
+}

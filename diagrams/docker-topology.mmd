@@ -1,0 +1,32 @@
+%%{init: {'theme': 'dark', 'themeVariables': {'primaryColor': '#3b82f6', 'primaryTextColor': '#e2e8f0', 'primaryBorderColor': '#60a5fa', 'lineColor': '#94a3b8', 'secondaryColor': '#1e293b', 'tertiaryColor': '#0f172a'}}}%%
+
+flowchart TB
+    BROWSER["Browser<br/><i>http://localhost:8080</i>"]
+
+    subgraph DOCKER["Docker Compose Network"]
+        FE["<b>frontend</b><br/>React · Nginx<br/><i>:8080 → exposed</i>"]
+        BE["<b>backend</b><br/>NestJS · Prisma<br/><i>:3000 → exposed</i>"]
+        FS["<b>feasibility</b><br/>Express · TypeScript<br/><i>:3001 internal</i>"]
+        CD["<b>claim-drafter</b><br/>FastAPI · LangGraph<br/><i>:3002 internal</i>"]
+        AG["<b>application-generator</b><br/>FastAPI · LangGraph<br/><i>:3003 internal</i>"]
+        CC["<b>compliance-checker</b><br/>FastAPI · LangGraph<br/><i>:3004 internal</i>"]
+        PG[("postgres<br/>PostgreSQL 16<br/><i>pgdata volume</i>")]
+    end
+
+    BROWSER --> FE
+    FE --> BE
+    BE --> FS
+    BE --> CD
+    BE --> AG
+    BE --> CC
+    BE --> PG
+
+    style DOCKER fill:#0f172a,stroke:#3b82f6,color:#e2e8f0
+    style BROWSER fill:#94a3b8,stroke:#cbd5e1,color:#000
+    style FE fill:#3b82f6,stroke:#60a5fa,color:#fff
+    style BE fill:#3b82f6,stroke:#60a5fa,color:#fff
+    style FS fill:#22c55e,stroke:#4ade80,color:#000
+    style CD fill:#a78bfa,stroke:#c4b5fd,color:#000
+    style AG fill:#a78bfa,stroke:#c4b5fd,color:#000
+    style CC fill:#a78bfa,stroke:#c4b5fd,color:#000
+    style PG fill:#f59e0b,stroke:#fbbf24,color:#000

@@ -1,0 +1,225 @@
+name: Release
+
+on:
+  push:
+    tags: ['v*']
+
+permissions:
+  contents: write
+
+jobs:
+  build-windows:
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-go@v5
+        with:
+          go-version: '1.22'
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+
+      # Build tray app
+      - name: Build tray app
+        working-directory: tray
+        run: go build -ldflags "-X main.version=${{ github.ref_name }}" -o ../patentforge-tray.exe ./cmd/tray
+
+      # Build backend dependencies and SEA
+      - name: Install backend dependencies
+        working-directory: backend
+        run: npm ci
+
+      - name: Generate Prisma client
+        working-directory: backend
+        run: npx prisma generate
+
+      - name: Build backend SEA
+        run: bash scripts/build-backend-sea.sh
+        shell: bash
+
+      # Build feasibility dependencies and SEA
+      - name: Install feasibility dependencies
+        working-directory: services/feasibility
+        run: npm ci
+
+      - name: Build feasibility SEA
+        run: bash scripts/build-feasibility-sea.sh
+        shell: bash
+
+      # Build frontend
+      - name: Install frontend dependencies
+        working-directory: frontend
+        run: npm install
+
+      - name: Build frontend
+        working-directory: frontend
+        run: npm run build
+
+      # Frontend dist stays at frontend/dist/ — .iss and tray both reference it there
+
+      # Bundle portable Python
+      - name: Bundle Python
+        run: bash scripts/bundle-python.sh windows
+        shell: bash
+
+      # Build installer
+      - name: Install Inno Setup
+        run: choco install innosetup -y
+
+      - name: Build Windows installer
+        run: bash installer/windows/build-installer.sh
+        shell: bash
+
+      - name: Upload Windows installer
+        uses: actions/upload-artifact@v4
+        with:
+          name: windows-installer
+          path: build/PatentForge-*-Setup.exe
+
+  build-mac:
+    runs-on: macos-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-go@v5
+        with:
+          go-version: '1.22'
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+
+      - name: Build tray app
+        working-directory: tray
+        run: CGO_ENABLED=1 go build -ldflags "-X main.version=${{ github.ref_name }}" -o ../patentforge-tray ./cmd/tray
+
+      - name: Install backend dependencies
+        working-directory: backend
+        run: npm ci
+
+      - name: Generate Prisma client
+        working-directory: backend
+        run: npx prisma generate
+
+      - name: Build backend SEA
+        run: bash scripts/build-backend-sea.sh
+
+      - name: Install feasibility dependencies
+        working-directory: services/feasibility
+        run: npm ci
+
+      - name: Build feasibility SEA
+        run: bash scripts/build-feasibility-sea.sh
+
+      - name: Install frontend dependencies
+        working-directory: frontend
+        run: npm install
+
+      - name: Build frontend
+        working-directory: frontend
+        run: npm run build
+
+      - name: Bundle Python (Mac)
+        run: bash scripts/bundle-python.sh mac
+
+      - name: Create .app bundle and .dmg
+        run: bash installer/mac/build-dmg.sh
+
+      - name: Upload Mac installer
+        uses: actions/upload-artifact@v4
+        with:
+          name: mac-dmg
+          path: build/PatentForge-*.dmg
+
+  build-linux:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-go@v5
+        with:
+          go-version: '1.22'
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+
+      - name: Install systray build dependencies
+        run: sudo apt-get update && sudo apt-get install -y gcc libayatana-appindicator3-dev
+
+      - name: Build tray app
+        working-directory: tray
+        run: CGO_ENABLED=1 go build -ldflags "-X main.version=${{ github.ref_name }}" -o ../patentforge-tray ./cmd/tray
+
+      - name: Install backend dependencies
+        working-directory: backend
+        run: npm ci
+
+      - name: Generate Prisma client
+        working-directory: backend
+        run: npx prisma generate
+
+      - name: Build backend SEA
+        run: bash scripts/build-backend-sea.sh
+
+      - name: Install feasibility dependencies
+        working-directory: services/feasibility
+        run: npm ci
+
+      - name: Build feasibility SEA
+        run: bash scripts/build-feasibility-sea.sh
+
+      - name: Install frontend dependencies
+        working-directory: frontend
+        run: npm install
+
+      - name: Build frontend
+        working-directory: frontend
+        run: npm run build
+
+      - name: Bundle Python (Linux)
+        run: bash scripts/bundle-python.sh linux
+
+      - name: Create AppImage
+        run: bash installer/linux/build-appimage.sh
+
+      - name: Upload Linux installer
+        uses: actions/upload-artifact@v4
+        with:
+          name: linux-appimage
+          path: build/PatentForge-*.AppImage
+
+  create-release:
+    needs: [build-windows, build-mac, build-linux]
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/download-artifact@v4
+        with:
+          path: artifacts/
+
+      - name: Create GitHub Release
+        uses: softprops/action-gh-release@v2
+        with:
+          files: |
+            artifacts/windows-installer/*
+            artifacts/mac-dmg/*
+            artifacts/linux-appimage/*
+          generate_release_notes: true
+          draft: false
+          prerelease: false
