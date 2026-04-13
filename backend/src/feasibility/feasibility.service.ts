@@ -38,9 +38,11 @@ export function resolveExportDir(customExportPath?: string): string {
     return resolved;
   }
 
-  const oneDriveDesktop = path.join(home, 'OneDrive', 'Desktop');
-  const regularDesktop = path.join(home, 'Desktop');
-  return fs.existsSync(oneDriveDesktop) ? oneDriveDesktop : regularDesktop;
+  // Default to a local-only folder — never export to cloud-synced directories
+  // (OneDrive Desktop, iCloud, Dropbox) since patent data should stay local.
+  const localExportDir = path.join(home, 'PatentForgeLocal', 'exports');
+  fs.mkdirSync(localExportDir, { recursive: true });
+  return localExportDir;
 }
 
 const REPORT_HTML_TEMPLATE = `<!DOCTYPE html>

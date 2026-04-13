@@ -325,7 +325,6 @@ export async function* runPipeline(
     };
   }
 
-  contextMgr.close();
   yield {
     type: 'pipeline_complete',
     finalReport,

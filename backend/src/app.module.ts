@@ -27,7 +27,7 @@ import { SystemModule } from './system/system.module';
           }),
         ]
       : []),
-    ThrottlerModule.forRoot([{ ttl: 60_000, limit: 5 }]),
+    ThrottlerModule.forRoot([{ ttl: 60_000, limit: 100 }]),
     PrismaModule,
     ProjectsModule,
     FeasibilityModule,

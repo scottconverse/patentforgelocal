@@ -78,14 +78,14 @@ if (-not (Test-Path $envFile)) {
     $generatedSecret = [System.BitConverter]::ToString($secretBytes).Replace('-','').ToLower()
     @(
         'DATABASE_URL="file:./prisma/dev.db"',
-        'NODE_ENV=development',
+        'NODE_ENV=production',
         "INTERNAL_SERVICE_SECRET=$generatedSecret"
     ) | Out-File -FilePath $envFile -Encoding utf8
     Write-Host "  Created backend/.env with generated INTERNAL_SERVICE_SECRET" -ForegroundColor DarkGray
 }
 
 # Read the internal secret from the .env file (handles both new and existing installs)
-$internalSecret = 'patentforge-internal'  # fallback if .env parse fails
+$internalSecret = ''  # empty fallback — auth disabled if .env parse fails
 $envContent = Get-Content $envFile -ErrorAction SilentlyContinue
 if ($envContent) {
     $secretLine = $envContent | Where-Object { $_ -match '^INTERNAL_SERVICE_SECRET=' }
@@ -202,11 +202,13 @@ if ($pythonOk) {
         @{ Name = "Compliance Checker";    Dir = "compliance-checker";    Port = 3004 },
         @{ Name = "Application Generator"; Dir = "application-generator"; Port = 3003 }
     )
+    # Set secret in environment — child processes inherit it without exposing in command line
+    $env:INTERNAL_SERVICE_SECRET = $internalSecret
     foreach ($svc in $pyServices) {
         Write-Host "  Starting $($svc.Name) (port $($svc.Port))..."
         $svcDir = Join-Path $root "services\$($svc.Dir)"
-        Start-Process -FilePath "cmd.exe" `
-            -ArgumentList "/c set INTERNAL_SERVICE_SECRET=$internalSecret&& `"$python`" -m uvicorn src.server:app --host 0.0.0.0 --port $($svc.Port)" `
+        Start-Process -FilePath $python `
+            -ArgumentList "-m uvicorn src.server:app --host 0.0.0.0 --port $($svc.Port)" `
             -WorkingDirectory $svcDir `
             -WindowStyle Minimized
     }

@@ -6,9 +6,8 @@
 #   docker compose down                # stop all services
 #   docker compose down -v             # stop and wipe database
 #
-# Required: generate secrets before first run:
+# Required: generate secret before first run:
 #   export INTERNAL_SERVICE_SECRET=$(openssl rand -hex 32)
-#   export POSTGRES_PASSWORD=$(openssl rand -hex 32)
 #
 # Optional: set Ollama host if running Ollama outside Docker:
 #   export OLLAMA_HOST=http://host.docker.internal:11434
@@ -18,39 +17,18 @@
 #
 # Or set it later via the Settings page at http://localhost:8080/settings
 #
-# Note: The backend uses 'prisma db push' on startup to sync the PostgreSQL schema.
-# Data persists in the 'pgdata' Docker volume between restarts.
+# Note: The backend uses SQLite (matching the Prisma schema). The database
+# file persists in the 'appdata' Docker volume between restarts.
 
 services:
-  postgres:
-    image: postgres:16-alpine
-    environment:
-      POSTGRES_DB: patentforgelocal
-      POSTGRES_USER: patentforgelocal
-      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?Set POSTGRES_PASSWORD — run: export POSTGRES_PASSWORD=$$(openssl rand -hex 32)}
-    volumes:
-      - pgdata:/var/lib/postgresql/data
-    # No external port — only reachable by backend within the Docker network
-    healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U patentforgelocal"]
-      interval: 5s
-      timeout: 5s
-      retries: 5
-    logging:
-      driver: json-file
-      options:
-        max-size: "10m"
-        max-file: "3"
-
   backend:
     build: ./backend
     ports:
       - "3000:3000"
-    depends_on:
-      postgres:
-        condition: service_healthy
+    volumes:
+      - appdata:/app/data
     environment:
-      DATABASE_URL: postgresql://patentforgelocal:${POSTGRES_PASSWORD}@postgres:5432/patentforgelocal
+      DATABASE_URL: "file:/app/data/patentforgelocal.db"
       FEASIBILITY_URL: http://feasibility:3001
       CLAIM_DRAFTER_URL: http://claim-drafter:3002
       COMPLIANCE_CHECKER_URL: http://compliance-checker:3004
@@ -181,4 +159,4 @@ services:
       start_period: 10s
 
 volumes:
-  pgdata:
+  appdata:

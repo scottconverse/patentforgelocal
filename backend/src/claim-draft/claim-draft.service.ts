@@ -11,7 +11,7 @@ const INTERNAL_SECRET =
       '[PatentForge] INTERNAL_SERVICE_SECRET is not set — using insecure default. ' +
         'Add it to backend/.env for any networked deployment. Generate one: openssl rand -hex 32',
     );
-    return 'patentforge-internal';
+    return '';
   })();
 
 /** Shape of a single claim returned by the Python claim-drafter. */
@@ -601,8 +601,16 @@ export class ClaimDraftService implements OnModuleInit {
       throw new BadRequestException('Claim regeneration produced no results');
     }
 
-    // Find the matching claim number in the result, or take the first one
-    const newClaim = result.claims.find((c) => c.claim_number === claimNumber) || result.claims[0];
+    // Find the matching claim number in the result — never silently substitute
+    // a different claim, as that would corrupt the user's claim set.
+    const newClaim = result.claims.find((c) => c.claim_number === claimNumber);
+    if (!newClaim) {
+      throw new BadRequestException(
+        `Claim regeneration did not produce claim ${claimNumber}. ` +
+        `The AI returned claims numbered: ${result.claims.map((c) => c.claim_number).join(', ')}. ` +
+        `Please try again or edit the claim text manually.`,
+      );
+    }
 
     // Update claim text in DB
     return this.prisma.claim.update({

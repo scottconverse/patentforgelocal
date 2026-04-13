@@ -11,7 +11,7 @@ const INTERNAL_SECRET =
       '[PatentForge] INTERNAL_SERVICE_SECRET is not set — using insecure default. ' +
         'Add it to backend/.env for any networked deployment. Generate one: openssl rand -hex 32',
     );
-    return 'patentforge-internal';
+    return '';
   })();
 
 /** Response from the Python application-generator /generate/sync endpoint. */
