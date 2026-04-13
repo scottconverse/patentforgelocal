@@ -22,52 +22,24 @@ function sleep(ms: number, signal?: AbortSignal): Promise<void> {
  * Handles common issues: trailing commas, unescaped newlines in strings,
  * truncated output (missing closing braces/brackets).
  */
+import { jsonrepair } from 'jsonrepair';
+
+/**
+ * Repair malformed JSON from LLM output. Handles:
+ * - Markdown code fences wrapping JSON
+ * - Trailing commas, unclosed strings/braces/brackets
+ * - Escaped backslash sequences (\\) that break hand-rolled parsers
+ * - All edge cases handled by the battle-tested jsonrepair library
+ */
 export function repairJSON(raw: string): string {
   let s = raw.trim();
 
-  // Strip markdown code fences if present
+  // Strip markdown code fences if present (jsonrepair doesn't handle these)
   if (s.startsWith('```')) {
     s = s.replace(/^```(?:json)?\s*\n?/, '').replace(/\n?```\s*$/, '');
   }
 
-  // Remove trailing commas before } or ]
-  s = s.replace(/,\s*([}\]])/g, '$1');
-
-  // Count unmatched braces/brackets and close them
-  let braces = 0;
-  let brackets = 0;
-  let inString = false;
-  let escape = false;
-
-  for (const ch of s) {
-    if (escape) {
-      escape = false;
-      continue;
-    }
-    if (ch === '\\' && inString) {
-      escape = true;
-      continue;
-    }
-    if (ch === '"') {
-      inString = !inString;
-      continue;
-    }
-    if (inString) continue;
-
-    if (ch === '{') braces++;
-    else if (ch === '}') braces--;
-    else if (ch === '[') brackets++;
-    else if (ch === ']') brackets--;
-  }
-
-  // Close unclosed strings
-  if (inString) s += '"';
-
-  // Close unclosed brackets/braces
-  while (brackets > 0) { s += ']'; brackets--; }
-  while (braces > 0) { s += '}'; braces--; }
-
-  return s;
+  return jsonrepair(s);
 }
 
 export async function streamMessage(params: {

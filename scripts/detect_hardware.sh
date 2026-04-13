@@ -97,7 +97,7 @@ elif command -v rocm-smi &>/dev/null; then
         strix_krackan)
             GFX_VERSION="11.5.1"
             HSA_OVERRIDE="11.5.1"
-            CU_DETECT=$(cat /sys/class/drm/card*/device/pp_num_cu 2>/dev/null | head -1 || echo "16")
+            CU_DETECT=$(cat /sys/class/drm/card*/device/pp_num_cu 2>/dev/null | head -1 | tr -d '[:space:]' || echo "16")
             GPU_CU_COUNT=${CU_DETECT:-16}
             if [ "$GPU_CU_COUNT" -le 12 ]; then
                 GFX_VERSION="11.5.0"
@@ -107,7 +107,7 @@ elif command -v rocm-smi &>/dev/null; then
         hawk_point|phoenix)
             GFX_VERSION="11.0.0"
             HSA_OVERRIDE="11.0.0"
-            CU_DETECT=$(cat /sys/class/drm/card*/device/pp_num_cu 2>/dev/null | head -1 || echo "12")
+            CU_DETECT=$(cat /sys/class/drm/card*/device/pp_num_cu 2>/dev/null | head -1 | tr -d '[:space:]' || echo "12")
             GPU_CU_COUNT=${CU_DETECT:-12}
             if [ "$GPU_CU_COUNT" -le 8 ]; then
                 HSA_OVERRIDE="11.0.2"

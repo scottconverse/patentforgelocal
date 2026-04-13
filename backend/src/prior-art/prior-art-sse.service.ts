@@ -6,6 +6,7 @@ export type PriorArtEvent =
   | { type: 'prior_art_queries'; queries: string[] }
   | { type: 'prior_art_progress'; queryIndex: number; query: string; resultCount: number }
   | { type: 'prior_art_complete'; searchId: string; totalResults: number }
+  | { type: 'prior_art_warning'; message: string }
   | { type: 'prior_art_error'; message: string };
 
 @Injectable()

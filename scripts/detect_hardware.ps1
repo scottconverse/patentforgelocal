@@ -85,7 +85,21 @@ foreach ($gpu in $gpus) {
     }
     elseif ($name -match "Radeon" -and $name -notmatch "610M") {
         $amdGpuName = $name
-        $amdVramBytes = $gpu.AdapterRAM
+        # Win32_VideoController.AdapterRAM is uint32, overflows at 4 GB.
+        # For AMD iGPUs with UMA > 4 GB, read the QWORD from the registry.
+        $amdVramBytes = [uint64]$gpu.AdapterRAM
+        try {
+            $regPath = "HKLM:\SYSTEM\CurrentControlSet\Control\Class\{4d36e968-e325-11ce-bfc1-08002be10318}"
+            Get-ChildItem $regPath -ErrorAction SilentlyContinue | ForEach-Object {
+                $driverDesc = (Get-ItemProperty $_.PSPath -ErrorAction SilentlyContinue).DriverDesc
+                if ($driverDesc -eq $name) {
+                    $qwMem = (Get-ItemProperty $_.PSPath -ErrorAction SilentlyContinue).'HardwareInformation.qwMemorySize'
+                    if ($qwMem -and $qwMem -gt $amdVramBytes) {
+                        $amdVramBytes = [uint64]$qwMem
+                    }
+                }
+            }
+        } catch { }
         $amdVramGB = [math]::Round($amdVramBytes / 1GB, 1)
         Write-Host "AMD iGPU: $name ($amdVramGB GB VRAM)"
         $gpuEnabled = $true

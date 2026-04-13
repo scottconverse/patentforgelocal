@@ -8,10 +8,19 @@ Write-Host "PatentForgeLocal starting..." -ForegroundColor Cyan
 # ─── Hardware Detection ──────────────────────────────────────────────────────
 $hwEnvFile = Join-Path $root ".env.hardware"
 $detectScript = Join-Path $root "scripts\detect_hardware.ps1"
-if ((Test-Path $detectScript) -and -not (Test-Path $hwEnvFile)) {
-    Write-Host "  Running hardware detection (first run)..." -ForegroundColor Yellow
-    & $detectScript
-    Write-Host ""
+$needsDetect = $false
+if (Test-Path $detectScript) {
+    if (-not (Test-Path $hwEnvFile)) {
+        $needsDetect = $true
+        Write-Host "  Running hardware detection (first run)..." -ForegroundColor Yellow
+    } elseif ((Get-Item $hwEnvFile).LastWriteTime -lt (Get-Date).AddDays(-7)) {
+        $needsDetect = $true
+        Write-Host "  Re-running hardware detection (cache older than 7 days)..." -ForegroundColor Yellow
+    }
+    if ($needsDetect) {
+        & $detectScript
+        Write-Host ""
+    }
 }
 
 # ─── Find Node.js ─────────────────────────────────────────────────────────────
@@ -125,7 +134,8 @@ foreach ($dir in $npmDirs) {
 # ─── Build Node services (only when dist is missing) ──────────────────────────
 $buildTargets = @(
     @{ Name = "Backend";     Path = Join-Path $root "backend";              Dist = Join-Path $root "backend\dist\main.js" },
-    @{ Name = "Feasibility"; Path = Join-Path $root "services\feasibility"; Dist = Join-Path $root "services\feasibility\dist\server.js" }
+    @{ Name = "Feasibility"; Path = Join-Path $root "services\feasibility"; Dist = Join-Path $root "services\feasibility\dist\server.js" },
+    @{ Name = "Frontend";    Path = Join-Path $root "frontend";             Dist = Join-Path $root "frontend\dist\index.html" }
 )
 
 foreach ($target in $buildTargets) {
@@ -165,8 +175,66 @@ if (-not (Test-Path $dbFile)) {
     Write-Host "  Database: ready" -ForegroundColor Green
 }
 
+# ─── Check Ollama ────────────────────────────────────────────────────────────
+$ollamaRunning = $false
+try {
+    $ollamaCheck = Invoke-WebRequest -Uri "http://127.0.0.1:11434/api/tags" -TimeoutSec 3 -ErrorAction SilentlyContinue
+    if ($ollamaCheck.StatusCode -eq 200) { $ollamaRunning = $true }
+} catch { }
+
+if (-not $ollamaRunning) {
+    # Try to find and start Ollama
+    $ollamaBin = Join-Path $root "runtime\ollama\ollama.exe"
+    if (-not (Test-Path $ollamaBin)) {
+        $ollamaBin = (Get-Command ollama -ErrorAction SilentlyContinue).Source
+    }
+    if ($ollamaBin) {
+        Write-Host "  Ollama: starting..." -ForegroundColor Yellow
+        Start-Process -FilePath $ollamaBin -ArgumentList "serve" -WindowStyle Hidden
+        # Wait up to 15s for Ollama to be ready
+        $ollamaDeadline = (Get-Date).AddSeconds(15)
+        while ((Get-Date) -lt $ollamaDeadline) {
+            Start-Sleep -Seconds 1
+            try {
+                $r = Invoke-WebRequest -Uri "http://127.0.0.1:11434/api/tags" -TimeoutSec 2 -ErrorAction SilentlyContinue
+                if ($r.StatusCode -eq 200) { $ollamaRunning = $true; break }
+            } catch { }
+        }
+    }
+    if (-not $ollamaRunning) {
+        Write-Host ""
+        Write-Host "ERROR: Ollama is not running and could not be started." -ForegroundColor Red
+        Write-Host "  Install Ollama from https://ollama.com or place the binary in runtime\ollama\" -ForegroundColor Yellow
+        Read-Host "Press Enter to exit"
+        exit 1
+    }
+}
+Write-Host "  Ollama: running" -ForegroundColor Green
+
+# ─── Check model is downloaded ───────────────────────────────────────────────
+$defaultModel = "gemma4:26b"
+$modelReady = $false
+try {
+    $tags = (Invoke-WebRequest -Uri "http://127.0.0.1:11434/api/tags" -TimeoutSec 5).Content | ConvertFrom-Json
+    foreach ($m in $tags.models) {
+        if ($m.name -match "^gemma4:(26b|27b)") { $modelReady = $true; break }
+    }
+} catch { }
+
+if (-not $modelReady) {
+    Write-Host "  Model: downloading $defaultModel (this takes a few minutes on first run)..." -ForegroundColor Yellow
+    $pullProc = Start-Process -FilePath "ollama" -ArgumentList "pull $defaultModel" -NoNewWindow -Wait -PassThru
+    if ($pullProc.ExitCode -ne 0) {
+        Write-Host "  WARNING: Model download may have failed. The app will start but AI features may not work." -ForegroundColor Yellow
+    } else {
+        Write-Host "  Model: $defaultModel ready" -ForegroundColor Green
+    }
+} else {
+    Write-Host "  Model: ready" -ForegroundColor Green
+}
+
 # ─── Kill stale processes on all service ports ────────────────────────────────
-foreach ($port in @(3000, 3001, 3002, 3003, 3004, 8080)) {
+foreach ($port in @(3000, 3001, 3002, 3003, 3004)) {
     $conn = Get-NetTCPConnection -LocalPort $port -State Listen -ErrorAction SilentlyContinue
     if ($conn) {
         Stop-Process -Id $conn.OwningProcess -Force -ErrorAction SilentlyContinue
@@ -174,26 +242,37 @@ foreach ($port in @(3000, 3001, 3002, 3003, 3004, 8080)) {
 }
 Start-Sleep -Seconds 1
 
+# ─── Create logs directory ───────────────────────────────────────────────────
+$logsDir = Join-Path $root "logs"
+if (-not (Test-Path $logsDir)) { New-Item -ItemType Directory -Path $logsDir -Force | Out-Null }
+
+# ─── PID tracking for graceful shutdown ──────────────────────────────────────
+$pidFile = Join-Path $root "logs\pids.txt"
+$pids = @()
+
 # ─── Start Node services ──────────────────────────────────────────────────────
-Write-Host "  Starting Backend (port 3000)..."
-Start-Process -FilePath $node `
+# Backend serves both the API and the built frontend static files (via ServeStaticModule)
+$frontendDist = Join-Path $root "frontend\dist"
+$env:FRONTEND_DIST_PATH = $frontendDist
+Write-Host "  Starting Backend + Frontend (port 3000)..."
+$p = Start-Process -FilePath $node `
     -ArgumentList "--enable-source-maps dist/main.js" `
     -WorkingDirectory (Join-Path $root "backend") `
-    -WindowStyle Minimized
+    -WindowStyle Hidden `
+    -RedirectStandardOutput (Join-Path $logsDir "backend.log") `
+    -RedirectStandardError (Join-Path $logsDir "backend-error.log") `
+    -PassThru
+$pids += $p.Id
 
 Write-Host "  Starting Feasibility service (port 3001)..."
-Start-Process -FilePath $node `
+$p = Start-Process -FilePath $node `
     -ArgumentList "dist/server.js" `
     -WorkingDirectory (Join-Path $root "services\feasibility") `
-    -WindowStyle Minimized
-
-# ─── Start Frontend (Vite dev server) ─────────────────────────────────────────
-Write-Host "  Starting Frontend (port 8080)..."
-$viteBin = Join-Path $root "frontend\node_modules\vite\bin\vite.js"
-Start-Process -FilePath $node `
-    -ArgumentList "`"$viteBin`" --port 8080" `
-    -WorkingDirectory (Join-Path $root "frontend") `
-    -WindowStyle Minimized
+    -WindowStyle Hidden `
+    -RedirectStandardOutput (Join-Path $logsDir "feasibility.log") `
+    -RedirectStandardError (Join-Path $logsDir "feasibility-error.log") `
+    -PassThru
+$pids += $p.Id
 
 # ─── Start Python services (if available) ─────────────────────────────────────
 if ($pythonOk) {
@@ -207,34 +286,39 @@ if ($pythonOk) {
     foreach ($svc in $pyServices) {
         Write-Host "  Starting $($svc.Name) (port $($svc.Port))..."
         $svcDir = Join-Path $root "services\$($svc.Dir)"
-        Start-Process -FilePath $python `
+        $logName = $svc.Dir
+        $p = Start-Process -FilePath $python `
             -ArgumentList "-m uvicorn src.server:app --host 0.0.0.0 --port $($svc.Port)" `
             -WorkingDirectory $svcDir `
-            -WindowStyle Minimized
+            -WindowStyle Hidden `
+            -RedirectStandardOutput (Join-Path $logsDir "$logName.log") `
+            -RedirectStandardError (Join-Path $logsDir "$logName-error.log") `
+            -PassThru
+        $pids += $p.Id
     }
 }
+
+# Write PID file for graceful shutdown
+$pids | Out-File -FilePath $pidFile -Encoding utf8
 
 # ─── Poll for required services (up to 60 s) ──────────────────────────────────
 Write-Host "`nWaiting for services to start..." -ForegroundColor Cyan
 $deadline    = (Get-Date).AddSeconds(60)
 $backendOk   = $false
-$frontendOk  = $false
 while ((Get-Date) -lt $deadline) {
     Start-Sleep -Seconds 2
-    $backendOk  = [bool](Get-NetTCPConnection -LocalPort 3000 -State Listen -ErrorAction SilentlyContinue)
-    $frontendOk = [bool](Get-NetTCPConnection -LocalPort 8080 -State Listen -ErrorAction SilentlyContinue)
-    if ($backendOk -and $frontendOk) { break }
+    $backendOk = [bool](Get-NetTCPConnection -LocalPort 3000 -State Listen -ErrorAction SilentlyContinue)
+    if ($backendOk) { break }
     Write-Host "  ..." -ForegroundColor DarkGray
 }
 
 # ─── Report status ─────────────────────────────────────────────────────────────
 $services = @(
-    @{ Name = "Backend";               Port = 3000; Required = $true },
+    @{ Name = "Backend + Frontend";    Port = 3000; Required = $true },
     @{ Name = "Feasibility";           Port = 3001; Required = $true },
     @{ Name = "Claim Drafter";         Port = 3002; Required = $false },
     @{ Name = "Application Generator"; Port = 3003; Required = $false },
-    @{ Name = "Compliance Checker";    Port = 3004; Required = $false },
-    @{ Name = "Frontend";              Port = 8080; Required = $true }
+    @{ Name = "Compliance Checker";    Port = 3004; Required = $false }
 )
 
 Write-Host ""
@@ -242,8 +326,7 @@ foreach ($svc in $services) {
     $conn = Get-NetTCPConnection -LocalPort $svc.Port -State Listen -ErrorAction SilentlyContinue
     if ($conn) {
         Write-Host "  $($svc.Name) ($($svc.Port)): OK" -ForegroundColor Green
-        if ($svc.Port -eq 3000) { $backendOk  = $true }
-        if ($svc.Port -eq 8080) { $frontendOk = $true }
+        if ($svc.Port -eq 3000) { $backendOk = $true }
     } elseif ($svc.Required) {
         Write-Host "  $($svc.Name) ($($svc.Port)): FAILED" -ForegroundColor Red
     } else {
@@ -252,21 +335,14 @@ foreach ($svc in $services) {
 }
 
 Write-Host ""
-if ($backendOk -and $frontendOk) {
-    Write-Host "PatentForgeLocal is running at http://localhost:8080" -ForegroundColor Green
-    Start-Process "http://localhost:8080"
+if ($backendOk) {
+    Write-Host "PatentForgeLocal is running at http://localhost:3000" -ForegroundColor Green
+    Start-Process "http://localhost:3000"
 } else {
-    Write-Host "One or more required services failed to start." -ForegroundColor Red
-    if (-not $backendOk) {
-        Write-Host "  Backend failed. Check Node.js is installed and try:" -ForegroundColor Yellow
-        Write-Host "    cd `"$(Join-Path $root 'backend')`"" -ForegroundColor Yellow
-        Write-Host "    npm run build && npm start" -ForegroundColor Yellow
-    }
-    if (-not $frontendOk) {
-        Write-Host "  Frontend failed. Try:" -ForegroundColor Yellow
-        Write-Host "    cd `"$(Join-Path $root 'frontend')`"" -ForegroundColor Yellow
-        Write-Host "    npm run dev" -ForegroundColor Yellow
-    }
+    Write-Host "Backend failed to start." -ForegroundColor Red
+    Write-Host "  Check Node.js is installed and try:" -ForegroundColor Yellow
+    Write-Host "    cd `"$(Join-Path $root 'backend')`"" -ForegroundColor Yellow
+    Write-Host "    npm run build && npm start" -ForegroundColor Yellow
     Read-Host "Press Enter to exit"
     exit 1
 }

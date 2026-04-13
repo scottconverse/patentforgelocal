@@ -56,7 +56,8 @@ func Load(baseDir string) (*Config, error) {
 	cfg.EnvFile = filepath.Join(cfg.ConfigDir, ".env")
 
 	// Create directories
-	for _, dir := range []string{cfg.DataDir, cfg.LogsDir, cfg.ConfigDir, cfg.ModelsDir} {
+	tmpDir := filepath.Join(baseDir, "tmp")
+	for _, dir := range []string{cfg.DataDir, cfg.LogsDir, cfg.ConfigDir, cfg.ModelsDir, tmpDir} {
 		if err := os.MkdirAll(dir, 0755); err != nil {
 			return nil, fmt.Errorf("failed to create directory %s: %w", dir, err)
 		}

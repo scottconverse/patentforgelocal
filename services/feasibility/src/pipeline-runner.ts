@@ -1,3 +1,4 @@
+import * as fs from 'fs';
 import {
   AnalysisSettings,
   StageResult,
@@ -221,10 +222,11 @@ export async function* runPipeline(
   let finalReport = '';
 
   const dataDir = process.env.CONTEXT_DB_DIR || path.join(process.cwd(), 'data', 'context-db');
-  const contextMgr = await ContextManager.create(path.join(dataDir, 'pipeline.db'));
-  if (startFromStage === 1) {
-    contextMgr.clear();
-  }
+  // Per-run DB file prevents concurrent pipelines from cross-contaminating context.
+  // Resume uses seedOutputs (not the DB), so a fresh DB per run is safe.
+  const runSuffix = `${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
+  const dbPath = path.join(dataDir, `pipeline-${runSuffix}.db`);
+  const contextMgr = await ContextManager.create(dbPath);
 
   try {
   for (const stageDef of STAGE_DEFINITIONS) {
@@ -332,5 +334,7 @@ export async function* runPipeline(
   };
   } finally {
     contextMgr.close();
+    // Clean up per-run DB file — data is already saved to the backend DB via SSE events
+    try { fs.unlinkSync(dbPath); } catch { /* ignore — file may already be gone */ }
   }
 }

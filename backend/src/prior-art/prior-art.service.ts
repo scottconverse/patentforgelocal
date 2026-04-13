@@ -120,10 +120,15 @@ export class PriorArtService {
           })
           .catch((err) => console.warn('[ODP] Failed to log usage:', err.message));
       } else {
-        throw new Error(
-          'No USPTO API key configured. The PatentsView API has been shut down. ' +
-            'Add a USPTO Open Data Portal API key in Settings to enable prior art search.',
-        );
+        // No USPTO key — skip prior art search gracefully. This is expected for
+        // local-only users who haven't configured a free USPTO API key.
+        console.warn('[PriorArt] No USPTO API key configured — skipping patent database search.');
+        this.sse.emit(projectId, {
+          type: 'prior_art_warning',
+          message: 'No USPTO API key configured. Prior art search skipped. Add a free API key in Settings for patent database search.',
+        });
+        rawResults = [];
+        source = 'none (no USPTO API key)';
       }
 
       // Emit progress (one event per query equivalent)

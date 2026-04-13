@@ -61,12 +61,12 @@ describe('repairJSON', () => {
     expect(JSON.parse(result)).toEqual({ a: 1, b: 2 });
   });
 
-  test('returns original string for unfixable non-JSON', () => {
+  test('wraps plain text as valid JSON string', () => {
     const input = 'This is not JSON at all';
     const result = repairJSON(input);
-    // Should return the string as-is (no braces to close, no fences to strip)
-    expect(result).toBe(input);
-    expect(() => JSON.parse(result)).toThrow();
+    // jsonrepair wraps bare strings in quotes to produce valid JSON
+    expect(result).toBe('"This is not JSON at all"');
+    expect(JSON.parse(result)).toBe(input);
   });
 });
 
