@@ -35,12 +35,9 @@ if [ -d "runtime/python" ]; then
   cp -r runtime/python/* "${APP_DIR}/Contents/Resources/runtime/python/"
 fi
 
-# Bundle Ollama
-if [ -d "runtime/ollama" ]; then
-  echo "  Copying Ollama runtime..."
-  mkdir -p "${APP_DIR}/Contents/Resources/runtime/ollama"
-  cp -r runtime/ollama/* "${APP_DIR}/Contents/Resources/runtime/ollama/"
-fi
+# Ollama is NOT bundled on Mac — Gatekeeper quarantines unsigned scripts
+# inside unsigned .app bundles. Users install Ollama from ollama.com.
+# Auto-download wrapper deferred to v0.1.2 (requires signing cert).
 
 # Create Info.plist
 cat > "${APP_DIR}/Contents/Info.plist" << EOF

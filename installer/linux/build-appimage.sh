@@ -34,12 +34,7 @@ if [ -d "runtime/python" ]; then
   cp -r runtime/python/* "${APP_DIR}/usr/bin/runtime/python/"
 fi
 
-# Bundle Ollama
-if [ -d "runtime/ollama" ]; then
-  echo "  Copying Ollama runtime..."
-  mkdir -p "${APP_DIR}/usr/bin/runtime/ollama"
-  cp -r runtime/ollama/* "${APP_DIR}/usr/bin/runtime/ollama/"
-fi
+# Ollama is downloaded on first run by AppRun, not bundled (keeps AppImage small)
 
 # Copy icon
 cp tray/internal/assets/icon.png "${APP_DIR}/usr/share/icons/hicolor/256x256/apps/patentforgelocal.png"
@@ -57,14 +52,75 @@ Comment=Patent analysis and preparation tool
 EOF
 cp "${APP_DIR}/patentforgelocal.desktop" "${APP_DIR}/usr/share/applications/"
 
-# Create AppRun
-cat > "${APP_DIR}/AppRun" << 'EOF'
+# Create AppRun with Ollama pre-flight check
+cat > "${APP_DIR}/AppRun" << 'APPRUN_EOF'
 #!/bin/bash
+# PatentForgeLocal AppRun — ensures Ollama is available before launching the tray app.
 SELF=$(readlink -f "$0")
 HERE=${SELF%/*}
 export PATH="${HERE}/usr/bin:${PATH}"
+
+OLLAMA_OK=false
+
+# Step 1: Check if Ollama is already running
+if curl -sf http://127.0.0.1:11434/api/tags >/dev/null 2>&1; then
+  OLLAMA_OK=true
+fi
+
+# Step 2: Try bundled Ollama (if present from a previous download or manual placement)
+if [ "$OLLAMA_OK" = false ] && [ -x "${HERE}/usr/bin/runtime/ollama/ollama" ]; then
+  echo "Starting bundled Ollama..."
+  "${HERE}/usr/bin/runtime/ollama/ollama" serve &
+  for i in $(seq 1 15); do
+    sleep 1
+    if curl -sf http://127.0.0.1:11434/api/tags >/dev/null 2>&1; then
+      OLLAMA_OK=true
+      break
+    fi
+  done
+fi
+
+# Step 3: Try system Ollama
+if [ "$OLLAMA_OK" = false ] && command -v ollama >/dev/null 2>&1; then
+  echo "Starting system Ollama..."
+  ollama serve &
+  for i in $(seq 1 15); do
+    sleep 1
+    if curl -sf http://127.0.0.1:11434/api/tags >/dev/null 2>&1; then
+      OLLAMA_OK=true
+      break
+    fi
+  done
+fi
+
+# Step 4: Download and install Ollama
+if [ "$OLLAMA_OK" = false ]; then
+  echo ""
+  echo "Ollama is not installed. Installing now (one-time setup)..."
+  echo ""
+  if curl -fsSL https://ollama.com/install.sh | sh; then
+    echo "Starting Ollama..."
+    ollama serve &
+    for i in $(seq 1 15); do
+      sleep 1
+      if curl -sf http://127.0.0.1:11434/api/tags >/dev/null 2>&1; then
+        OLLAMA_OK=true
+        break
+      fi
+    done
+  fi
+fi
+
+if [ "$OLLAMA_OK" = false ]; then
+  echo ""
+  echo "ERROR: Could not start Ollama."
+  echo "Install it manually from https://ollama.com and try again."
+  echo ""
+  exit 1
+fi
+
 exec "${HERE}/usr/bin/patentforgelocal-tray" "$@"
-EOF
+APPRUN_EOF
 chmod +x "${APP_DIR}/AppRun"
 
 # Download appimagetool if not present

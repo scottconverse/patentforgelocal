@@ -22,13 +22,17 @@ PatentForgeLocal is a fully local version of [PatentForge](https://github.com/sc
 ## Quick Start
 
 1. **Download** the installer from [GitHub Releases](https://github.com/scottconverse/patentforgelocal/releases/latest)
-2. **Run** the installer -- it bundles Ollama, Python, all services, and the frontend
-3. **Follow the wizard** -- the system check verifies your hardware, downloads the AI model if needed, and launches the app
+2. **Run** the installer and launch the app
+3. The system check verifies your hardware, downloads the AI model if needed, and opens the browser
 
 No API keys required. No cloud accounts. No recurring costs.
 
-> **Download sizes:** Windows ~880 MB, Mac ~400 MB, Linux ~400 MB. Everything is included — no separate installs needed.
->
+| Platform | Size | Ollama |
+|----------|------|--------|
+| **Windows** | ~880 MB | Bundled. Auto-downloads if missing. |
+| **Linux** | ~200 MB | Auto-downloaded on first launch if not installed. |
+| **macOS** | ~200 MB | **Install [Ollama](https://ollama.com) first.** Auto-download coming in v0.1.2. |
+
 > **macOS note:** The DMG is unsigned. On first launch, right-click the app and select "Open", then confirm. Or run: `xattr -cr /Applications/PatentForgeLocal.app`
 
 ## System Requirements
