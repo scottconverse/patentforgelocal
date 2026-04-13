@@ -62,6 +62,7 @@ export class FeasibilityController {
         run.id,
         body.narrative,
         settings.ollamaUrl || 'http://127.0.0.1:11434',
+        settings.defaultModel || 'gemma4:26b',
         settings.usptoApiKey || undefined,
       );
     }

@@ -26,6 +26,7 @@ const makePrisma = () => ({
   feasibilityStage: { findMany: jest.fn().mockResolvedValue([]) },
   feasibilityRun: { findFirst: jest.fn() },
   project: { findUnique: jest.fn() },
+  priorArtSearch: { findFirst: jest.fn().mockResolvedValue(null) },
   patentApplication: { findMany: jest.fn().mockResolvedValue([]) },
 });
 

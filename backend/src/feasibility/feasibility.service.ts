@@ -31,8 +31,11 @@ export function resolveExportDir(customExportPath?: string): string {
 
   if (customExportPath && customExportPath.trim()) {
     const resolved = path.resolve(customExportPath.trim());
-    // Prevent path traversal — export must be within user's home directory
-    if (!resolved.startsWith(home + path.sep) && resolved !== home) {
+    // Prevent path traversal — export must be within user's home directory.
+    // Use path.relative instead of startsWith to avoid prefix-matching attacks
+    // (e.g. C:\Users\victim_extra would match C:\Users\victim with startsWith).
+    const relative = path.relative(home, resolved);
+    if (relative.startsWith('..') || path.isAbsolute(relative)) {
       throw new Error(`Export path must be within your home directory (${home}). Got: ${resolved}`);
     }
     return resolved;
@@ -40,9 +43,8 @@ export function resolveExportDir(customExportPath?: string): string {
 
   // Default to a local-only folder — never export to cloud-synced directories
   // (OneDrive Desktop, iCloud, Dropbox) since patent data should stay local.
-  const localExportDir = path.join(home, 'PatentForgeLocal', 'exports');
-  fs.mkdirSync(localExportDir, { recursive: true });
-  return localExportDir;
+  // Directory creation is the caller's responsibility, not this resolver's.
+  return path.join(home, 'PatentForgeLocal', 'exports');
 }
 
 const REPORT_HTML_TEMPLATE = `<!DOCTYPE html>

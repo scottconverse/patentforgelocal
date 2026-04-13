@@ -2,9 +2,11 @@ import { Injectable } from '@nestjs/common';
 import * as os from 'os';
 import { execSync } from 'child_process';
 
-const OLLAMA_URL = process.env.OLLAMA_HOST
-  ? `http://${process.env.OLLAMA_HOST}`
-  : 'http://127.0.0.1:11434';
+const OLLAMA_URL = (() => {
+  const host = process.env.OLLAMA_HOST;
+  if (!host) return 'http://127.0.0.1:11434';
+  return host.startsWith('http://') || host.startsWith('https://') ? host : `http://${host}`;
+})();
 
 interface SystemCheckResult {
   ramGB: number;

@@ -28,6 +28,7 @@ const mockPrisma = {
   feasibilityStage: { findMany: jest.fn() },
   feasibilityRun: { findFirst: jest.fn() },
   project: { findUnique: jest.fn() },
+  priorArtSearch: { findFirst: jest.fn().mockResolvedValue(null) },
 };
 
 const mockSettings = {

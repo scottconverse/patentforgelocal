@@ -84,13 +84,14 @@ app.post('/analyze', requireInternalSecret, async (req, res) => {
   }
 
   // Apply defaults to settings — model is required, no silent fallback to expensive model
-  const ollamaHost = settings.ollamaUrl || (process.env.OLLAMA_HOST ? `http://${process.env.OLLAMA_HOST}` : 'http://127.0.0.1:11434');
+  const envHost = process.env.OLLAMA_HOST;
+  const ollamaHost = settings.ollamaUrl || (envHost ? (envHost.startsWith('http') ? envHost : `http://${envHost}`) : 'http://127.0.0.1:11434');
 
   const resolvedSettings: AnalysisSettings = {
     model: settings.model,
     researchModel: settings.researchModel,
     maxTokens: settings.maxTokens || 16384,
-    interStageDelaySeconds: settings.interStageDelaySeconds ?? 2,
+    interStageDelaySeconds: settings.interStageDelaySeconds ?? 5,
     ollamaUrl: ollamaHost,
     ollamaApiKey: settings.ollamaApiKey || process.env.OLLAMA_API_KEY || '',
     priorArtContext: priorArtContext || undefined,

@@ -222,7 +222,7 @@ export class ClaimDraftService implements OnModuleInit {
       include: { results: { orderBy: { relevanceScore: 'desc' }, take: 10 } },
     });
 
-    // Get cached claims for top prior art results
+    // Get cached claims for top prior art results (batch query instead of N+1)
     const priorArtResults: Array<{
       patent_number: string;
       title: string;
@@ -230,18 +230,20 @@ export class ClaimDraftService implements OnModuleInit {
       relevance_score: number;
       claims_text: string | null;
     }> = [];
-    if (priorArt?.results) {
+    if (priorArt?.results?.length) {
+      const patentNumbers = priorArt.results.map((r) => r.patentNumber);
+      const cachedDetails = await this.prisma.patentDetail.findMany({
+        where: { patentNumber: { in: patentNumbers } },
+        select: { patentNumber: true, claimsText: true },
+      });
+      const claimsMap = new Map(cachedDetails.map((d) => [d.patentNumber, d.claimsText]));
       for (const r of priorArt.results) {
-        const cached = await this.prisma.patentDetail.findUnique({
-          where: { patentNumber: r.patentNumber },
-          select: { claimsText: true },
-        });
         priorArtResults.push({
           patent_number: r.patentNumber,
           title: r.title,
           abstract: r.abstract,
           relevance_score: r.relevanceScore,
-          claims_text: cached?.claimsText ?? null,
+          claims_text: claimsMap.get(r.patentNumber) ?? null,
         });
       }
     }

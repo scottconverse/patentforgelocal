@@ -16,11 +16,31 @@ import * as crypto from 'crypto';
 export class AuthGuard implements CanActivate {
   private readonly token: string | undefined;
 
+  /** One-time download tokens: token → expiry timestamp. Single-use, short-lived. */
+  private static downloadTokens = new Map<string, number>();
+  private static readonly DOWNLOAD_TOKEN_TTL_MS = 5 * 60 * 1000; // 5 minutes
+
   constructor() {
     this.token = process.env.PATENTFORGE_TOKEN;
     if (this.token) {
       console.log('[Auth] Token-based authentication enabled (PATENTFORGE_TOKEN is set)');
     }
+  }
+
+  /**
+   * Generate a single-use download token valid for 5 minutes.
+   * Use this for download links and iframes instead of exposing the
+   * long-lived PATENTFORGE_TOKEN in query parameters.
+   */
+  static generateDownloadToken(): string {
+    const token = crypto.randomBytes(32).toString('hex');
+    const expiry = Date.now() + AuthGuard.DOWNLOAD_TOKEN_TTL_MS;
+    AuthGuard.downloadTokens.set(token, expiry);
+    // Prune expired tokens on each generation to prevent unbounded growth
+    for (const [t, exp] of AuthGuard.downloadTokens) {
+      if (exp < Date.now()) AuthGuard.downloadTokens.delete(t);
+    }
+    return token;
   }
 
   /**
@@ -48,11 +68,18 @@ export class AuthGuard implements CanActivate {
       }
     }
 
-    // Fall back to ?token= query param (for iframes and download links that
-    // cannot send custom headers). Same constant-time comparison.
+    // Check for one-time download token (preferred for links/iframes)
     const queryToken = request.query?.token as string | undefined;
-    if (queryToken && this.timingSafeEqual(queryToken, this.token)) {
-      return true;
+    if (queryToken) {
+      const expiry = AuthGuard.downloadTokens.get(queryToken);
+      if (expiry && expiry > Date.now()) {
+        AuthGuard.downloadTokens.delete(queryToken); // Single-use: consume on first use
+        return true;
+      }
+      // Also accept the long-lived token for backward compatibility
+      if (this.timingSafeEqual(queryToken, this.token)) {
+        return true;
+      }
     }
 
     if (!authHeader && !queryToken) {

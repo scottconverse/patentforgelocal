@@ -148,6 +148,16 @@ export class ComplianceService implements OnModuleInit {
       },
     });
 
+    // Build prior art context for compliance checking (112(b) definiteness benefits from this)
+    const priorArtSearch = await this.prisma.priorArtSearch.findFirst({
+      where: { projectId, status: 'COMPLETE' },
+      orderBy: { version: 'desc' },
+      include: { results: { orderBy: { relevanceScore: 'desc' }, take: 5 } },
+    });
+    const priorArtContext = priorArtSearch?.results
+      ?.map((r) => `[${r.patentNumber}] ${r.title}\n${r.abstract ?? ''}`)
+      .join('\n\n') ?? '';
+
     // Fire and forget -- frontend polls for status
     // finally block guarantees check status is resolved even if error handling itself fails
     (async () => {
@@ -168,7 +178,7 @@ export class ComplianceService implements OnModuleInit {
           }),
           specification_text: specText,
           invention_narrative: narrative,
-          prior_art_context: '',
+          prior_art_context: priorArtContext,
           settings: {
             ollama_url: settings.ollamaUrl || 'http://127.0.0.1:11434',
             default_model: settings.defaultModel,
@@ -353,6 +363,16 @@ export class ComplianceService implements OnModuleInit {
       },
     });
 
+    // Build prior art context for compliance checking
+    const priorArtSearch2 = await this.prisma.priorArtSearch.findFirst({
+      where: { projectId, status: 'COMPLETE' },
+      orderBy: { version: 'desc' },
+      include: { results: { orderBy: { relevanceScore: 'desc' }, take: 5 } },
+    });
+    const priorArtContext2 = priorArtSearch2?.results
+      ?.map((r) => `[${r.patentNumber}] ${r.title}\n${r.abstract ?? ''}`)
+      .join('\n\n') ?? '';
+
     return {
       checkId: check.id,
       requestBody: {
@@ -364,7 +384,7 @@ export class ComplianceService implements OnModuleInit {
         })),
         specification_text: specText,
         invention_narrative: narrative,
-        prior_art_context: '',
+        prior_art_context: priorArtContext2,
         settings: {
           ollama_url: settings.ollamaUrl || 'http://127.0.0.1:11434',
           default_model: settings.defaultModel,

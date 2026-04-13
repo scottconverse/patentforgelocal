@@ -51,9 +51,10 @@ export class PriorArtService {
     feasibilityRunId: string,
     narrative: string,
     ollamaUrl: string,
+    defaultModel: string,
     usptoApiKey?: string,
   ): void {
-    this.runSearch(projectId, feasibilityRunId, narrative, ollamaUrl, usptoApiKey).catch((err) =>
+    this.runSearch(projectId, feasibilityRunId, narrative, ollamaUrl, defaultModel, usptoApiKey).catch((err) =>
       console.error(`[PriorArt] search failed for project ${projectId}:`, err),
     );
   }
@@ -63,6 +64,7 @@ export class PriorArtService {
     feasibilityRunId: string,
     narrative: string,
     ollamaUrl: string,
+    defaultModel: string,
     usptoApiKey?: string,
   ): Promise<void> {
     // Determine version
@@ -83,7 +85,7 @@ export class PriorArtService {
 
     try {
       // Step 1: Extract search queries via Ollama
-      const queries = await this.extractSearchQueries(narrative, ollamaUrl);
+      const queries = await this.extractSearchQueries(narrative, ollamaUrl, defaultModel);
 
       await this.prisma.priorArtSearch.update({
         where: { id: search.id },
@@ -178,7 +180,7 @@ export class PriorArtService {
     }
   }
 
-  private async extractSearchQueries(narrative: string, ollamaUrl: string): Promise<string[]> {
+  private async extractSearchQueries(narrative: string, ollamaUrl: string, defaultModel: string): Promise<string[]> {
     const truncated = narrative.slice(0, 2000);
     const prompt = `You are a patent search specialist. Given the invention description below, produce exactly 3 search queries for the USPTO PatentsView full-text patent database.
 
@@ -198,7 +200,7 @@ Output format: ["query one", "query two", "query three"]`;
         method: 'POST',
         headers: { 'content-type': 'application/json' },
         body: JSON.stringify({
-          model: 'gemma4:26b',
+          model: defaultModel,
           stream: false,
           messages: [{ role: 'user', content: prompt }],
         }),
