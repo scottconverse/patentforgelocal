@@ -169,14 +169,12 @@ func (m *Manager) buildServices() []*Service {
 	return []*Service{ollama, backend, feasibility, claimDrafter, appGenerator, complianceChecker}
 }
 
-// buildBaseEnv constructs the base environment variable slice that all
-// services inherit. Includes PATH from the host.
+// buildBaseEnv returns the full parent environment for child processes.
+// Services add their own vars on top via copyEnv + append.
+// Previously this only passed PATH, which stripped USERPROFILE, SYSTEMROOT,
+// TEMP, etc. — causing Ollama to fail with "%userprofile% is not defined".
 func (m *Manager) buildBaseEnv() []string {
-	env := []string{
-		fmt.Sprintf("PATH=%s", os.Getenv("PATH")),
-	}
-
-	return env
+	return os.Environ()
 }
 
 // copyEnv returns a copy of the slice so append operations on one
