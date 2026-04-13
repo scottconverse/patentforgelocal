@@ -27,22 +27,40 @@ case $PLATFORM in
         runtime/ollama/ollama.exe --version
         ;;
     mac)
-        URL="https://github.com/ollama/ollama/releases/latest/download/ollama-darwin"
+        URL="https://github.com/ollama/ollama/releases/latest/download/ollama-darwin.tgz"
         echo "  Downloading Ollama for macOS..."
-        curl -L -o runtime/ollama/ollama "$URL"
+        curl -L -o ollama-darwin.tgz "$URL"
+        tar xzf ollama-darwin.tgz -C runtime/ollama/
+        rm ollama-darwin.tgz
+        # Find the ollama binary wherever tar extracted it
+        OLLAMA_BIN=$(find runtime/ollama -name ollama -type f | head -1)
+        if [ -n "$OLLAMA_BIN" ] && [ "$OLLAMA_BIN" != "runtime/ollama/ollama" ]; then
+            mv "$OLLAMA_BIN" runtime/ollama/ollama
+        fi
         chmod +x runtime/ollama/ollama
         echo "  Verifying Ollama binary..."
         runtime/ollama/ollama --version
         ;;
     linux)
-        URL="https://github.com/ollama/ollama/releases/latest/download/ollama-linux-amd64.tgz"
+        URL="https://github.com/ollama/ollama/releases/latest/download/ollama-linux-amd64.tar.zst"
         echo "  Downloading Ollama for Linux..."
-        curl -L -o ollama-linux.tgz "$URL"
-        tar xzf ollama-linux.tgz -C runtime/ollama/
-        rm ollama-linux.tgz
-        if [ -f runtime/ollama/bin/ollama ]; then
-            mv runtime/ollama/bin/ollama runtime/ollama/ollama
-            rm -rf runtime/ollama/bin
+        curl -L -o ollama-linux.tar.zst "$URL"
+        # zstd may not be installed — try tar with --zstd flag, fall back to zstd pipe
+        if tar --zstd -xf ollama-linux.tar.zst -C runtime/ollama/ 2>/dev/null; then
+            echo "  Extracted with tar --zstd"
+        elif command -v zstd &>/dev/null; then
+            zstd -d ollama-linux.tar.zst -o ollama-linux.tar
+            tar xf ollama-linux.tar -C runtime/ollama/
+            rm ollama-linux.tar
+        else
+            echo "  ERROR: zstd not available. Install with: sudo apt install zstd"
+            exit 1
+        fi
+        rm -f ollama-linux.tar.zst
+        # Find the ollama binary wherever tar extracted it
+        OLLAMA_BIN=$(find runtime/ollama -name ollama -type f | head -1)
+        if [ -n "$OLLAMA_BIN" ] && [ "$OLLAMA_BIN" != "runtime/ollama/ollama" ]; then
+            mv "$OLLAMA_BIN" runtime/ollama/ollama
         fi
         chmod +x runtime/ollama/ollama
         echo "  Verifying Ollama binary..."
