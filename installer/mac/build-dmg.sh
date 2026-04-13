@@ -71,14 +71,14 @@ EOF
 # Without signing, users must right-click → Open or run: xattr -cr /Applications/PatentForgeLocal.app
 echo "  NOTE: DMG is unsigned. Users will see Gatekeeper warning on first launch."
 
-# Create .dmg — use retry loop to handle Spotlight/indexer "Resource busy" on CI
+# Disable Spotlight indexing on the .app directory — prevents "Resource busy"
+# errors from mds (Spotlight) locking files during hdiutil create.
+# See: https://github.com/actions/runner-images/issues/7522
+sudo mdutil -i off "${APP_DIR}" 2>/dev/null || true
+sudo mdutil -i off "$(dirname "${APP_DIR}")" 2>/dev/null || true
+
+# Create .dmg
 mkdir -p build
-for attempt in 1 2 3; do
-  if hdiutil create -volname "${APP_NAME}" -srcfolder "${APP_DIR}" -ov -format UDZO "build/${APP_NAME}-${VERSION}.dmg" 2>/dev/null; then
-    break
-  fi
-  echo "  hdiutil attempt $attempt failed (Resource busy), retrying in 5s..."
-  sleep 5
-done
+hdiutil create -volname "${APP_NAME}" -srcfolder "${APP_DIR}" -ov -format UDZO "build/${APP_NAME}-${VERSION}.dmg"
 
 echo "=== Mac .dmg built: build/${APP_NAME}-${VERSION}.dmg ==="
