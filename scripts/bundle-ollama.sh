@@ -50,21 +50,11 @@ case $PLATFORM in
         runtime/ollama/ollama --version
         ;;
     linux)
-        URL="https://github.com/ollama/ollama/releases/download/${OLLAMA_VERSION}/ollama-linux-amd64.tar.zst"
+        URL="https://github.com/ollama/ollama/releases/download/${OLLAMA_VERSION}/ollama-linux-amd64.tgz"
         echo "  Downloading Ollama ${OLLAMA_VERSION} for Linux..."
-        curl -L --retry 3 --retry-delay 5 -o ollama-linux.tar.zst "$URL"
-        # zstd may not be installed — try tar with --zstd flag, fall back to zstd pipe
-        if tar --zstd -xf ollama-linux.tar.zst -C runtime/ollama/ 2>/dev/null; then
-            echo "  Extracted with tar --zstd"
-        elif command -v zstd &>/dev/null; then
-            zstd -d ollama-linux.tar.zst -o ollama-linux.tar
-            tar xf ollama-linux.tar -C runtime/ollama/
-            rm ollama-linux.tar
-        else
-            echo "  ERROR: zstd not available. Install with: sudo apt install zstd"
-            exit 1
-        fi
-        rm -f ollama-linux.tar.zst
+        curl -L --retry 3 --retry-delay 5 -o ollama-linux.tgz "$URL"
+        tar xzf ollama-linux.tgz -C runtime/ollama/
+        rm ollama-linux.tgz
         # Find the ollama binary wherever tar extracted it
         OLLAMA_BIN=$(find runtime/ollama -name ollama -type f | head -1)
         if [ -n "$OLLAMA_BIN" ] && [ "$OLLAMA_BIN" != "runtime/ollama/ollama" ]; then
