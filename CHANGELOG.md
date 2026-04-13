@@ -5,6 +5,52 @@ All notable changes to PatentForgeLocal will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.1.1] - 2026-04-13
+
+### Added
+
+- GPU/NPU hardware detection scripts for Windows (PowerShell) and Linux (bash) -- auto-detects AMD Ryzen platform, iGPU capabilities, NVIDIA GPUs, NPU presence, RAM, and disk
+- Tray app injects ROCm HSA_OVERRIDE_GFX_VERSION + HSA_ENABLE_SDMA=0 into Ollama env on Linux for AMD iGPU acceleration
+- Ollama pre-check and model auto-download in PS1 launcher -- starts Ollama if not running, pulls default model on first run
+- Graceful shutdown via PID tracking (logs/pids.txt) + PatentForgeLocal-stop.ps1 script
+- Log management -- all services log to logs/ directory with separate stdout/stderr files
+- One-time download token endpoint (POST /api/health/download-token) for secure file exports
+- Prior art context now passed to compliance checker (top 5 results by relevance) for better 112(b) analysis
+- TypeScript status constants (RunStatus, ProjectStatus, CheckResultStatus) for compile-time safety
+- Prior art panel shows actionable warning when no results found (missing USPTO API key)
+- GitHub Pages landing page at https://scottconverse.github.io/patentforgelocal/
+- GitHub Discussions seeded with 8 posts across Announcements, Q&A, Ideas, Show and Tell, General
+
+### Fixed
+
+- **CRASH:** Double contextMgr.close() in pipeline-runner.ts crashed on every successful feasibility run
+- **DATA CORRUPTION:** Claim regeneration silently substituted wrong claim via fallback -- now fails explicitly with actionable error
+- **SECURITY:** Replaced 'patentforge-internal' known-public secret fallback with empty string in all 7 service files
+- **SECURITY:** INTERNAL_SERVICE_SECRET no longer exposed in process command line (environment inheritance instead of cmd.exe args)
+- **SECURITY:** Path traversal guard uses path.relative instead of startsWith to prevent prefix-matching attacks
+- **PRIVACY:** Export path defaults to ~/PatentForgeLocal/exports/ instead of OneDrive Desktop (cloud-synced)
+- Docker Compose switched from PostgreSQL (incompatible with SQLite schema) to SQLite with volume mount
+- ThrottlerModule rate limit increased from 5/min to 100/min (was causing 429s during normal UI use)
+- PS1 launcher generates NODE_ENV=production (was development, disabling security guards)
+- Frontend served via NestJS ServeStaticModule instead of Vite dev server (no more HMR socket on 0.0.0.0:8080)
+- Hardcoded gemma4:26b in prior-art query extraction now reads from user settings
+- OLLAMA_HOST URL construction handles values with or without http:// prefix
+- N+1 sequential findUnique queries in getFeasibilityContext replaced with single findMany + Map
+- ContextManager now uses per-run DB files instead of shared pipeline.db (concurrent runs no longer cross-contaminate)
+- interStageDelaySeconds server-side fallback changed from 2 to 5 to match Prisma schema default
+- repairJSON replaced hand-rolled state machine (broken on \\\\ sequences) with jsonrepair package
+- Hardware detection cache refreshes after 7 days instead of never
+- AMD VRAM detection reads registry QWORD for UMA > 4 GB (uint32 overflow fix)
+- detect_hardware.sh strips whitespace from CU count to prevent bash crash on multi-GPU systems
+- Tray app creates OLLAMA_TMPDIR (tmp/) during config init
+- Missing USPTO API key now warns gracefully instead of throwing (expected state for local-only users)
+- CI release workflow: Node 20 -> 22, tray exe name fixed, artifact paths corrected for all 3 platforms
+
+### Removed
+
+- Dead PatentsView code (searchPatentsViewMulti, queryPatentsView, PatentsViewMigrationError) -- API shut down March 2026
+- mkdirSync side effect from resolveExportDir (pure path resolver should not create directories)
+
 ## [0.1.0] - 2026-04-12
 
 First release of PatentForgeLocal -- a fully local fork of [PatentForge v0.9.3](https://github.com/scottconverse/patentforge) that replaces cloud AI with on-device inference.
