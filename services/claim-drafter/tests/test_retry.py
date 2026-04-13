@@ -1,50 +1,44 @@
-"""Tests for Anthropic API retry/backoff utility."""
+"""Tests for Ollama API retry/backoff utility."""
 
 import asyncio
 from unittest.mock import AsyncMock, MagicMock, patch
 
-import anthropic
+import openai
+import httpx
 import pytest
 
 from src.retry import (
     MAX_RETRIES,
-    RATE_LIMIT_DELAYS,
-    SERVER_ERROR_DELAYS,
-    call_anthropic_with_retry,
+    RETRY_DELAYS,
+    call_ollama_with_retry,
 )
 
 
 def _make_client(side_effects):
-    """Build a mock AsyncAnthropic client whose messages.create has the given side effects."""
-    client = MagicMock(spec=anthropic.AsyncAnthropic)
-    client.messages = MagicMock()
-    client.messages.create = AsyncMock(side_effect=side_effects)
+    """Build a mock AsyncOpenAI client whose chat.completions.create has the given side effects."""
+    client = MagicMock(spec=openai.AsyncOpenAI)
+    client.chat = MagicMock()
+    client.chat.completions = MagicMock()
+    client.chat.completions.create = AsyncMock(side_effect=side_effects)
     return client
 
 
-def _rate_limit_error():
-    err = anthropic.RateLimitError.__new__(anthropic.RateLimitError)
-    err.status_code = 429
-    err.message = "Rate limited"
-    return err
-
-
 def _server_error(status: int = 503):
-    err = anthropic.InternalServerError.__new__(anthropic.InternalServerError)
-    err.status_code = status
-    err.message = f"Server error {status}"
-    return err
+    mock_request = httpx.Request("POST", "http://localhost:11434/v1/chat/completions")
+    mock_response = httpx.Response(status_code=status, request=mock_request)
+    return openai.APIStatusError(
+        message=f"Server error {status}",
+        response=mock_response,
+        body=None,
+    )
 
 
-def _api_status_error(status: int):
-    err = anthropic.APIStatusError.__new__(anthropic.APIStatusError)
-    err.status_code = status
-    err.message = f"API error {status}"
-    return err
+def _connection_error():
+    return openai.APIConnectionError(request=httpx.Request("POST", "http://localhost:11434/v1/chat/completions"))
 
 
 CALL_KWARGS = dict(
-    model="claude-haiku-4-5-20251001",
+    model="gemma4:26b",
     max_tokens=1024,
     system="test system",
     messages=[{"role": "user", "content": "test"}],
@@ -58,108 +52,94 @@ async def test_success_on_first_attempt():
     client = _make_client([mock_response])
 
     with patch("src.retry.asyncio.sleep", new_callable=AsyncMock) as mock_sleep:
-        result = await call_anthropic_with_retry(client, **CALL_KWARGS)
+        result = await call_ollama_with_retry(client, **CALL_KWARGS)
 
     assert result is mock_response
     mock_sleep.assert_not_called()
 
 
 @pytest.mark.asyncio
-async def test_success_after_one_rate_limit():
-    """429 on first attempt → waits → succeeds on second attempt."""
-    mock_response = MagicMock()
-    client = _make_client([_rate_limit_error(), mock_response])
-
-    with patch("src.retry.asyncio.sleep", new_callable=AsyncMock) as mock_sleep:
-        result = await call_anthropic_with_retry(client, **CALL_KWARGS)
-
-    assert result is mock_response
-    mock_sleep.assert_called_once_with(RATE_LIMIT_DELAYS[0])
-
-
-@pytest.mark.asyncio
-async def test_rate_limit_uses_correct_delay_sequence():
-    """429 retries use the 60s/90s delay sequence."""
-    mock_response = MagicMock()
-    client = _make_client([_rate_limit_error(), _rate_limit_error(), mock_response])
-
-    with patch("src.retry.asyncio.sleep", new_callable=AsyncMock) as mock_sleep:
-        result = await call_anthropic_with_retry(client, **CALL_KWARGS)
-
-    assert result is mock_response
-    assert mock_sleep.call_count == 2
-    assert mock_sleep.call_args_list[0][0][0] == RATE_LIMIT_DELAYS[0]  # 60s
-    assert mock_sleep.call_args_list[1][0][0] == RATE_LIMIT_DELAYS[1]  # 90s
-
-
-@pytest.mark.asyncio
-async def test_rate_limit_raises_after_max_retries():
-    """429 on every attempt → raises after MAX_RETRIES exhausted."""
-    errors = [_rate_limit_error()] * (MAX_RETRIES + 1)
-    client = _make_client(errors)
-
-    with patch("src.retry.asyncio.sleep", new_callable=AsyncMock):
-        with pytest.raises(anthropic.RateLimitError):
-            await call_anthropic_with_retry(client, **CALL_KWARGS)
-
-    assert client.messages.create.call_count == MAX_RETRIES + 1
-
-
-@pytest.mark.asyncio
-async def test_success_after_server_error():
-    """502 on first attempt → waits → succeeds on second attempt."""
-    mock_response = MagicMock()
-    client = _make_client([_server_error(502), mock_response])
-
-    with patch("src.retry.asyncio.sleep", new_callable=AsyncMock) as mock_sleep:
-        result = await call_anthropic_with_retry(client, **CALL_KWARGS)
-
-    assert result is mock_response
-    mock_sleep.assert_called_once_with(SERVER_ERROR_DELAYS[0])
-
-
-@pytest.mark.asyncio
-async def test_server_error_503_retried():
-    """503 is retried with server error delays."""
+async def test_success_after_one_server_error():
+    """503 on first attempt -> waits -> succeeds on second attempt."""
     mock_response = MagicMock()
     client = _make_client([_server_error(503), mock_response])
 
     with patch("src.retry.asyncio.sleep", new_callable=AsyncMock) as mock_sleep:
-        result = await call_anthropic_with_retry(client, **CALL_KWARGS)
+        result = await call_ollama_with_retry(client, **CALL_KWARGS)
 
     assert result is mock_response
-    mock_sleep.assert_called_once_with(SERVER_ERROR_DELAYS[0])
+    mock_sleep.assert_called_once_with(RETRY_DELAYS[0])
 
 
 @pytest.mark.asyncio
-async def test_non_retryable_4xx_raises_immediately():
-    """401 (auth error) is not retried — raises immediately on first attempt."""
-    client = _make_client([_api_status_error(401)])
+async def test_success_after_connection_error():
+    """Connection error on first attempt -> waits -> succeeds on second attempt."""
+    mock_response = MagicMock()
+    client = _make_client([_connection_error(), mock_response])
 
     with patch("src.retry.asyncio.sleep", new_callable=AsyncMock) as mock_sleep:
-        with pytest.raises(anthropic.APIStatusError):
-            await call_anthropic_with_retry(client, **CALL_KWARGS)
+        result = await call_ollama_with_retry(client, **CALL_KWARGS)
 
-    mock_sleep.assert_not_called()
-    assert client.messages.create.call_count == 1
+    assert result is mock_response
+    mock_sleep.assert_called_once_with(RETRY_DELAYS[0])
+
+
+@pytest.mark.asyncio
+async def test_server_error_uses_correct_delay_sequence():
+    """Server error retries use the 5s/10s delay sequence."""
+    mock_response = MagicMock()
+    client = _make_client([_server_error(503), _server_error(502), mock_response])
+
+    with patch("src.retry.asyncio.sleep", new_callable=AsyncMock) as mock_sleep:
+        result = await call_ollama_with_retry(client, **CALL_KWARGS)
+
+    assert result is mock_response
+    assert mock_sleep.call_count == 2
+    assert mock_sleep.call_args_list[0][0][0] == RETRY_DELAYS[0]  # 5s
+    assert mock_sleep.call_args_list[1][0][0] == RETRY_DELAYS[1]  # 10s
 
 
 @pytest.mark.asyncio
 async def test_server_error_raises_after_max_retries():
-    """503 on every attempt → raises after MAX_RETRIES exhausted."""
+    """503 on every attempt -> raises after MAX_RETRIES exhausted."""
     errors = [_server_error(503)] * (MAX_RETRIES + 1)
     client = _make_client(errors)
 
     with patch("src.retry.asyncio.sleep", new_callable=AsyncMock):
-        with pytest.raises(anthropic.InternalServerError):
-            await call_anthropic_with_retry(client, **CALL_KWARGS)
+        with pytest.raises(openai.APIStatusError):
+            await call_ollama_with_retry(client, **CALL_KWARGS)
 
-    assert client.messages.create.call_count == MAX_RETRIES + 1
+    assert client.chat.completions.create.call_count == MAX_RETRIES + 1
+
+
+@pytest.mark.asyncio
+async def test_connection_error_raises_after_max_retries():
+    """Connection errors on every attempt -> raises after MAX_RETRIES exhausted."""
+    errors = [_connection_error()] * (MAX_RETRIES + 1)
+    client = _make_client(errors)
+
+    with patch("src.retry.asyncio.sleep", new_callable=AsyncMock):
+        with pytest.raises(openai.APIConnectionError):
+            await call_ollama_with_retry(client, **CALL_KWARGS)
+
+    assert client.chat.completions.create.call_count == MAX_RETRIES + 1
+
+
+@pytest.mark.asyncio
+async def test_non_retryable_4xx_raises_immediately():
+    """400 (client error) is not retried — raises immediately on first attempt."""
+    client = _make_client([_server_error(400)])
+
+    with patch("src.retry.asyncio.sleep", new_callable=AsyncMock) as mock_sleep:
+        with pytest.raises(openai.APIStatusError):
+            await call_ollama_with_retry(client, **CALL_KWARGS)
+
+    mock_sleep.assert_not_called()
+    assert client.chat.completions.create.call_count == 1
 
 
 @pytest.mark.asyncio
 async def test_delay_constants_match_spec():
-    """Verify delay values match the feasibility service spec."""
-    assert RATE_LIMIT_DELAYS == [60, 90, 120]
-    assert SERVER_ERROR_DELAYS == [30, 45, 60]
+    """Verify delay values match the local Ollama retry spec."""
+    assert RETRY_DELAYS == [5, 10, 15]
     assert MAX_RETRIES == 3

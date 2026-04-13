@@ -1,6 +1,6 @@
 """
 Tests for the Examiner agent.
-Mocks Anthropic SDK to verify state transitions and revision flag detection.
+Mocks OpenAI SDK (Ollama-compatible) to verify state transitions and revision flag detection.
 """
 
 from unittest.mock import AsyncMock, patch, MagicMock
@@ -31,11 +31,17 @@ CRITICAL: Claim 1 is anticipated by US10845342.
 ```"""
 
 
-def _make_mock_response(text: str):
-    mock_content = MagicMock()
-    mock_content.text = text
+def _make_mock_response(text: str, prompt_tokens: int = 100, completion_tokens: int = 200):
+    mock_message = MagicMock()
+    mock_message.content = text
+    mock_choice = MagicMock()
+    mock_choice.message = mock_message
+    mock_usage = MagicMock()
+    mock_usage.prompt_tokens = prompt_tokens
+    mock_usage.completion_tokens = completion_tokens
     mock_response = MagicMock()
-    mock_response.content = [mock_content]
+    mock_response.choices = [mock_choice]
+    mock_response.usage = mock_usage
     return mock_response
 
 
@@ -47,15 +53,15 @@ class TestExaminerAgent:
             planner_strategy="Strategy.",
             draft_claims_raw="1. A method comprising: step a.",
             prior_art_context="US1234 - Prior Widget",
-            api_key="test-key",
+            ollama_url="http://127.0.0.1:11434",
         )
 
-        with patch("src.agents.examiner.anthropic") as mock_anthropic:
+        with patch("src.agents.examiner.openai") as mock_openai:
             mock_client = AsyncMock()
-            mock_client.messages.create = AsyncMock(
+            mock_client.chat.completions.create = AsyncMock(
                 return_value=_make_mock_response(MOCK_FEEDBACK_NO_REVISION),
             )
-            mock_anthropic.AsyncAnthropic.return_value = mock_client
+            mock_openai.AsyncOpenAI.return_value = mock_client
 
             result = await run_examiner(state)
 
@@ -70,15 +76,15 @@ class TestExaminerAgent:
             planner_strategy="Strategy.",
             draft_claims_raw="1. A method comprising: step a.",
             prior_art_context="US1234 - Prior Widget",
-            api_key="test-key",
+            ollama_url="http://127.0.0.1:11434",
         )
 
-        with patch("src.agents.examiner.anthropic") as mock_anthropic:
+        with patch("src.agents.examiner.openai") as mock_openai:
             mock_client = AsyncMock()
-            mock_client.messages.create = AsyncMock(
+            mock_client.chat.completions.create = AsyncMock(
                 return_value=_make_mock_response(MOCK_FEEDBACK_WITH_REVISION),
             )
-            mock_anthropic.AsyncAnthropic.return_value = mock_client
+            mock_openai.AsyncOpenAI.return_value = mock_client
 
             result = await run_examiner(state)
 
@@ -92,20 +98,21 @@ class TestExaminerAgent:
             invention_narrative="A widget.",
             draft_claims_raw="Claims here.",
             prior_art_context="US5555 - Important prior art patent",
-            api_key="test-key",
+            ollama_url="http://127.0.0.1:11434",
         )
 
-        with patch("src.agents.examiner.anthropic") as mock_anthropic:
+        with patch("src.agents.examiner.openai") as mock_openai:
             mock_client = AsyncMock()
-            mock_client.messages.create = AsyncMock(
+            mock_client.chat.completions.create = AsyncMock(
                 return_value=_make_mock_response(MOCK_FEEDBACK_NO_REVISION),
             )
-            mock_anthropic.AsyncAnthropic.return_value = mock_client
+            mock_openai.AsyncOpenAI.return_value = mock_client
 
             await run_examiner(state)
 
-            call_kwargs = mock_client.messages.create.call_args.kwargs
-            user_msg = call_kwargs["messages"][0]["content"]
+            call_kwargs = mock_client.chat.completions.create.call_args.kwargs
+            # Messages include system + user; user message has the prior art
+            user_msg = call_kwargs["messages"][1]["content"]
             assert "US5555" in user_msg
             assert "Claims here." in user_msg
 
@@ -114,15 +121,15 @@ class TestExaminerAgent:
         state = GraphState(
             invention_narrative="A widget.",
             draft_claims_raw="Claims.",
-            api_key="bad-key",
+            ollama_url="http://127.0.0.1:11434",
         )
 
-        with patch("src.agents.examiner.anthropic") as mock_anthropic:
+        with patch("src.agents.examiner.openai") as mock_openai:
             mock_client = AsyncMock()
-            mock_client.messages.create = AsyncMock(
-                side_effect=Exception("Rate limited"),
+            mock_client.chat.completions.create = AsyncMock(
+                side_effect=Exception("Connection refused"),
             )
-            mock_anthropic.AsyncAnthropic.return_value = mock_client
+            mock_openai.AsyncOpenAI.return_value = mock_client
 
             result = await run_examiner(state)
 
@@ -134,21 +141,21 @@ class TestExaminerAgent:
         state = GraphState(
             invention_narrative="A widget.",
             draft_claims_raw="Claims.",
-            api_key="test-key",
-            default_model="claude-opus-4-20250514",
+            ollama_url="http://127.0.0.1:11434",
+            default_model="gemma4:26b",
         )
 
-        with patch("src.agents.examiner.anthropic") as mock_anthropic:
+        with patch("src.agents.examiner.openai") as mock_openai:
             mock_client = AsyncMock()
-            mock_client.messages.create = AsyncMock(
+            mock_client.chat.completions.create = AsyncMock(
                 return_value=_make_mock_response(MOCK_FEEDBACK_NO_REVISION),
             )
-            mock_anthropic.AsyncAnthropic.return_value = mock_client
+            mock_openai.AsyncOpenAI.return_value = mock_client
 
             await run_examiner(state)
 
-            call_kwargs = mock_client.messages.create.call_args.kwargs
-            assert call_kwargs["model"] == "claude-opus-4-20250514"
+            call_kwargs = mock_client.chat.completions.create.call_args.kwargs
+            assert call_kwargs["model"] == "gemma4:26b"
 
 
 class TestParseRevisionVerdict:

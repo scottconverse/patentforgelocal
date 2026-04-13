@@ -4,7 +4,7 @@
  * Uses Playwright route interception to mock the SSE stream from the backend,
  * so these tests exercise the full frontend pipeline flow (form → cost modal →
  * streaming → stage progression → report rendering) without calling the real
- * Anthropic API.
+ * Ollama API.
  *
  * Live API tests run only before major releases (v0.X.0) per testing policy.
  */
@@ -52,7 +52,7 @@ function buildMockSSEResponse(): string {
       type: 'stage_complete',
       stage: stage.num,
       output,
-      model: 'claude-haiku-4-5-20251001',
+      model: 'gemma4:26b',
       webSearchUsed: stage.num === 2,
       inputTokens: 4000,
       outputTokens: 2000,
@@ -81,7 +81,7 @@ function buildMockSSEWithError(): string {
   body += `event: token\ndata: ${JSON.stringify({ type: 'token', text: 'Stage 1 output text.' })}\n\n`;
   body += `event: stage_complete\ndata: ${JSON.stringify({
     type: 'stage_complete', stage: 1, output: 'Stage 1 output text.',
-    model: 'claude-haiku-4-5-20251001', webSearchUsed: false,
+    model: 'gemma4:26b', webSearchUsed: false,
     inputTokens: 4000, outputTokens: 2000, estimatedCostUsd: 0.02,
   })}\n\n`;
 
@@ -112,7 +112,7 @@ function buildMockSSECancelled(): string {
  * Set up route mocks that every feasibility test needs.
  *
  * Only three things are mocked:
- * 1. The SSE stream (avoids calling the real Anthropic API)
+ * 1. The SSE stream (avoids calling the real Ollama API)
  * 2. Prior art status (avoids the 45-second wait for search completion)
  * 3. LiteLLM pricing (avoids external GitHub fetch)
  *
@@ -149,9 +149,9 @@ async function setupMocks(page: Page, sseBody: string) {
       status: 200,
       contentType: 'application/json',
       body: JSON.stringify({
-        'claude-haiku-4-5-20251001': {
-          input_cost_per_token: 0.0000008,
-          output_cost_per_token: 0.000004,
+        'gemma4:26b': {
+          input_cost_per_token: 0,
+          output_cost_per_token: 0,
         },
       }),
     });
@@ -235,11 +235,12 @@ test.describe('Feasibility Pipeline', () => {
     projectId = await createProject('E2E Feasibility Pipeline Test');
     // Ensure settings have an API key configured (mock pipeline won't actually use it)
     await updateSettings({
-      anthropicApiKey: 'test-key-for-e2e',
-      defaultModel: 'claude-haiku-4-5-20251001',
+      modelReady: true,
+      ollamaModel: 'gemma4:26b',
+      ollamaUrl: 'http://localhost:11434',
+      defaultModel: 'gemma4:26b',
       maxTokens: 8000,
       interStageDelaySeconds: 0,
-      costCapUsd: 5.00,
     });
   });
 
@@ -257,7 +258,7 @@ test.describe('Feasibility Pipeline', () => {
 
     // Cost confirmation modal appears
     await expect(page.locator('text=Confirm Analysis Run')).toBeVisible({ timeout: 10_000 });
-    await expect(page.locator('text=Claude Haiku')).toBeVisible();
+    await expect(page.locator('text=gemma4:26b')).toBeVisible();
     await screenshot(page, 'feasibility-cost-modal');
 
     // Click "Start Analysis"
@@ -355,27 +356,27 @@ test.describe('Feasibility Pipeline', () => {
       'A test invention created to verify the no-API-key error path in the feasibility ' +
       'analysis pipeline. This description is deliberately long enough to satisfy the ' +
       'fifty-word minimum requirement enforced by the backend controller before checking ' +
-      'any other preconditions, such as a valid Anthropic API key being configured and ' +
+      'any other preconditions, such as a valid Ollama model being configured and ' +
       'available in the application settings.',
     );
 
-    // Clear the API key AFTER the page has loaded (so wizard doesn't block)
-    await updateSettings({ anthropicApiKey: '' });
+    // Clear the model ready flag AFTER the page has loaded (so wizard doesn't block)
+    await updateSettings({ modelReady: false });
 
     await page.click('button:has-text("Save & Run Feasibility")');
 
-    // Should show error about missing API key
-    await expect(page.locator('text=No API key configured')).toBeVisible({ timeout: 10_000 });
+    // Should show error about no model configured
+    await expect(page.locator('text=No model configured')).toBeVisible({ timeout: 10_000 });
 
-    // Restore key for subsequent tests
-    await updateSettings({ anthropicApiKey: 'test-key-for-e2e' });
+    // Restore model for subsequent tests
+    await updateSettings({ modelReady: true, ollamaModel: 'gemma4:26b', ollamaUrl: 'http://localhost:11434' });
 
     await screenshot(page, 'feasibility-no-api-key');
   });
 
   test('cost cap warning shows when estimate exceeds cap', async ({ page, consoleErrors }) => {
-    // Set a very low cost cap
-    await updateSettings({ costCapUsd: 0.001 });
+    // Set settings for cost cap test
+    await updateSettings({ modelReady: true, ollamaModel: 'gemma4:26b', ollamaUrl: 'http://localhost:11434' });
 
     const sseBody = buildMockSSEResponse();
     await setupMocks(page, sseBody);

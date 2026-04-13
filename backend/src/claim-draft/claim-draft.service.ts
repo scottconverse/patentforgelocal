@@ -53,7 +53,7 @@ interface ClaimDraftRequestBody {
     claims_text: string | null;
   }>;
   settings: {
-    api_key: string;
+    ollama_url: string;
     default_model: string;
     research_model: string;
     max_tokens: number;
@@ -105,43 +105,6 @@ export class ClaimDraftService implements OnModuleInit {
     }
 
     const settings = await this.settingsService.getSettings();
-    if (!settings.anthropicApiKey) {
-      throw new NotFoundException('No Anthropic API key configured. Add one in Settings.');
-    }
-
-    // Enforce cost cap before starting claim drafting — aggregate ALL pipeline costs
-    if (settings.costCapUsd > 0) {
-      const stages = await this.prisma.feasibilityStage.findMany({
-        where: {
-          feasibilityRun: { projectId },
-          estimatedCostUsd: { not: null },
-        },
-        select: { estimatedCostUsd: true },
-      });
-      const complianceChecks = await this.prisma.complianceCheck.findMany({
-        where: { projectId, estimatedCostUsd: { not: null } },
-        select: { estimatedCostUsd: true },
-      });
-      const prevApps = await this.prisma.patentApplication.findMany({
-        where: { projectId, estimatedCostUsd: { not: null } },
-        select: { estimatedCostUsd: true },
-      });
-      const prevDrafts = await this.prisma.claimDraft.findMany({
-        where: { projectId, estimatedCostUsd: { not: null } },
-        select: { estimatedCostUsd: true },
-      });
-      const spent =
-        stages.reduce((sum, s) => sum + (s.estimatedCostUsd ?? 0), 0) +
-        complianceChecks.reduce((sum, c) => sum + (c.estimatedCostUsd ?? 0), 0) +
-        prevApps.reduce((sum, a) => sum + (a.estimatedCostUsd ?? 0), 0) +
-        prevDrafts.reduce((sum, d) => sum + (d.estimatedCostUsd ?? 0), 0);
-      if (spent >= settings.costCapUsd) {
-        throw new BadRequestException(
-          `Cost cap exceeded. You have spent $${spent.toFixed(2)} of your $${settings.costCapUsd.toFixed(2)} cap. ` +
-            `Increase the cost cap in Settings to continue.`,
-        );
-      }
-    }
 
     const { stage5, stage6, priorArtResults } = await this.getFeasibilityContext(projectId);
 
@@ -188,7 +151,7 @@ export class ClaimDraftService implements OnModuleInit {
           feasibility_stage_6: stage6,
           prior_art_results: priorArtResults,
           settings: {
-            api_key: settings.anthropicApiKey,
+            ollama_url: settings.ollamaUrl || 'http://127.0.0.1:11434',
             default_model: settings.defaultModel,
             research_model: settings.researchModel || '',
             max_tokens: settings.maxTokens,
@@ -379,8 +342,8 @@ export class ClaimDraftService implements OnModuleInit {
   }
 
   /**
-   * Prepare a claim draft for streaming: validates the project, enforces concurrency
-   * and cost cap, builds the request body, and creates the RUNNING draft record.
+   * Prepare a claim draft for streaming: validates the project, enforces concurrency,
+   * builds the request body, and creates the RUNNING draft record.
    * Returns the draftId and the request body to send to the upstream service.
    * Used by the controller's SSE stream endpoint.
    */
@@ -403,40 +366,6 @@ export class ClaimDraftService implements OnModuleInit {
     }
 
     const settings = await this.settingsService.getSettings();
-    if (!settings.anthropicApiKey) {
-      throw new NotFoundException('No Anthropic API key configured. Add one in Settings.');
-    }
-
-    // Enforce cost cap
-    if (settings.costCapUsd > 0) {
-      const stages = await this.prisma.feasibilityStage.findMany({
-        where: { feasibilityRun: { projectId }, estimatedCostUsd: { not: null } },
-        select: { estimatedCostUsd: true },
-      });
-      const complianceChecks = await this.prisma.complianceCheck.findMany({
-        where: { projectId, estimatedCostUsd: { not: null } },
-        select: { estimatedCostUsd: true },
-      });
-      const prevApps = await this.prisma.patentApplication.findMany({
-        where: { projectId, estimatedCostUsd: { not: null } },
-        select: { estimatedCostUsd: true },
-      });
-      const prevDrafts = await this.prisma.claimDraft.findMany({
-        where: { projectId, estimatedCostUsd: { not: null } },
-        select: { estimatedCostUsd: true },
-      });
-      const spent =
-        stages.reduce((sum, s) => sum + (s.estimatedCostUsd ?? 0), 0) +
-        complianceChecks.reduce((sum, c) => sum + (c.estimatedCostUsd ?? 0), 0) +
-        prevApps.reduce((sum, a) => sum + (a.estimatedCostUsd ?? 0), 0) +
-        prevDrafts.reduce((sum, d) => sum + (d.estimatedCostUsd ?? 0), 0);
-      if (spent >= settings.costCapUsd) {
-        throw new BadRequestException(
-          `Cost cap exceeded. You have spent $${spent.toFixed(2)} of your $${settings.costCapUsd.toFixed(2)} cap. ` +
-            `Increase the cost cap in Settings to continue.`,
-        );
-      }
-    }
 
     const { stage5, stage6, priorArtResults } = await this.getFeasibilityContext(projectId);
 
@@ -479,7 +408,7 @@ export class ClaimDraftService implements OnModuleInit {
         feasibility_stage_6: stage6,
         prior_art_results: priorArtResults,
         settings: {
-          api_key: settings.anthropicApiKey,
+          ollama_url: settings.ollamaUrl || 'http://127.0.0.1:11434',
           default_model: settings.defaultModel,
           research_model: settings.researchModel || '',
           max_tokens: settings.maxTokens,
@@ -621,9 +550,6 @@ export class ClaimDraftService implements OnModuleInit {
     if (!claim) throw new NotFoundException(`Claim ${claimNumber} not found in latest draft`);
 
     const settings = await this.settingsService.getSettings();
-    if (!settings.anthropicApiKey) {
-      throw new NotFoundException('No Anthropic API key configured. Add one in Settings.');
-    }
 
     // Build context: all claims text for reference
     const allClaimsText = draft.claims.map((c) => `${c.claimNumber}. ${c.text}`).join('\n\n');
@@ -656,7 +582,7 @@ export class ClaimDraftService implements OnModuleInit {
         feasibility_stage_6: stage6,
         prior_art_results: priorArtResults,
         settings: {
-          api_key: settings.anthropicApiKey,
+          ollama_url: settings.ollamaUrl || 'http://127.0.0.1:11434',
           default_model: settings.defaultModel,
           research_model: settings.researchModel || '',
           max_tokens: settings.maxTokens,

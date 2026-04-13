@@ -5,7 +5,7 @@ import matplotlib.patches as mpatches
 from matplotlib.patches import FancyBboxPatch
 import os
 
-OUT = r"C:\Users\scott\OneDrive\Desktop\Claude\patentforge\diagrams"
+OUT = os.path.dirname(os.path.abspath(__file__))
 
 blue_dark = '#1B3A5C'
 blue_mid = '#2E75B6'
@@ -90,7 +90,7 @@ stages = [
     (9.8, 'APPLICATION', 'Full Patent\nDocument', '#D6E4F0', blue_dark),
     (11.7, 'FILED', 'USPTO\nTracking', gray_light, gray),
 ]
-sources = ['User Input', 'Anthropic\nClaude API', 'PQAI\nML Search', 'AutoPatent +\nM-Cube', 'Claude-Patent-\nCreator RAG', 'All Artifacts\nAssembled', 'USPTO-CLI +\npyUSPTO']
+sources = ['User Input', 'Ollama\nGemma 4 (Local)', 'PQAI\nML Search', 'AutoPatent +\nM-Cube', 'Claude-Patent-\nCreator RAG', 'All Artifacts\nAssembled', 'USPTO-CLI +\npyUSPTO']
 
 for i, (x, title, desc, fc, ec) in enumerate(stages):
     box = FancyBboxPatch((x, 2.0), 1.7, 2.0, boxstyle="round,pad=0.12", facecolor=fc, edgecolor=ec, linewidth=2)

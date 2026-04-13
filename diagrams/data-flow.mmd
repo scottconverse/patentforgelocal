@@ -44,9 +44,9 @@ flowchart LR
     EXPORT["Export<br/>Word · Markdown"]
 
     INV --> S1
-    S2 -.->|"web search"| ANTH["Anthropic API"]
-    S3 -.-> ANTH
-    S4 -.-> ANTH
+    S2 -.->|"web search"| OLLAMA["Ollama (Local)"]
+    S3 -.-> OLLAMA
+    S4 -.-> OLLAMA
     S6 --> PA
     ODP --> CLAIMS
     S6 --> CLAIMS
@@ -62,4 +62,4 @@ flowchart LR
     style APP fill:#1e293b,stroke:#a78bfa,color:#e2e8f0
     style INV fill:#3b82f6,stroke:#60a5fa,color:#fff
     style EXPORT fill:#22c55e,stroke:#4ade80,color:#000
-    style ANTH fill:#ef4444,stroke:#f87171,color:#fff
+    style OLLAMA fill:#ef4444,stroke:#f87171,color:#fff

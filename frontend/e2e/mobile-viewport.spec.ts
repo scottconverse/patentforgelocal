@@ -51,7 +51,7 @@ function buildMockSSEResponse(): string {
       type: 'stage_complete',
       stage: stage.num,
       output,
-      model: 'claude-haiku-4-5-20251001',
+      model: 'gemma4:26b',
       webSearchUsed: stage.num === 2,
       inputTokens: 4000,
       outputTokens: 2000,
@@ -83,7 +83,7 @@ async function setupMocks(page: Page, sseBody: string) {
     await route.fulfill({
       status: 200,
       contentType: 'application/json',
-      body: JSON.stringify({ 'claude-haiku-4-5-20251001': { input_cost_per_token: 0.0000008, output_cost_per_token: 0.000004 } }),
+      body: JSON.stringify({ 'gemma4:26b': { input_cost_per_token: 0, output_cost_per_token: 0 } }),
     });
   });
 
@@ -128,7 +128,7 @@ async function setupMocks(page: Page, sseBody: string) {
 
 test.describe('Mobile viewport — project list and navigation', () => {
   test.beforeAll(async () => {
-    await updateSettings({ anthropicApiKey: 'test-key-for-e2e', defaultModel: 'claude-haiku-4-5-20251001' });
+    await updateSettings({ modelReady: true, ollamaModel: 'gemma4:26b', ollamaUrl: 'http://localhost:11434', defaultModel: 'gemma4:26b' });
   });
 
   test('project list renders at 375px with no overflow', async ({ page, consoleErrors }) => {
@@ -165,11 +165,12 @@ test.describe('Mobile viewport — project detail with sidebar', () => {
   test.beforeEach(async () => {
     projectId = await createProject('Mobile Viewport Test Project');
     await updateSettings({
-      anthropicApiKey: 'test-key-for-e2e',
-      defaultModel: 'claude-haiku-4-5-20251001',
+      modelReady: true,
+      ollamaModel: 'gemma4:26b',
+      ollamaUrl: 'http://localhost:11434',
+      defaultModel: 'gemma4:26b',
       maxTokens: 8000,
       interStageDelaySeconds: 0,
-      costCapUsd: 5.0,
     });
   });
 

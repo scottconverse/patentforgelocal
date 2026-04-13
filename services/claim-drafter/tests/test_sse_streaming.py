@@ -34,7 +34,7 @@ def _reset_sse_app_status():
 
 MINIMAL_REQUEST = {
     "invention_narrative": "A widget that does things",
-    "settings": {"api_key": "fake-key", "default_model": "claude-haiku-4-5-20251001"},
+    "settings": {"ollama_url": "http://127.0.0.1:11434", "default_model": "gemma4:26b"},
 }
 
 
@@ -80,7 +80,7 @@ async def _fake_stream_with_revision(*args, **kwargs):
 async def _fake_stream_error(*args, **kwargs):
     """Simulate a pipeline that errors during the draft step."""
     yield {"event": "step", "node": "plan", "detail": "Claim strategy planned"}
-    yield {"event": "error", "message": "Anthropic API returned 401: Invalid API key"}
+    yield {"event": "error", "message": "Ollama connection refused: http://127.0.0.1:11434"}
 
 
 async def _fake_stream_immediate_error(*args, **kwargs):
@@ -253,7 +253,7 @@ class TestSSEErrorEvent:
 
         error_data = json.loads(error_events[0]["data"])
         assert "message" in error_data
-        assert "401" in error_data["message"]
+        assert "connection refused" in error_data["message"].lower()
 
     @pytest.mark.asyncio
     async def test_step_events_emitted_before_error(self):

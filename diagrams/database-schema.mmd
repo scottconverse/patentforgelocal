@@ -132,9 +132,12 @@ erDiagram
 
     AppSettings {
         string id PK
-        string anthropicApiKey
+        string ollamaApiKey
+        string ollamaModel
+        string ollamaUrl
+        boolean modelReady
         string defaultModel
-        float costCapUsd
+        int maxTokens
     }
 
     OdpApiUsage {

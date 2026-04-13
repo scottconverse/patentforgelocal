@@ -52,12 +52,12 @@ if ($python) {
         $pythonOk = $true
         Write-Host "  Python: found with uvicorn" -ForegroundColor DarkGray
     } else {
-        Write-Host "  Python: uvicorn missing. Run: pip install uvicorn fastapi anthropic httpx" -ForegroundColor Yellow
+        Write-Host "  Python: uvicorn missing. Run: pip install uvicorn fastapi openai httpx" -ForegroundColor Yellow
         Write-Host "  (Claims, Compliance, and Application services will not start)" -ForegroundColor Yellow
     }
 } else {
     Write-Host "  Python: not found. Claims, Compliance, and Application services will not start." -ForegroundColor Yellow
-    Write-Host "  Install Python from https://python.org then run: pip install uvicorn fastapi anthropic httpx" -ForegroundColor Yellow
+    Write-Host "  Install Python from https://python.org then run: pip install uvicorn fastapi openai httpx" -ForegroundColor Yellow
 }
 
 # ─── Create backend .env if missing ───────────────────────────────────────────

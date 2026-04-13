@@ -2,7 +2,7 @@
 
 flowchart TB
     subgraph EXT["External Services"]
-        ANTH["Anthropic Claude API<br/><i>LLM + Web Search</i>"]
+        OLLAMA["Ollama (Local)<br/><i>Gemma 4 + Web Search</i>"]
         USPTO["USPTO Open Data Portal<br/><i>Patent Search + Claims</i>"]
         LITE["LiteLLM Pricing<br/><i>Cost Estimation</i>"]
     end
@@ -26,10 +26,10 @@ flowchart TB
     BE -->|"HTTP"| CD
     BE -->|"HTTP"| AG
     BE -->|"HTTP"| CC
-    FS -->|"SSE stream"| ANTH
-    CD --> ANTH
-    AG --> ANTH
-    CC --> ANTH
+    FS -->|"SSE stream"| OLLAMA
+    CD --> OLLAMA
+    AG --> OLLAMA
+    CC --> OLLAMA
     BE --> USPTO
     FE -.->|"cost est."| LITE
 
@@ -43,6 +43,6 @@ flowchart TB
     style CD fill:#a78bfa,stroke:#c4b5fd,color:#000
     style AG fill:#a78bfa,stroke:#c4b5fd,color:#000
     style CC fill:#a78bfa,stroke:#c4b5fd,color:#000
-    style ANTH fill:#ef4444,stroke:#f87171,color:#fff
+    style OLLAMA fill:#ef4444,stroke:#f87171,color:#fff
     style USPTO fill:#f59e0b,stroke:#fbbf24,color:#000
     style LITE fill:#94a3b8,stroke:#cbd5e1,color:#000

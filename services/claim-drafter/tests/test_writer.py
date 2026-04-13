@@ -1,6 +1,6 @@
 """
 Tests for the Writer agent.
-Mocks Anthropic SDK to verify state transitions, revision mode, and prompt construction.
+Mocks OpenAI SDK (Ollama-compatible) to verify state transitions, revision mode, and prompt construction.
 """
 
 from unittest.mock import AsyncMock, patch, MagicMock
@@ -33,11 +33,17 @@ The method of claim 1, wherein the sensor data includes soil moisture at multipl
 """
 
 
-def _make_mock_response(text: str):
-    mock_content = MagicMock()
-    mock_content.text = text
+def _make_mock_response(text: str, prompt_tokens: int = 100, completion_tokens: int = 200):
+    mock_message = MagicMock()
+    mock_message.content = text
+    mock_choice = MagicMock()
+    mock_choice.message = mock_message
+    mock_usage = MagicMock()
+    mock_usage.prompt_tokens = prompt_tokens
+    mock_usage.completion_tokens = completion_tokens
     mock_response = MagicMock()
-    mock_response.content = [mock_content]
+    mock_response.choices = [mock_choice]
+    mock_response.usage = mock_usage
     return mock_response
 
 
@@ -47,15 +53,15 @@ class TestWriterAgent:
         state = GraphState(
             invention_narrative="A widget.",
             planner_strategy="Strategy: broad method, medium system, narrow apparatus.",
-            api_key="test-key",
+            ollama_url="http://127.0.0.1:11434",
         )
 
-        with patch("src.agents.writer.anthropic") as mock_anthropic:
+        with patch("src.agents.writer.openai") as mock_openai:
             mock_client = AsyncMock()
-            mock_client.messages.create = AsyncMock(
+            mock_client.chat.completions.create = AsyncMock(
                 return_value=_make_mock_response(MOCK_CLAIMS_DRAFT),
             )
-            mock_anthropic.AsyncAnthropic.return_value = mock_client
+            mock_openai.AsyncOpenAI.return_value = mock_client
 
             result = await run_writer(state)
 
@@ -72,15 +78,15 @@ class TestWriterAgent:
             draft_claims_raw=MOCK_CLAIMS_DRAFT,
             examiner_feedback="Claim 1 is too broad. Narrow it.",
             needs_revision=True,
-            api_key="test-key",
+            ollama_url="http://127.0.0.1:11434",
         )
 
-        with patch("src.agents.writer.anthropic") as mock_anthropic:
+        with patch("src.agents.writer.openai") as mock_openai:
             mock_client = AsyncMock()
-            mock_client.messages.create = AsyncMock(
+            mock_client.chat.completions.create = AsyncMock(
                 return_value=_make_mock_response(MOCK_REVISED_CLAIMS),
             )
-            mock_anthropic.AsyncAnthropic.return_value = mock_client
+            mock_openai.AsyncOpenAI.return_value = mock_client
 
             result = await run_writer(state)
 
@@ -93,21 +99,21 @@ class TestWriterAgent:
         state = GraphState(
             invention_narrative="A widget.",
             planner_strategy="Strategy.",
-            api_key="test-key",
-            default_model="claude-sonnet-4-20250514",
+            ollama_url="http://127.0.0.1:11434",
+            default_model="gemma4:26b",
         )
 
-        with patch("src.agents.writer.anthropic") as mock_anthropic:
+        with patch("src.agents.writer.openai") as mock_openai:
             mock_client = AsyncMock()
-            mock_client.messages.create = AsyncMock(
+            mock_client.chat.completions.create = AsyncMock(
                 return_value=_make_mock_response(MOCK_CLAIMS_DRAFT),
             )
-            mock_anthropic.AsyncAnthropic.return_value = mock_client
+            mock_openai.AsyncOpenAI.return_value = mock_client
 
             await run_writer(state)
 
-            call_kwargs = mock_client.messages.create.call_args.kwargs
-            assert call_kwargs["model"] == "claude-sonnet-4-20250514"
+            call_kwargs = mock_client.chat.completions.create.call_args.kwargs
+            assert call_kwargs["model"] == "gemma4:26b"
 
     @pytest.mark.asyncio
     async def test_revision_includes_examiner_feedback_in_prompt(self):
@@ -117,20 +123,21 @@ class TestWriterAgent:
             draft_claims_raw="Original claims.",
             examiner_feedback="Claim 1 too broad. Add limitation X.",
             needs_revision=True,
-            api_key="test-key",
+            ollama_url="http://127.0.0.1:11434",
         )
 
-        with patch("src.agents.writer.anthropic") as mock_anthropic:
+        with patch("src.agents.writer.openai") as mock_openai:
             mock_client = AsyncMock()
-            mock_client.messages.create = AsyncMock(
+            mock_client.chat.completions.create = AsyncMock(
                 return_value=_make_mock_response(MOCK_REVISED_CLAIMS),
             )
-            mock_anthropic.AsyncAnthropic.return_value = mock_client
+            mock_openai.AsyncOpenAI.return_value = mock_client
 
             await run_writer(state)
 
-            call_kwargs = mock_client.messages.create.call_args.kwargs
-            user_msg = call_kwargs["messages"][0]["content"]
+            call_kwargs = mock_client.chat.completions.create.call_args.kwargs
+            # Messages: [system, user] — user is at index 1
+            user_msg = call_kwargs["messages"][1]["content"]
             assert "Examiner Feedback" in user_msg
             assert "Claim 1 too broad" in user_msg
 
@@ -139,15 +146,15 @@ class TestWriterAgent:
         state = GraphState(
             invention_narrative="A widget.",
             planner_strategy="Strategy.",
-            api_key="bad-key",
+            ollama_url="http://127.0.0.1:11434",
         )
 
-        with patch("src.agents.writer.anthropic") as mock_anthropic:
+        with patch("src.agents.writer.openai") as mock_openai:
             mock_client = AsyncMock()
-            mock_client.messages.create = AsyncMock(
-                side_effect=Exception("API error"),
+            mock_client.chat.completions.create = AsyncMock(
+                side_effect=Exception("Connection refused"),
             )
-            mock_anthropic.AsyncAnthropic.return_value = mock_client
+            mock_openai.AsyncOpenAI.return_value = mock_client
 
             result = await run_writer(state)
 

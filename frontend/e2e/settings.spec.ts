@@ -4,14 +4,13 @@ import { getSettings, updateSettings } from './helpers';
 test.describe('Settings Page', () => {
   // Ensure an API key is set so the FirstRunWizard does not block navigation
   test.beforeAll(async () => {
-    await updateSettings({ anthropicApiKey: 'test-key-for-e2e' });
+    await updateSettings({ modelReady: true, ollamaModel: 'gemma4:26b', ollamaUrl: 'http://localhost:11434' });
   });
 
   test.afterAll(async () => {
     await updateSettings({
-      anthropicApiKey: '',
       usptoApiKey: '',
-      defaultModel: 'claude-haiku-4-5-20251001',
+      defaultModel: 'gemma4:26b',
     });
   });
 
@@ -19,7 +18,7 @@ test.describe('Settings Page', () => {
     await page.goto('/settings');
 
     await expect(page.locator('h1, h2').filter({ hasText: /settings/i })).toBeVisible({ timeout: 10_000 });
-    await expect(page.locator('text=Anthropic API Key')).toBeVisible();
+    await expect(page.locator('text=Ollama')).toBeVisible();
     await expect(page.locator('label:has-text("USPTO Open Data Portal Key")')).toBeVisible();
     await expect(page.locator('button:has-text("Save Settings")')).toBeVisible();
     await screenshot(page, 'settings-page-loaded');
@@ -27,12 +26,12 @@ test.describe('Settings Page', () => {
 
   test('can save and persist API key settings', async ({ page, consoleErrors }) => {
     await page.goto('/settings');
-    await expect(page.locator('text=Anthropic API Key')).toBeVisible({ timeout: 10_000 });
+    await expect(page.locator('text=Ollama')).toBeVisible({ timeout: 10_000 });
 
-    // Use placeholder to target the correct input
-    const testKey = `sk-ant-e2e-${Date.now()}`;
-    const anthropicInput = page.locator('input[placeholder="sk-ant-..."]');
-    await anthropicInput.fill(testKey);
+    // Use placeholder to target the Ollama URL input
+    const testUrl = 'http://localhost:11434';
+    const ollamaInput = page.locator('input[placeholder*="localhost"]').first();
+    await ollamaInput.fill(testUrl);
     await screenshot(page, 'settings-key-filled');
 
     await page.click('button:has-text("Save Settings")');
@@ -46,8 +45,8 @@ test.describe('Settings Page', () => {
 
     // Verify the save completed by checking the UI showed confirmation
     // (Separate GET is racy with concurrent test workers sharing the singleton settings row)
-    // Restore a valid key so subsequent tests don't trigger the FirstRunWizard
-    await updateSettings({ anthropicApiKey: 'test-key-for-e2e' });
+    // Restore valid settings so subsequent tests don't trigger the FirstRunWizard
+    await updateSettings({ modelReady: true, ollamaModel: 'gemma4:26b', ollamaUrl: 'http://localhost:11434' });
   });
 
   test('model dropdown reflects saved selection', async ({ page, consoleErrors }) => {

@@ -3,7 +3,7 @@
  * Tests for ComplianceController streamCheck SSE endpoint.
  */
 
-import { NotFoundException, ConflictException, BadRequestException } from '@nestjs/common';
+import { NotFoundException, ConflictException } from '@nestjs/common';
 import { ComplianceService } from './compliance.service';
 import { ComplianceController } from './compliance.controller';
 
@@ -31,11 +31,11 @@ const makePrisma = () => ({
 
 const makeSettings = () => ({
   getSettings: jest.fn().mockResolvedValue({
-    anthropicApiKey: 'test-key',
-    defaultModel: 'claude-haiku-4-5-20251001',
+    ollamaApiKey: '',
+    ollamaUrl: 'http://localhost:11434',
+    defaultModel: 'gemma4:26b',
     researchModel: '',
     maxTokens: 16000,
-    costCapUsd: 0,
   }),
 });
 
@@ -107,35 +107,10 @@ describe('ComplianceService — stream helpers', () => {
 
       expect(result.checkId).toBe('new-check');
       expect(result.requestBody.claims).toHaveLength(1);
-      expect(result.requestBody.settings.api_key).toBe('test-key');
+      expect(result.requestBody.settings.ollama_url).toBe('http://localhost:11434');
       expect(result.requestBody.specification_text).toBe('Stage 1');
     });
 
-    it('throws BadRequestException when cost cap exceeded', async () => {
-      mockSettings.getSettings.mockResolvedValue({
-        anthropicApiKey: 'test-key',
-        defaultModel: 'claude-haiku-4-5-20251001',
-        researchModel: '',
-        maxTokens: 16000,
-        costCapUsd: 1.0,
-      });
-      mockPrisma.project.findUnique.mockResolvedValue({
-        id: 'p1',
-        invention: { title: 'Test', description: 'Desc' },
-      });
-      mockPrisma.claimDraft.findFirst.mockResolvedValue({
-        id: 'd1',
-        version: 1,
-        status: 'COMPLETE',
-        claims: [{ claimNumber: 1, claimType: 'INDEPENDENT', parentClaimNumber: null, text: 'text' }],
-      });
-      mockPrisma.complianceCheck.findFirst.mockResolvedValue(null);
-      mockPrisma.complianceCheck.findMany.mockResolvedValue([{ estimatedCostUsd: 2.0 }]);
-      mockPrisma.feasibilityStage.findMany.mockResolvedValue([]);
-      mockPrisma.patentApplication.findMany.mockResolvedValue([]);
-
-      await expect(service.prepareCheck('p1')).rejects.toThrow(BadRequestException);
-    });
   });
 
   describe('saveStreamComplete', () => {
@@ -253,7 +228,7 @@ describe('ComplianceController — streamCheck SSE', () => {
   it('returns 502 when upstream fetch fails', async () => {
     mockService.prepareCheck.mockResolvedValue({
       checkId: 'check-1',
-      requestBody: { settings: { api_key: 'key' } },
+      requestBody: { settings: { ollama_url: 'key' } },
     });
     mockFetch.mockRejectedValue(new Error('ECONNREFUSED'));
 
@@ -266,7 +241,7 @@ describe('ComplianceController — streamCheck SSE', () => {
   it('sets SSE headers and forwards events when upstream succeeds', async () => {
     mockService.prepareCheck.mockResolvedValue({
       checkId: 'check-1',
-      requestBody: { settings: { api_key: 'key' } },
+      requestBody: { settings: { ollama_url: 'key' } },
     });
 
     const ssePayload =
@@ -304,7 +279,7 @@ describe('ComplianceController — streamCheck SSE', () => {
   it('marks check as error when stream ends without complete event', async () => {
     mockService.prepareCheck.mockResolvedValue({
       checkId: 'check-1',
-      requestBody: { settings: { api_key: 'key' } },
+      requestBody: { settings: { ollama_url: 'key' } },
     });
 
     const ssePayload = 'event: step\ndata: {"step":"eligibility"}\n\n';

@@ -27,14 +27,14 @@ export default function DisclaimerModal() {
 
         <div className="text-sm text-gray-300 space-y-3 mb-6 max-h-80 overflow-y-auto pr-2">
           <p className="font-semibold text-gray-100">
-            PatentForge is a research and preparation tool. It is not a legal service.
+            PatentForgeLocal is a research and preparation tool. It is not a legal service.
           </p>
 
           <p>By using this software, you acknowledge and agree that:</p>
 
           <ul className="list-disc ml-5 space-y-2">
             <li>
-              PatentForge <strong className="text-gray-100">does not provide legal advice</strong>, patent opinions, or
+              PatentForgeLocal <strong className="text-gray-100">does not provide legal advice</strong>, patent opinions, or
               attorney services. The output is AI-generated research intended to help you prepare for consultation with
               a registered patent attorney or patent agent.
             </li>
@@ -44,9 +44,8 @@ export default function DisclaimerModal() {
               qualified patent professional before being relied upon.
             </li>
             <li>
-              You are using <strong className="text-gray-100">your own third-party AI account</strong> (Anthropic API).
-              PatentForge routes your requests to that service on your behalf. You are responsible for reviewing the AI
-              provider's terms of service.
+              All AI processing runs <strong className="text-gray-100">locally on your machine</strong> using Ollama.
+              No data is sent to external servers. Your invention details remain private.
             </li>
             <li>
               Decisions about whether to file a patent application should{' '}

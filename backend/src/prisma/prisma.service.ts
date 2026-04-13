@@ -246,14 +246,13 @@ CREATE TABLE "OdpApiUsage" (
 );
 CREATE TABLE "AppSettings" (
     "id" TEXT NOT NULL PRIMARY KEY DEFAULT 'singleton',
-    "anthropicApiKey" TEXT NOT NULL DEFAULT '',
-    "defaultModel" TEXT NOT NULL DEFAULT 'claude-haiku-4-5-20251001',
+    "ollamaApiKey" TEXT NOT NULL DEFAULT '',
+    "defaultModel" TEXT NOT NULL DEFAULT 'gemma4:26b',
     "researchModel" TEXT NOT NULL DEFAULT '',
     "maxTokens" INTEGER NOT NULL DEFAULT 32000,
     "interStageDelaySeconds" INTEGER NOT NULL DEFAULT 5,
     "exportPath" TEXT NOT NULL DEFAULT '',
     "autoExport" BOOLEAN NOT NULL DEFAULT true,
-    "costCapUsd" REAL NOT NULL DEFAULT 5.00,
     "usptoApiKey" TEXT NOT NULL DEFAULT '',
     "encryptionSalt" TEXT NOT NULL DEFAULT ''
 );

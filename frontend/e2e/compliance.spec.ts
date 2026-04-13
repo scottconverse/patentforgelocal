@@ -224,7 +224,7 @@ test.describe('Compliance Checking', () => {
   test.beforeEach(async () => {
     projectId = await createProject('E2E Compliance Test');
     // Ensure an API key is set so the FirstRunWizard does not block navigation
-    await updateSettings({ anthropicApiKey: 'test-key-for-e2e' });
+    await updateSettings({ modelReady: true, ollamaModel: 'gemma4:26b', ollamaUrl: 'http://localhost:11434' });
   });
 
   test.afterEach(async () => {

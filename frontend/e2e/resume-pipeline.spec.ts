@@ -35,7 +35,7 @@ function buildMockSSEWithError(): string {
     type: 'stage_complete',
     stage: 1,
     output: 'Stage 1 output text.',
-    model: 'claude-haiku-4-5-20251001',
+    model: 'gemma4:26b',
     webSearchUsed: false,
     inputTokens: 4000,
     outputTokens: 2000,
@@ -102,7 +102,7 @@ function buildMockSSEResponse(): string {
       type: 'stage_complete',
       stage: stage.num,
       output,
-      model: 'claude-haiku-4-5-20251001',
+      model: 'gemma4:26b',
       webSearchUsed: false,
       inputTokens: 4000,
       outputTokens: 2000,
@@ -146,9 +146,9 @@ async function setupMocks(page: Page, sseBody: string) {
       status: 200,
       contentType: 'application/json',
       body: JSON.stringify({
-        'claude-haiku-4-5-20251001': {
-          input_cost_per_token: 0.0000008,
-          output_cost_per_token: 0.000004,
+        'gemma4:26b': {
+          input_cost_per_token: 0,
+          output_cost_per_token: 0,
         },
       }),
     });
@@ -225,11 +225,12 @@ test.describe('Resume Pipeline', () => {
   test.beforeEach(async () => {
     projectId = await createProject('E2E Resume Pipeline Test');
     await updateSettings({
-      anthropicApiKey: 'test-key-for-e2e',
-      defaultModel: 'claude-haiku-4-5-20251001',
+      modelReady: true,
+      ollamaModel: 'gemma4:26b',
+      ollamaUrl: 'http://localhost:11434',
+      defaultModel: 'gemma4:26b',
       maxTokens: 8000,
       interStageDelaySeconds: 0,
-      costCapUsd: 5.0,
     });
   });
 

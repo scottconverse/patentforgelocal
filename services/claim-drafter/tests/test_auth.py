@@ -25,9 +25,9 @@ class TestInternalAuth:
         client = TestClient(app)
         resp = client.post("/draft/sync", json={
             "invention_narrative": "test",
-            "settings": {"api_key": "fake", "default_model": "claude-haiku-4-5-20251001"}
+            "settings": {"ollama_url": "http://127.0.0.1:11434", "default_model": "gemma4:26b"}
         })
-        # Should get past auth. Pipeline returns 200 with status=ERROR (bad API key).
+        # Should get past auth. Pipeline returns 200 with status=ERROR (Ollama not running).
         assert resp.status_code == 200
         assert resp.json()["status"] == "ERROR"
 
@@ -40,7 +40,7 @@ class TestInternalAuth:
             client = TestClient(srv.app)
             resp = client.post("/draft/sync", json={
                 "invention_narrative": "test",
-                "settings": {"api_key": "fake", "default_model": "claude-haiku-4-5-20251001"}
+                "settings": {"ollama_url": "http://127.0.0.1:11434", "default_model": "gemma4:26b"}
             })
             assert resp.status_code == 403
             assert "internal service secret" in resp.json()["detail"].lower()
@@ -58,11 +58,11 @@ class TestInternalAuth:
                 "/draft/sync",
                 json={
                     "invention_narrative": "test",
-                    "settings": {"api_key": "fake", "default_model": "claude-haiku-4-5-20251001"}
+                    "settings": {"ollama_url": "http://127.0.0.1:11434", "default_model": "gemma4:26b"}
                 },
                 headers={"X-Internal-Secret": "test-secret-123"},
             )
-            # Should get past auth. Pipeline returns 200 with status=ERROR (bad API key).
+            # Should get past auth. Pipeline returns 200 with status=ERROR (Ollama not running).
             assert resp.status_code == 200
             assert resp.json()["status"] == "ERROR"
         finally:
@@ -79,7 +79,7 @@ class TestInternalAuth:
                 "/draft/sync",
                 json={
                     "invention_narrative": "test",
-                    "settings": {"api_key": "fake", "default_model": "claude-haiku-4-5-20251001"}
+                    "settings": {"ollama_url": "http://127.0.0.1:11434", "default_model": "gemma4:26b"}
                 },
                 headers={"X-Internal-Secret": "wrong-secret"},
             )

@@ -6,7 +6,7 @@ Thank you for your interest in contributing to PatentForgeLocal! This guide will
 
 ### Prerequisites
 
-- **Node.js** 20+ LTS
+- **Node.js** 22+ LTS
 - **Go** 1.22+ (for the system tray app)
 - **Python** 3.12+ (for the claim-drafter, compliance-checker, and application-generator services)
 - **npm** 9+

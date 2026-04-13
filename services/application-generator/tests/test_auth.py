@@ -23,7 +23,7 @@ class TestInternalAuth:
             resp = client.post("/generate/sync", json={
                 "invention_narrative": "test",
                 "claims_text": "1. A method.",
-                "settings": {"api_key": "fake", "default_model": "claude-haiku-4-5-20251001"},
+                "settings": {"ollama_url": "http://127.0.0.1:11434", "default_model": "gemma4:26b"},
             })
             assert resp.status_code == 403
         finally:
@@ -42,7 +42,7 @@ class TestInternalAuth:
                 json={
                     "invention_narrative": "test",
                     "claims_text": "1. A method.",
-                    "settings": {"api_key": "fake", "default_model": "claude-haiku-4-5-20251001"},
+                    "settings": {"ollama_url": "http://127.0.0.1:11434", "default_model": "gemma4:26b"},
                 },
                 headers={"X-Internal-Secret": "test-secret-123"},
             )
@@ -63,7 +63,7 @@ class TestInternalAuth:
                 json={
                     "invention_narrative": "test",
                     "claims_text": "1. A method.",
-                    "settings": {"api_key": "fake", "default_model": "claude-haiku-4-5-20251001"},
+                    "settings": {"ollama_url": "http://127.0.0.1:11434", "default_model": "gemma4:26b"},
                 },
                 headers={"X-Internal-Secret": "wrong"},
             )

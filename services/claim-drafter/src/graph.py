@@ -20,11 +20,11 @@ async def finalize(state: GraphState) -> GraphState:
     """
     Parse the final claims text into structured Claim objects.
     Uses revised claims if available, otherwise the original draft.
-    Scrubs the API key from state so it doesn't persist in checkpoints or tracebacks.
+    Scrubs the ollama_url from state so it doesn't persist in checkpoints or tracebacks.
     """
     raw = state.revised_claims_raw or state.draft_claims_raw
     state.claims = parse_claims(raw)
-    state.api_key = ""  # Scrub — no longer needed after all agents have run
+    state.ollama_url = ""  # Scrub — no longer needed after all agents have run
     state.step = "finalize_complete"
     return state
 
@@ -67,8 +67,8 @@ async def run_claim_pipeline(
     feasibility_stage_5: str,
     feasibility_stage_6: str,
     prior_art_context: str,
-    api_key: str,
-    default_model: str = "claude-sonnet-4-20250514",
+    ollama_url: str = "http://127.0.0.1:11434",
+    default_model: str = "gemma4:26b",
     research_model: str = "",
     max_tokens: int = 16000,
     on_step: 'Callable[[str, str], None] | None' = None,  # (node_name, step_name) — no state dict exposed
@@ -84,7 +84,7 @@ async def run_claim_pipeline(
         feasibility_stage_5=feasibility_stage_5,
         feasibility_stage_6=feasibility_stage_6,
         prior_art_context=prior_art_context,
-        api_key=api_key,
+        ollama_url=ollama_url,
         default_model=default_model,
         research_model=research_model,
         max_tokens=max_tokens,
@@ -99,7 +99,7 @@ async def run_claim_pipeline(
             else:
                 state_dict = node_state.model_dump() if hasattr(node_state, 'model_dump') else dict(node_state)
             if on_step:
-                # Pass only the node name and step, NOT the full state (contains api_key)
+                # Pass only the node name and step, NOT the full state
                 on_step(node_name, state_dict.get("step", ""))
             if state_dict.get("error"):
                 return ClaimDraftResult(
@@ -162,8 +162,8 @@ async def stream_claim_pipeline(
     feasibility_stage_5: str,
     feasibility_stage_6: str,
     prior_art_context: str,
-    api_key: str,
-    default_model: str = "claude-sonnet-4-20250514",
+    ollama_url: str = "http://127.0.0.1:11434",
+    default_model: str = "gemma4:26b",
     research_model: str = "",
     max_tokens: int = 16000,
 ) -> AsyncGenerator[dict, None]:
@@ -180,7 +180,7 @@ async def stream_claim_pipeline(
         feasibility_stage_5=feasibility_stage_5,
         feasibility_stage_6=feasibility_stage_6,
         prior_art_context=prior_art_context,
-        api_key=api_key,
+        ollama_url=ollama_url,
         default_model=default_model,
         research_model=research_model,
         max_tokens=max_tokens,

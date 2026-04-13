@@ -1,4 +1,4 @@
-# PatentForgeLocal
+# PatentForgeLocal v0.1.0
 
 **Private patent analysis, running entirely on your machine.**
 
@@ -47,24 +47,23 @@ GPU acceleration is optional but significantly improves generation speed. Ollama
                     |  (service manager)  |
                     +----------+----------+
                                |
-          +--------------------+--------------------+
-          |         |          |          |          |
-    +-----+--+ +---+----+ +---+----+ +---+----+ +---+----+
-    |Backend | |Feasib. | |Claim   | |App     | |Compl.  |
-    |NestJS  | |Express | |Drafter | |Gen     | |Checker |
-    |:3000   | |:3001   | |Python  | |Python  | |Python  |
-    +-----+--+ +---+----+ |:3002   | |:3003   | |:3004   |
-          |        |       +---+----+ +---+----+ +---+----+
-          |        |           |          |          |
-          +--------+-----------+----------+----------+
-                               |
-                    +----------+----------+
-                    |    Ollama (local)    |
-                    |    Gemma 4 26B      |
-                    +---------------------+
+     +-------------------------+-------------------------+
+     |          |         |          |          |         |
++----+---+ +---+----+ +--+-----+ +--+-----+ +-+------+ ++-------+
+|Frontend| |Backend | |Feasib. | |Claim   | |App     | |Compl.  |
+|React   | |NestJS  | |Express | |Drafter | |Gen     | |Checker |
+|:8080   | |:3000   | |:3001   | |:3002   | |:3003   | |:3004   |
++--------+ +---+----+ +---+----+ +---+----+ +---+----+ +---+----+
+               |           |          |          |          |
+               +-----------+----------+----------+----------+
+                                      |
+                           +----------+----------+
+                           |    Ollama (local)    |
+                           |    Gemma 4 26B      |
+                           +---------------------+
 ```
 
-The Go tray app manages all 6 services as child processes with health monitoring and auto-restart. The NestJS backend orchestrates the pipeline and serves the React frontend. All AI inference routes through a local Ollama instance running Gemma 4 26B.
+The Go tray app manages all 6 services as child processes with health monitoring and auto-restart. The NestJS backend orchestrates the pipeline and serves the React frontend. The three Python services — claim-drafter, application-generator, and compliance-checker — each run as independent FastAPI servers. All AI inference routes through a local Ollama instance running Gemma 4 26B.
 
 ## How Is This Different from PatentForge?
 

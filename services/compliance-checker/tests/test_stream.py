@@ -32,7 +32,7 @@ _VALID_REQUEST = {
     ],
     "specification_text": "The invention is a test.",
     "invention_narrative": "A test system.",
-    "settings": {"default_model": "claude-sonnet-4-20250514"},
+    "settings": {"default_model": "gemma4:26b"},
 }
 
 # Mock agent factory — same pattern as test_graph.py
@@ -83,7 +83,7 @@ class TestStreamEndpoint:
             "claims": [],
             "specification_text": "",
             "invention_narrative": "",
-            "settings": {"default_model": "claude-sonnet-4-20250514"},
+            "settings": {"default_model": "gemma4:26b"},
         })
         assert response.status_code == 422
 
@@ -293,7 +293,7 @@ class TestCheckEndpointUnchanged:
             "claims": [],
             "specification_text": "",
             "invention_narrative": "",
-            "settings": {"default_model": "claude-sonnet-4-20250514"},
+            "settings": {"default_model": "gemma4:26b"},
         })
         assert response.status_code == 422
 

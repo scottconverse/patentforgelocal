@@ -221,15 +221,17 @@ model OdpApiUsage {
 }
 
 model AppSettings {
-  id                     String @id @default("singleton")
-  ollamaApiKey        String @default("")
-  defaultModel           String @default("claude-haiku-4-5-20251001")
-  researchModel          String @default("")
-  maxTokens              Int    @default(32000)
-  interStageDelaySeconds Int    @default(5)
+  id                     String  @id @default("singleton")
+  ollamaApiKey           String  @default("")
+  ollamaModel            String  @default("gemma4:26b")
+  ollamaUrl              String  @default("http://localhost:11434")
+  modelReady             Boolean @default(false)
+  defaultModel           String  @default("gemma4:26b")
+  researchModel          String  @default("")
+  maxTokens              Int     @default(32000)
+  interStageDelaySeconds Int     @default(5)
   exportPath             String  @default("")
   autoExport             Boolean @default(true)
-  costCapUsd             Float   @default(5.00)
-  usptoApiKey            String @default("")
-  encryptionSalt         String @default("")
+  usptoApiKey            String  @default("")
+  encryptionSalt         String  @default("")
 }

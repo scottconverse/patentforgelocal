@@ -10,8 +10,8 @@
 #   export INTERNAL_SERVICE_SECRET=$(openssl rand -hex 32)
 #   export POSTGRES_PASSWORD=$(openssl rand -hex 32)
 #
-# Optional: set your Anthropic API key in the environment before starting:
-#   export ANTHROPIC_API_KEY=sk-ant-...
+# Optional: set Ollama host if running Ollama outside Docker:
+#   export OLLAMA_HOST=http://host.docker.internal:11434
 #
 # Then:
 #   docker compose up --build
@@ -80,7 +80,7 @@ services:
       NODE_ENV: production
       # Set before first run: export INTERNAL_SERVICE_SECRET=$(openssl rand -hex 32)
       INTERNAL_SERVICE_SECRET: ${INTERNAL_SERVICE_SECRET:?Set INTERNAL_SERVICE_SECRET — run: export INTERNAL_SERVICE_SECRET=$$(openssl rand -hex 32)}
-      ANTHROPIC_API_KEY: ${ANTHROPIC_API_KEY:-}
+      OLLAMA_HOST: ${OLLAMA_HOST:-http://host.docker.internal:11434}
     restart: unless-stopped
     healthcheck:
       test: ["CMD", "node", "-e", "fetch('http://localhost:3001/health').then(r=>{process.exit(r.ok?0:1)}).catch(()=>process.exit(1))"]
@@ -102,7 +102,7 @@ services:
       HOST: "0.0.0.0"
       # Set before first run: export INTERNAL_SERVICE_SECRET=$(openssl rand -hex 32)
       INTERNAL_SERVICE_SECRET: ${INTERNAL_SERVICE_SECRET:?Set INTERNAL_SERVICE_SECRET — run: export INTERNAL_SERVICE_SECRET=$$(openssl rand -hex 32)}
-      ANTHROPIC_API_KEY: ${ANTHROPIC_API_KEY:-}
+      OLLAMA_HOST: ${OLLAMA_HOST:-http://host.docker.internal:11434}
     restart: unless-stopped
     healthcheck:
       test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:3002/health')"]
@@ -124,7 +124,7 @@ services:
       HOST: "0.0.0.0"
       # Set before first run: export INTERNAL_SERVICE_SECRET=$(openssl rand -hex 32)
       INTERNAL_SERVICE_SECRET: ${INTERNAL_SERVICE_SECRET:?Set INTERNAL_SERVICE_SECRET — run: export INTERNAL_SERVICE_SECRET=$$(openssl rand -hex 32)}
-      ANTHROPIC_API_KEY: ${ANTHROPIC_API_KEY:-}
+      OLLAMA_HOST: ${OLLAMA_HOST:-http://host.docker.internal:11434}
     restart: unless-stopped
     healthcheck:
       test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:3004/health')"]
@@ -146,7 +146,7 @@ services:
       HOST: "0.0.0.0"
       # Set before first run: export INTERNAL_SERVICE_SECRET=$(openssl rand -hex 32)
       INTERNAL_SERVICE_SECRET: ${INTERNAL_SERVICE_SECRET:?Set INTERNAL_SERVICE_SECRET — run: export INTERNAL_SERVICE_SECRET=$$(openssl rand -hex 32)}
-      ANTHROPIC_API_KEY: ${ANTHROPIC_API_KEY:-}
+      OLLAMA_HOST: ${OLLAMA_HOST:-http://host.docker.internal:11434}
     restart: unless-stopped
     healthcheck:
       test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:3003/health')"]

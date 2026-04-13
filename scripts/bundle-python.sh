@@ -44,7 +44,7 @@ case $PLATFORM in
         echo "  Verifying imports..."
         runtime/python/python.exe -c "
 import fastapi
-import anthropic
+import openai
 import langgraph
 import uvicorn
 import pydantic

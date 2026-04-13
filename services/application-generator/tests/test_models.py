@@ -10,7 +10,7 @@ class TestRequestValidation:
         req = ApplicationGenerateRequest(
             invention_narrative="A novel widget",
             claims_text="1. A method of making widgets.",
-            settings=GenerateSettings(default_model="claude-sonnet-4-20250514"),
+            settings=GenerateSettings(default_model="gemma4:26b"),
         )
         assert req.invention_narrative == "A novel widget"
 
@@ -27,7 +27,7 @@ class TestRequestValidation:
             ApplicationGenerateRequest(
                 invention_narrative="test",
                 prior_art_results=items,
-                settings=GenerateSettings(default_model="claude-sonnet-4-20250514"),
+                settings=GenerateSettings(default_model="gemma4:26b"),
             )
 
     def test_twenty_prior_art_accepted(self):
@@ -35,6 +35,6 @@ class TestRequestValidation:
         req = ApplicationGenerateRequest(
             invention_narrative="test",
             prior_art_results=items,
-            settings=GenerateSettings(default_model="claude-sonnet-4-20250514"),
+            settings=GenerateSettings(default_model="gemma4:26b"),
         )
         assert len(req.prior_art_results) == 20

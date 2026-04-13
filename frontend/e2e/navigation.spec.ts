@@ -4,7 +4,7 @@ import { updateSettings } from './helpers';
 test.describe('Navigation', () => {
   // Ensure an API key is set so the FirstRunWizard does not block navigation
   test.beforeAll(async () => {
-    await updateSettings({ anthropicApiKey: 'test-key-for-e2e' });
+    await updateSettings({ modelReady: true, ollamaModel: 'gemma4:26b', ollamaUrl: 'http://localhost:11434' });
   });
 
   test('home page loads with clean console', async ({ page, consoleErrors }) => {

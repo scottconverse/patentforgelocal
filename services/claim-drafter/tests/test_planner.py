@@ -1,6 +1,6 @@
 """
 Tests for the Planner agent.
-Mocks the Anthropic SDK to verify state transitions and prompt construction.
+Mocks the OpenAI SDK (Ollama-compatible) to verify state transitions and prompt construction.
 """
 
 from unittest.mock import AsyncMock, patch, MagicMock
@@ -51,12 +51,18 @@ Specific sensor node with LoRa and 3-depth probes.
 REVISION_NEEDED: NO"""
 
 
-def _make_mock_response(text: str):
-    """Create a mock Anthropic API response."""
-    mock_content = MagicMock()
-    mock_content.text = text
+def _make_mock_response(text: str, prompt_tokens: int = 100, completion_tokens: int = 200):
+    """Create a mock OpenAI chat completion response."""
+    mock_message = MagicMock()
+    mock_message.content = text
+    mock_choice = MagicMock()
+    mock_choice.message = mock_message
+    mock_usage = MagicMock()
+    mock_usage.prompt_tokens = prompt_tokens
+    mock_usage.completion_tokens = completion_tokens
     mock_response = MagicMock()
-    mock_response.content = [mock_content]
+    mock_response.choices = [mock_choice]
+    mock_response.usage = mock_usage
     return mock_response
 
 
@@ -66,16 +72,16 @@ class TestPlannerAgent:
         state = GraphState(
             invention_narrative="A widget that processes data.",
             prior_art_context="US1234 - Prior Widget",
-            api_key="test-key",
-            default_model="claude-haiku-4-5-20251001",
+            ollama_url="http://127.0.0.1:11434",
+            default_model="gemma4:26b",
         )
 
-        with patch("src.agents.planner.anthropic") as mock_anthropic:
+        with patch("src.agents.planner.openai") as mock_openai:
             mock_client = AsyncMock()
-            mock_client.messages.create = AsyncMock(
+            mock_client.chat.completions.create = AsyncMock(
                 return_value=_make_mock_response(MOCK_STRATEGY),
             )
-            mock_anthropic.AsyncAnthropic.return_value = mock_client
+            mock_openai.AsyncOpenAI.return_value = mock_client
 
             result = await run_planner(state)
 
@@ -91,64 +97,65 @@ class TestPlannerAgent:
     async def test_uses_research_model_when_available(self):
         state = GraphState(
             invention_narrative="A widget.",
-            api_key="test-key",
-            default_model="claude-sonnet-4-20250514",
-            research_model="claude-haiku-4-5-20251001",
+            ollama_url="http://127.0.0.1:11434",
+            default_model="gemma4:26b",
+            research_model="gemma4:12b",
         )
 
-        with patch("src.agents.planner.anthropic") as mock_anthropic:
+        with patch("src.agents.planner.openai") as mock_openai:
             mock_client = AsyncMock()
-            mock_client.messages.create = AsyncMock(
+            mock_client.chat.completions.create = AsyncMock(
                 return_value=_make_mock_response(MOCK_STRATEGY),
             )
-            mock_anthropic.AsyncAnthropic.return_value = mock_client
+            mock_openai.AsyncOpenAI.return_value = mock_client
 
             await run_planner(state)
 
             # Verify the research model was used, not the default
-            call_kwargs = mock_client.messages.create.call_args.kwargs
-            assert call_kwargs["model"] == "claude-haiku-4-5-20251001"
+            call_kwargs = mock_client.chat.completions.create.call_args.kwargs
+            assert call_kwargs["model"] == "gemma4:12b"
 
     @pytest.mark.asyncio
     async def test_falls_back_to_default_model_when_no_research_model(self):
         state = GraphState(
             invention_narrative="A widget.",
-            api_key="test-key",
-            default_model="claude-sonnet-4-20250514",
+            ollama_url="http://127.0.0.1:11434",
+            default_model="gemma4:26b",
             research_model="",
         )
 
-        with patch("src.agents.planner.anthropic") as mock_anthropic:
+        with patch("src.agents.planner.openai") as mock_openai:
             mock_client = AsyncMock()
-            mock_client.messages.create = AsyncMock(
+            mock_client.chat.completions.create = AsyncMock(
                 return_value=_make_mock_response(MOCK_STRATEGY),
             )
-            mock_anthropic.AsyncAnthropic.return_value = mock_client
+            mock_openai.AsyncOpenAI.return_value = mock_client
 
             await run_planner(state)
 
-            call_kwargs = mock_client.messages.create.call_args.kwargs
-            assert call_kwargs["model"] == "claude-sonnet-4-20250514"
+            call_kwargs = mock_client.chat.completions.create.call_args.kwargs
+            assert call_kwargs["model"] == "gemma4:26b"
 
     @pytest.mark.asyncio
     async def test_includes_invention_and_prior_art_in_user_message(self):
         state = GraphState(
             invention_narrative="My special widget invention.",
             prior_art_context="US9999 - Existing widget patent",
-            api_key="test-key",
+            ollama_url="http://127.0.0.1:11434",
         )
 
-        with patch("src.agents.planner.anthropic") as mock_anthropic:
+        with patch("src.agents.planner.openai") as mock_openai:
             mock_client = AsyncMock()
-            mock_client.messages.create = AsyncMock(
+            mock_client.chat.completions.create = AsyncMock(
                 return_value=_make_mock_response(MOCK_STRATEGY),
             )
-            mock_anthropic.AsyncAnthropic.return_value = mock_client
+            mock_openai.AsyncOpenAI.return_value = mock_client
 
             await run_planner(state)
 
-            call_kwargs = mock_client.messages.create.call_args.kwargs
-            user_msg = call_kwargs["messages"][0]["content"]
+            call_kwargs = mock_client.chat.completions.create.call_args.kwargs
+            # Messages: [system, user] — user is at index 1
+            user_msg = call_kwargs["messages"][1]["content"]
             assert "My special widget invention" in user_msg
             assert "US9999" in user_msg
 
@@ -156,15 +163,15 @@ class TestPlannerAgent:
     async def test_handles_api_error_gracefully(self):
         state = GraphState(
             invention_narrative="A widget.",
-            api_key="bad-key",
+            ollama_url="http://127.0.0.1:11434",
         )
 
-        with patch("src.agents.planner.anthropic") as mock_anthropic:
+        with patch("src.agents.planner.openai") as mock_openai:
             mock_client = AsyncMock()
-            mock_client.messages.create = AsyncMock(
-                side_effect=Exception("Authentication error: invalid API key"),
+            mock_client.chat.completions.create = AsyncMock(
+                side_effect=Exception("Connection refused"),
             )
-            mock_anthropic.AsyncAnthropic.return_value = mock_client
+            mock_openai.AsyncOpenAI.return_value = mock_client
 
             result = await run_planner(state)
 

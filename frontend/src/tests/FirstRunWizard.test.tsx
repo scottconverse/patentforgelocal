@@ -6,10 +6,26 @@ vi.mock('../api', () => ({
   api: {
     settings: {
       get: vi.fn(),
-      update: vi.fn(),
-      validateKey: vi.fn(),
+      update: vi.fn().mockResolvedValue({}),
     },
   },
+}));
+
+vi.mock('../components/SystemCheck', () => ({
+  default: ({ onPass }: { onPass: (result: { modelDownloaded: boolean }) => void }) => (
+    <div data-testid="system-check">
+      <button onClick={() => onPass({ modelDownloaded: false })}>System OK</button>
+    </div>
+  ),
+}));
+
+vi.mock('../components/ModelDownload', () => ({
+  default: ({ onComplete, onSkip }: { onComplete: () => void; onSkip: () => void }) => (
+    <div data-testid="model-download">
+      <button onClick={onComplete}>Download Complete</button>
+      <button onClick={onSkip}>Skip Download</button>
+    </div>
+  ),
 }));
 
 import { api } from '../api';
@@ -21,64 +37,48 @@ describe('FirstRunWizard', () => {
     vi.clearAllMocks();
   });
 
-  it('renders welcome message and key input', () => {
+  it('renders welcome step with PatentForgeLocal branding', () => {
     render(<FirstRunWizard onComplete={mockOnComplete} />);
-    expect(screen.getByText(/Welcome to PatentForge/i)).toBeTruthy();
-    expect(screen.getByPlaceholderText(/sk-ant-/i)).toBeTruthy();
-    expect(screen.getByText(/Validate Key/i)).toBeTruthy();
+    expect(screen.getByText(/Welcome to PatentForgeLocal/i)).toBeTruthy();
+    expect(screen.getByText(/Get Started/i)).toBeTruthy();
+    expect(screen.getByText(/100% Private/i)).toBeTruthy();
+  });
+
+  it('advances from welcome to system-check on Get Started click', () => {
+    render(<FirstRunWizard onComplete={mockOnComplete} />);
+    fireEvent.click(screen.getByText(/Get Started/i));
+    expect(screen.getByTestId('system-check')).toBeTruthy();
+  });
+
+  it('advances through system-check to model-download when model not downloaded', () => {
+    render(<FirstRunWizard onComplete={mockOnComplete} />);
+    fireEvent.click(screen.getByText(/Get Started/i));
+    fireEvent.click(screen.getByText(/System OK/i));
+    expect(screen.getByTestId('model-download')).toBeTruthy();
+  });
+
+  it('shows optional API keys step after model download', () => {
+    render(<FirstRunWizard onComplete={mockOnComplete} />);
+    fireEvent.click(screen.getByText(/Get Started/i));
+    fireEvent.click(screen.getByText(/System OK/i));
+    fireEvent.click(screen.getByText(/Download Complete/i));
+    expect(screen.getByText(/Optional API Keys/i)).toBeTruthy();
     expect(screen.getByText(/Skip for Now/i)).toBeTruthy();
   });
 
-  it('calls onComplete when Skip is clicked', async () => {
+  it('saves settings and calls onComplete on finish', async () => {
     render(<FirstRunWizard onComplete={mockOnComplete} />);
-    fireEvent.click(screen.getByText(/Skip for Now/i));
-    expect(mockOnComplete).toHaveBeenCalledWith(false);
-  });
-
-  it('shows error for empty key on validate', async () => {
-    render(<FirstRunWizard onComplete={mockOnComplete} />);
-    fireEvent.click(screen.getByText(/Validate Key/i));
-    await waitFor(() => {
-      expect(screen.getByText(/Please enter an API key/i)).toBeTruthy();
-    });
-  });
-
-  it('validates and saves a valid key', async () => {
-    vi.useFakeTimers();
-    (api.settings.validateKey as any).mockResolvedValue({ valid: true });
-    (api.settings.update as any).mockResolvedValue({});
-
-    render(<FirstRunWizard onComplete={mockOnComplete} />);
-    const input = screen.getByPlaceholderText(/sk-ant-/i);
-    fireEvent.change(input, { target: { value: 'sk-ant-test-key-123' } });
-    fireEvent.click(screen.getByText(/Validate Key/i));
-
-    // Wait for the async validation to complete
-    await vi.waitFor(() => {
-      expect(screen.getByText(/validated and saved/i)).toBeTruthy();
-    });
-
-    // Advance past the 1200ms delay
-    await vi.advanceTimersByTimeAsync(1500);
-
-    expect(mockOnComplete).toHaveBeenCalledWith(true);
-    vi.useRealTimers();
-  });
-
-  it('shows error for invalid key', async () => {
-    (api.settings.validateKey as any).mockResolvedValue({
-      valid: false,
-      error: 'Invalid API key. Please check the key and try again.',
-    });
-
-    render(<FirstRunWizard onComplete={mockOnComplete} />);
-    const input = screen.getByPlaceholderText(/sk-ant-/i);
-    fireEvent.change(input, { target: { value: 'bad-key' } });
-    fireEvent.click(screen.getByText(/Validate Key/i));
+    // Navigate through all steps
+    fireEvent.click(screen.getByText(/Get Started/i));
+    fireEvent.click(screen.getByText(/System OK/i));
+    fireEvent.click(screen.getByText(/Download Complete/i));
+    fireEvent.click(screen.getByText(/Skip for Now/i)); // skip API keys
+    fireEvent.click(screen.getByText(/I Understand/i)); // disclaimer
+    fireEvent.click(screen.getByText(/Start Using PatentForgeLocal/i));
 
     await waitFor(() => {
-      expect(screen.getByText(/Invalid API key/i)).toBeTruthy();
+      expect(api.settings.update).toHaveBeenCalled();
+      expect(mockOnComplete).toHaveBeenCalledWith(true);
     });
-    expect(mockOnComplete).not.toHaveBeenCalled();
   });
 });

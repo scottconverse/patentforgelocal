@@ -22,7 +22,7 @@ class TestServerEndpoints:
             "claims": [],
             "specification_text": "",
             "invention_narrative": "",
-            "settings": {"default_model": "claude-sonnet-4-20250514"},
+            "settings": {"default_model": "gemma4:26b"},
         })
         assert response.status_code == 422
 

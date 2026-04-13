@@ -56,8 +56,8 @@ class TestCompliancePipeline:
             claims_text="1. A method.",
             specification_text="The invention...",
             invention_narrative="A system.",
-            api_key="test-key",
-            default_model="claude-sonnet-4-20250514",
+            ollama_url="http://127.0.0.1:11434",
+            default_model="gemma4:26b",
         )
 
         assert isinstance(result, ComplianceResponse)
@@ -81,8 +81,8 @@ class TestCompliancePipeline:
             claims_text="1. A method.",
             specification_text="",
             invention_narrative="",
-            api_key="test-key",
-            default_model="claude-sonnet-4-20250514",
+            ollama_url="http://127.0.0.1:11434",
+            default_model="gemma4:26b",
         )
 
         assert result.overall_pass is False
@@ -103,8 +103,8 @@ class TestCompliancePipeline:
             claims_text="1. A method.",
             specification_text="",
             invention_narrative="",
-            api_key="test-key",
-            default_model="claude-sonnet-4-20250514",
+            ollama_url="http://127.0.0.1:11434",
+            default_model="gemma4:26b",
         )
 
         assert result.total_input_tokens == 400
@@ -126,8 +126,8 @@ class TestCompliancePipeline:
             claims_text="1. A method.",
             specification_text="",
             invention_narrative="",
-            api_key="test-key",
-            default_model="claude-sonnet-4-20250514",
+            ollama_url="http://127.0.0.1:11434",
+            default_model="gemma4:26b",
             on_step=lambda name, step: steps.append(name),
         )
 

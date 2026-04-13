@@ -168,8 +168,7 @@ describe('Invention Description Minimum Enforcement', () => {
         description: fiftyWords,
       });
       mockSettings.getSettings.mockResolvedValue({
-        costCapUsd: 0,
-        anthropicApiKey: 'key',
+        ollamaApiKey: 'key',
       });
       mockPrisma.project.findUnique.mockResolvedValue({ id: 'p1' });
       mockPrisma.feasibilityRun.count.mockResolvedValue(0);
@@ -192,8 +191,7 @@ describe('Invention Description Minimum Enforcement', () => {
         description: manyWords,
       });
       mockSettings.getSettings.mockResolvedValue({
-        costCapUsd: 0,
-        anthropicApiKey: 'key',
+        ollamaApiKey: 'key',
       });
       mockPrisma.project.findUnique.mockResolvedValue({ id: 'p1' });
       mockPrisma.feasibilityRun.count.mockResolvedValue(0);
@@ -210,8 +208,8 @@ describe('Invention Description Minimum Enforcement', () => {
       expect(result.id).toBe('run-1');
     });
 
-    it('checks description before cost cap', async () => {
-      // Description too short — should fail before cost cap is checked
+    it('checks description before fetching settings', async () => {
+      // Description too short — should fail before settings are fetched
       mockPrisma.inventionInput.findUnique.mockResolvedValue({
         description: 'short',
       });

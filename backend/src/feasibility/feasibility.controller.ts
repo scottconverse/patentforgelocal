@@ -52,26 +52,16 @@ export class FeasibilityController {
       );
     }
 
-    // Enforce cost cap before starting a new run
     const settings = await this.settingsService.getSettings();
-    if (settings.costCapUsd > 0) {
-      const spent = await this.feasibilityService.getProjectCumulativeCost(projectId);
-      if (spent >= settings.costCapUsd) {
-        throw new BadRequestException(
-          `Cost cap exceeded. You have spent $${spent.toFixed(2)} of your $${settings.costCapUsd.toFixed(2)} cap. ` +
-            `Increase the cost cap in Settings to continue.`,
-        );
-      }
-    }
 
     const run = await this.feasibilityService.startRun(projectId);
     // Kick off prior art search in background (non-blocking)
-    if (settings.anthropicApiKey && body?.narrative) {
+    if (body?.narrative) {
       this.priorArtService.startSearch(
         projectId,
         run.id,
         body.narrative,
-        settings.anthropicApiKey,
+        settings.ollamaUrl || 'http://127.0.0.1:11434',
         settings.usptoApiKey || undefined,
       );
     }
@@ -143,23 +133,7 @@ export class FeasibilityController {
     @Param('stageNumber', ParseIntPipe) stageNumber: number,
     @Body() dto: PatchStageDto,
   ) {
-    const result = await this.feasibilityService.patchStage(projectId, stageNumber, dto);
-
-    // After writing cost data, check if cumulative cost exceeds cap
-    // Return a flag so the frontend can abort the pipeline
-    let costCapExceeded = false;
-    let cumulativeCost = 0;
-    let costCapUsd = 0;
-    if (dto.estimatedCostUsd !== undefined && dto.estimatedCostUsd > 0) {
-      const settings = await this.settingsService.getSettings();
-      costCapUsd = settings.costCapUsd;
-      if (costCapUsd > 0) {
-        cumulativeCost = await this.feasibilityService.getProjectCumulativeCost(projectId);
-        costCapExceeded = cumulativeCost >= costCapUsd;
-      }
-    }
-
-    return { ...result, costCapExceeded, cumulativeCost, costCapUsd };
+    return this.feasibilityService.patchStage(projectId, stageNumber, dto);
   }
 
   /**
@@ -171,17 +145,13 @@ export class FeasibilityController {
   async streamAnalysis(@Param('id') projectId: string, @Body() body: Record<string, unknown>, @Res() res: Response) {
     // Inject the API key server-side — never trust the frontend to send it
     const settings = await this.settingsService.getSettings();
-    if (!settings.anthropicApiKey) {
-      res.status(400).json({ error: 'No Anthropic API key configured. Add one in Settings.' });
-      return;
-    }
 
     const bodySettings = (body.settings && typeof body.settings === 'object') ? body.settings as Record<string, unknown> : {};
     const forwardBody = {
       ...body,
       settings: {
         ...bodySettings,
-        apiKey: settings.anthropicApiKey,
+        ollamaUrl: settings.ollamaUrl || 'http://127.0.0.1:11434',
       },
     };
 

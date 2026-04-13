@@ -194,11 +194,12 @@ describe('useFeasibilityRun', () => {
     expect(setViewMode).toHaveBeenCalledWith('invention-form');
   });
 
-  it('handleRunFeasibility without API key shows error toast', async () => {
+  it('handleRunFeasibility without model ready shows error toast', async () => {
     const setToast = vi.fn();
     (api.settings.get as any).mockResolvedValue({
-      anthropicApiKey: '',
-      defaultModel: 'claude-sonnet-4-20250514',
+      modelReady: false,
+      defaultModel: 'gemma4:26b',
+      ollamaModel: 'gemma4:26b',
     });
 
     const params = makeDefaultParams({ setToast });
@@ -210,8 +211,8 @@ describe('useFeasibilityRun', () => {
     });
 
     expect(setToast).toHaveBeenCalledWith({
-      message: 'No API key configured',
-      detail: 'Add your Anthropic API key in Settings before running.',
+      message: 'Model not ready',
+      detail: 'Complete the first-run wizard to download the AI model before running analysis.',
       type: 'error',
     });
   });
@@ -273,20 +274,12 @@ describe('useFeasibilityRun', () => {
     expect(api.settings.get).not.toHaveBeenCalled();
   });
 
-  it('handleRunFeasibility with valid settings shows cost modal', async () => {
+  it('handleRunFeasibility with valid settings shows confirmation modal', async () => {
     const setCostModal = vi.fn();
     (api.settings.get as any).mockResolvedValue({
-      anthropicApiKey: 'sk-test-key',
-      defaultModel: 'claude-sonnet-4-20250514',
-      costCapUsd: 5.0,
-    });
-    (api.feasibility.costEstimate as any).mockResolvedValue({
-      hasHistory: false,
-      runsUsed: 0,
-      stagesUsed: 0,
-      avgInputTokens: 50000,
-      avgOutputTokens: 10000,
-      avgCostPerStage: 0,
+      modelReady: true,
+      defaultModel: 'gemma4:26b',
+      ollamaModel: 'gemma4:26b',
     });
 
     const params = makeDefaultParams({ setCostModal });
@@ -299,12 +292,10 @@ describe('useFeasibilityRun', () => {
 
     expect(setCostModal).toHaveBeenCalledTimes(1);
     const modalArg = setCostModal.mock.calls[0][0];
-    expect(modalArg).toHaveProperty('tokenCost');
-    expect(modalArg).toHaveProperty('webSearchCost', 0.15);
-    expect(modalArg).toHaveProperty('cap', 5.0);
-    expect(modalArg).toHaveProperty('model', 'claude-sonnet-4-20250514');
+    expect(modalArg).toHaveProperty('tokenCost', 0);
+    expect(modalArg).toHaveProperty('webSearchCost', 0);
+    expect(modalArg).toHaveProperty('model', 'gemma4:26b');
     expect(modalArg).toHaveProperty('source', 'static');
-    expect(modalArg).toHaveProperty('runsUsed', 0);
   });
 
   it('handleRunFeasibility blocks when description is under 50 words and sets descriptionError', async () => {
@@ -341,17 +332,9 @@ describe('useFeasibilityRun', () => {
 
   it('handleRunFeasibility clears descriptionError when description meets minimum', async () => {
     (api.settings.get as any).mockResolvedValue({
-      anthropicApiKey: 'sk-test-key',
-      defaultModel: 'claude-sonnet-4-20250514',
-      costCapUsd: 5.0,
-    });
-    (api.feasibility.costEstimate as any).mockResolvedValue({
-      hasHistory: false,
-      runsUsed: 0,
-      stagesUsed: 0,
-      avgInputTokens: 50000,
-      avgOutputTokens: 10000,
-      avgCostPerStage: 0,
+      modelReady: true,
+      defaultModel: 'gemma4:26b',
+      ollamaModel: 'gemma4:26b',
     });
 
     const params = makeDefaultParams();

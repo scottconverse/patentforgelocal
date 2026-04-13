@@ -1,6 +1,6 @@
 [project]
 name = "patentforge-application-generator"
-version = "1.0.0"
+version = "0.1.0"
 description = "Patent application generation service for PatentForge"
 requires-python = ">=3.11"
 dependencies = [

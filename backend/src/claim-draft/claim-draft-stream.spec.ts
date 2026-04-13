@@ -3,7 +3,7 @@
  * Tests for ClaimDraftController streamDraft SSE endpoint.
  */
 
-import { NotFoundException, ConflictException, BadRequestException } from '@nestjs/common';
+import { NotFoundException, ConflictException } from '@nestjs/common';
 import { ClaimDraftService } from './claim-draft.service';
 import { ClaimDraftController } from './claim-draft.controller';
 
@@ -33,11 +33,11 @@ const makePrisma = () => ({
 
 const makeSettings = () => ({
   getSettings: jest.fn().mockResolvedValue({
-    anthropicApiKey: 'test-key',
-    defaultModel: 'claude-haiku-4-5-20251001',
+    ollamaApiKey: '',
+    ollamaUrl: 'http://localhost:11434',
+    defaultModel: 'gemma4:26b',
     researchModel: '',
     maxTokens: 16000,
-    costCapUsd: 0,
   }),
 });
 
@@ -97,31 +97,10 @@ describe('ClaimDraftService — stream helpers', () => {
 
       expect(result.draftId).toBe('new-draft');
       expect(result.requestBody.invention_narrative).toContain('Widget');
-      expect(result.requestBody.settings.api_key).toBe('test-key');
+      expect(result.requestBody.settings.ollama_url).toBe('http://localhost:11434');
       expect(result.requestBody.feasibility_stage_5).toBe('Stage 5 output');
     });
 
-    it('throws BadRequestException when cost cap exceeded', async () => {
-      mockSettings.getSettings.mockResolvedValue({
-        anthropicApiKey: 'test-key',
-        defaultModel: 'claude-haiku-4-5-20251001',
-        researchModel: '',
-        maxTokens: 16000,
-        costCapUsd: 1.0,
-      });
-      mockPrisma.project.findUnique.mockResolvedValue({
-        id: 'p1',
-        invention: { title: 'Test', description: 'Desc' },
-      });
-      mockPrisma.claimDraft.findFirst.mockResolvedValue(null); // no running draft
-      mockPrisma.claimDraft.findMany.mockResolvedValue([{ estimatedCostUsd: 2.0 }]);
-      mockPrisma.feasibilityStage.findMany.mockResolvedValue([]);
-      mockPrisma.complianceCheck.findMany.mockResolvedValue([]);
-      mockPrisma.patentApplication.findMany.mockResolvedValue([]);
-
-      await expect(service.prepareDraft('p1')).rejects.toThrow(BadRequestException);
-      await expect(service.prepareDraft('p1')).rejects.toThrow(/Cost cap exceeded/);
-    });
   });
 
   describe('saveStreamComplete', () => {
@@ -249,7 +228,7 @@ describe('ClaimDraftController — streamDraft SSE', () => {
   it('returns 502 when upstream fetch fails (connection refused)', async () => {
     mockService.prepareDraft.mockResolvedValue({
       draftId: 'draft-1',
-      requestBody: { settings: { api_key: 'key' } },
+      requestBody: { settings: { ollama_url: 'key' } },
     });
     mockFetch.mockRejectedValue(new Error('ECONNREFUSED'));
 
@@ -265,7 +244,7 @@ describe('ClaimDraftController — streamDraft SSE', () => {
   it('sets SSE headers and forwards events when upstream succeeds', async () => {
     mockService.prepareDraft.mockResolvedValue({
       draftId: 'draft-1',
-      requestBody: { settings: { api_key: 'key' } },
+      requestBody: { settings: { ollama_url: 'key' } },
     });
 
     // Simulate an SSE stream with step + complete events
@@ -316,7 +295,7 @@ describe('ClaimDraftController — streamDraft SSE', () => {
   it('marks draft as error when upstream returns non-OK status', async () => {
     mockService.prepareDraft.mockResolvedValue({
       draftId: 'draft-1',
-      requestBody: { settings: { api_key: 'key' } },
+      requestBody: { settings: { ollama_url: 'key' } },
     });
 
     mockFetch.mockResolvedValue({
@@ -334,7 +313,7 @@ describe('ClaimDraftController — streamDraft SSE', () => {
   it('marks draft as error when stream ends without complete event', async () => {
     mockService.prepareDraft.mockResolvedValue({
       draftId: 'draft-1',
-      requestBody: { settings: { api_key: 'key' } },
+      requestBody: { settings: { ollama_url: 'key' } },
     });
 
     // Stream with only step events, no complete

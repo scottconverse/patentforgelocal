@@ -31,11 +31,10 @@ describe('ApplicationService', () => {
     };
     settings = {
       getSettings: jest.fn().mockResolvedValue({
-        anthropicApiKey: 'test-key',
-        defaultModel: 'claude-haiku-4-5-20251001',
+        ollamaApiKey: 'test-key',
+        defaultModel: 'gemma4:26b',
         researchModel: '',
         maxTokens: 16000,
-        costCapUsd: 5.0,
       }),
     };
 

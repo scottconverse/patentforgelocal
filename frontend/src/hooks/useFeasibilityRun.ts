@@ -10,8 +10,6 @@ import {
   PriorArtSearch,
 } from '../types';
 import { ViewMode } from './useProjectDetail';
-import { formatCost } from '../utils/format';
-import { getModelPricing } from '../utils/modelPricing';
 import { validateDescriptionWordCount } from '../utils/validation';
 
 // ----- Narrative builder -----
@@ -55,35 +53,7 @@ export function makePlaceholderStages(): FeasibilityStage[] {
   }));
 }
 
-// ----- Cost estimation -----
-
-// Web search: Anthropic charges $0.01 per search. Stage 2 always searches;
-// other stages occasionally do. Estimate ~15 searches per run.
-const WEB_SEARCH_COST_PER_SEARCH = 0.01;
-const ESTIMATED_SEARCHES_PER_RUN = 15;
-const ESTIMATED_WEB_SEARCH_COST = ESTIMATED_SEARCHES_PER_RUN * WEB_SEARCH_COST_PER_SEARCH;
-
-const COST_BUFFER = 1.25; // 25% buffer over estimate
-
-async function estimateRunCosts(
-  projectId: string,
-  model: string,
-): Promise<{ tokenCost: number; webSearchCost: number; source: 'history' | 'static'; runsUsed: number }> {
-  const estimate = await api.feasibility.costEstimate(projectId);
-  const p = getModelPricing(model);
-  const stages = 6;
-
-  if (estimate.hasHistory && estimate.avgCostPerStage > 0) {
-    const tokenCost = stages * estimate.avgCostPerStage * COST_BUFFER;
-    return { tokenCost, webSearchCost: ESTIMATED_WEB_SEARCH_COST, source: 'history', runsUsed: estimate.runsUsed };
-  }
-
-  const tokenCost =
-    stages *
-    ((estimate.avgInputTokens / 1_000_000) * p.inputPer1M + (estimate.avgOutputTokens / 1_000_000) * p.outputPer1M) *
-    COST_BUFFER;
-  return { tokenCost, webSearchCost: ESTIMATED_WEB_SEARCH_COST, source: 'static', runsUsed: 0 };
-}
+// Local inference has no per-token cost — Ollama runs on this machine.
 
 // ----- Hook parameters -----
 
@@ -219,25 +189,23 @@ export function useFeasibilityRun(params: UseFeasibilityRunParams): UseFeasibili
       return;
     }
 
-    if (!appSettings.anthropicApiKey) {
+    if (!appSettings.modelReady) {
       setToast({
-        message: 'No API key configured',
-        detail: 'Add your Anthropic API key in Settings before running.',
+        message: 'Model not ready',
+        detail: 'Complete the first-run wizard to download the AI model before running analysis.',
         type: 'error',
       });
       return;
     }
 
-    const model = appSettings.defaultModel || 'claude-haiku-4-5-20251001';
-    const cap = appSettings.costCapUsd ?? 5.0;
-    const { tokenCost, webSearchCost, source, runsUsed } = await estimateRunCosts(projectId, model);
+    const model = appSettings.defaultModel || appSettings.ollamaModel || 'gemma4:26b';
 
-    // Store run closure and show modal
+    // Store run closure and show confirmation modal
     pendingRunRef.current = async () => {
       setCostModal(null);
       await proceedWithRun(appSettings, inv);
     };
-    setCostModal({ tokenCost, webSearchCost, cap, model, source, runsUsed });
+    setCostModal({ tokenCost: 0, webSearchCost: 0, cap: 0, model, source: 'static', runsUsed: 0 });
   }
 
   // Resume a failed/interrupted run from the first incomplete stage,
@@ -267,30 +235,25 @@ export function useFeasibilityRun(params: UseFeasibilityRunParams): UseFeasibili
       setToast({ message: 'Failed to load settings', detail: (e as Error).message, type: 'error' });
       return;
     }
-    if (!appSettings.anthropicApiKey) {
-      setToast({ message: 'No API key configured', detail: 'Add your Anthropic API key in Settings.', type: 'error' });
+    if (!appSettings.modelReady) {
+      setToast({ message: 'Model not ready', detail: 'Complete the first-run wizard to download the AI model.', type: 'error' });
       return;
     }
 
-    const model = appSettings.defaultModel || 'claude-haiku-4-5-20251001';
-    const cap = appSettings.costCapUsd ?? 5.0;
+    const model = appSettings.defaultModel || appSettings.ollamaModel || 'gemma4:26b';
     const remainingStages = 6 - resumeFrom + 1;
-    // Estimate cost only for remaining stages
-    const { tokenCost, webSearchCost, source, runsUsed } = await estimateRunCosts(projectId, model);
-    const partialTokenCost = parseFloat(((tokenCost * remainingStages) / 6).toFixed(3));
-    const partialWebCost = parseFloat(((webSearchCost * remainingStages) / 6).toFixed(2));
 
     pendingRunRef.current = async () => {
       setCostModal(null);
       await proceedWithRun(appSettings, inv, resumeFrom, completedOutputs);
     };
     setCostModal({
-      tokenCost: partialTokenCost,
-      webSearchCost: partialWebCost,
-      cap,
+      tokenCost: 0,
+      webSearchCost: 0,
+      cap: 0,
       model,
-      source,
-      runsUsed,
+      source: 'static',
+      runsUsed: 0,
       stageCount: remainingStages,
     });
   }
@@ -457,7 +420,6 @@ export function useFeasibilityRun(params: UseFeasibilityRunParams): UseFeasibili
           }
         }, 250);
       }
-      let totalActualCost = 0;
 
       const updateStageStatus = (stageNum: number, updates: Partial<FeasibilityStage>) => {
         setStages((prev) => prev.map((s) => (s.stageNumber === stageNum ? { ...s, ...updates } : s)));
@@ -516,7 +478,6 @@ export function useFeasibilityRun(params: UseFeasibilityRunParams): UseFeasibili
               const inputTokens: number = data.inputTokens ?? 0;
               const outputTokens: number = data.outputTokens ?? 0;
               const estimatedCostUsd: number = data.estimatedCostUsd ?? 0;
-              totalActualCost += estimatedCostUsd;
               updateStageStatus(currentStageNum, {
                 status: 'COMPLETE',
                 outputText,
@@ -544,19 +505,6 @@ export function useFeasibilityRun(params: UseFeasibilityRunParams): UseFeasibili
                   runId: runIdRef.current || undefined,
                 });
 
-                // If cost cap exceeded, cancel the pipeline
-                if (patchResult?.costCapExceeded) {
-                  // Cost cap exceeded — cancel pipeline and show UI error (below)
-                  try {
-                    await api.feasibility.cancel(projectId);
-                  } catch {
-                    /* best-effort cancel — ignore failure */
-                  }
-                  setError(
-                    `Cost cap reached ($${patchResult.cumulativeCost.toFixed(2)} of $${patchResult.costCapUsd.toFixed(2)}). Pipeline stopped. Increase the cap in Settings to continue.`,
-                  );
-                  setViewMode('overview');
-                }
               } catch {
                 // non-fatal
               }
@@ -583,13 +531,13 @@ export function useFeasibilityRun(params: UseFeasibilityRunParams): UseFeasibili
               if (appSettings.autoExport !== false) try {
                 const exportResult = await api.feasibility.exportToDisk(projectId);
                 setToast({
-                  message: `Analysis complete · actual cost: ${formatCost(totalActualCost)}`,
+                  message: 'Analysis complete',
                   detail: exportResult.folderPath,
                   type: 'success',
                 });
               } catch {
                 setToast({
-                  message: `Analysis complete · actual cost: ${formatCost(totalActualCost)}`,
+                  message: 'Analysis complete',
                   type: 'success',
                 });
               }
@@ -600,11 +548,11 @@ export function useFeasibilityRun(params: UseFeasibilityRunParams): UseFeasibili
               setViewMode('overview');
               return;
             } else if (eventType === 'error' || eventType === 'pipeline_error') {
-              // The feasibility service sends 'error' events for stage-level Anthropic
-              // failures (billing, auth, rate limit). 'pipeline_error' is the legacy name.
+              // The feasibility service sends 'error' events for stage-level LLM
+              // failures (connection, model load, timeout). 'pipeline_error' is the legacy name.
               pipelineCompleted = true; // Prevent the generic "connection lost" fallback
               const rawMsg = data.message || data.error || 'Pipeline failed';
-              // Parse Anthropic JSON error into human-readable message (P3-2 fix)
+              // Parse JSON error into human-readable message
               let errorMsg = rawMsg;
               try {
                 const parsed = typeof rawMsg === 'string' && rawMsg.includes('"message"')

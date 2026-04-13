@@ -35,10 +35,16 @@ export class UpdateSettingsDto {
   autoExport?: boolean;
 
   @IsOptional()
-  @IsNumber()
-  @Min(0)
-  @Type(() => Number)
-  costCapUsd?: number;
+  @IsString()
+  ollamaModel?: string;
+
+  @IsOptional()
+  @IsString()
+  ollamaUrl?: string;
+
+  @IsOptional()
+  @IsBoolean()
+  modelReady?: boolean;
 
   @IsOptional()
   @IsString()

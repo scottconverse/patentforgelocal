@@ -15,20 +15,27 @@ def base_state():
         claims_text="1. A method comprising: a processor executing instructions.",
         specification_text="The invention uses a processor to execute instructions.",
         invention_narrative="A system that processes data.",
-        api_key="test-key",
-        default_model="claude-sonnet-4-20250514",
+        ollama_url="http://127.0.0.1:11434",
+        default_model="gemma4:26b",
     )
 
 
-def _mock_response(text: str, input_tokens: int = 100, output_tokens: int = 200):
+def _mock_response(text: str, prompt_tokens: int = 100, completion_tokens: int = 200):
+    mock_message = MagicMock()
+    mock_message.content = text
+    mock_choice = MagicMock()
+    mock_choice.message = mock_message
+    mock_usage = MagicMock()
+    mock_usage.prompt_tokens = prompt_tokens
+    mock_usage.completion_tokens = completion_tokens
     response = MagicMock()
-    response.content = [MagicMock(text=text)]
-    response.usage = MagicMock(input_tokens=input_tokens, output_tokens=output_tokens)
+    response.choices = [mock_choice]
+    response.usage = mock_usage
     return response
 
 
 class TestEligibility:
-    @patch("src.agents.eligibility.anthropic.AsyncAnthropic")
+    @patch("src.agents.eligibility.openai.AsyncOpenAI")
     async def test_pass_result(self, mock_cls, base_state):
         result_json = json.dumps([{
             "rule": "101_eligibility",
@@ -39,7 +46,7 @@ class TestEligibility:
             "suggestion": None,
         }])
         mock_client = AsyncMock()
-        mock_client.messages.create = AsyncMock(return_value=_mock_response(f"```json\n{result_json}\n```"))
+        mock_client.chat.completions.create = AsyncMock(return_value=_mock_response(f"```json\n{result_json}\n```"))
         mock_cls.return_value = mock_client
 
         state = await run_eligibility(base_state)
@@ -50,7 +57,7 @@ class TestEligibility:
         assert state.total_input_tokens == 100
         assert state.total_output_tokens == 200
 
-    @patch("src.agents.eligibility.anthropic.AsyncAnthropic")
+    @patch("src.agents.eligibility.openai.AsyncOpenAI")
     async def test_fail_result(self, mock_cls, base_state):
         result_json = json.dumps([{
             "rule": "101_eligibility",
@@ -61,7 +68,7 @@ class TestEligibility:
             "suggestion": "Fix the issue",
         }])
         mock_client = AsyncMock()
-        mock_client.messages.create = AsyncMock(return_value=_mock_response(f"```json\n{result_json}\n```"))
+        mock_client.chat.completions.create = AsyncMock(return_value=_mock_response(f"```json\n{result_json}\n```"))
         mock_cls.return_value = mock_client
 
         state = await run_eligibility(base_state)
@@ -69,10 +76,10 @@ class TestEligibility:
         results = json.loads(state.eligibility_results)
         assert results[0]["status"] == "FAIL"
 
-    @patch("src.agents.eligibility.anthropic.AsyncAnthropic")
+    @patch("src.agents.eligibility.openai.AsyncOpenAI")
     async def test_api_error_sets_state_error(self, mock_cls, base_state):
         mock_client = AsyncMock()
-        mock_client.messages.create = AsyncMock(side_effect=Exception("API timeout"))
+        mock_client.chat.completions.create = AsyncMock(side_effect=Exception("API timeout"))
         mock_cls.return_value = mock_client
 
         state = await run_eligibility(base_state)
@@ -80,23 +87,23 @@ class TestEligibility:
         assert state.error is not None
         assert "API timeout" in state.error
 
-    @patch("src.agents.eligibility.anthropic.AsyncAnthropic")
+    @patch("src.agents.eligibility.openai.AsyncOpenAI")
     async def test_malformed_json_handled(self, mock_cls, base_state):
         mock_client = AsyncMock()
-        mock_client.messages.create = AsyncMock(return_value=_mock_response("Not JSON at all"))
+        mock_client.chat.completions.create = AsyncMock(return_value=_mock_response("Not JSON at all"))
         mock_cls.return_value = mock_client
 
         state = await run_eligibility(base_state)
 
         assert state.error is not None or state.eligibility_results == "[]"
 
-    @patch("src.agents.eligibility.anthropic.AsyncAnthropic")
+    @patch("src.agents.eligibility.openai.AsyncOpenAI")
     async def test_cost_accumulated(self, mock_cls, base_state):
         base_state.total_input_tokens = 50
         base_state.total_output_tokens = 100
         result_json = json.dumps([{"rule": "101_eligibility", "status": "PASS", "claim_number": 1, "detail": "OK"}])
         mock_client = AsyncMock()
-        mock_client.messages.create = AsyncMock(return_value=_mock_response(f"```json\n{result_json}\n```", 200, 300))
+        mock_client.chat.completions.create = AsyncMock(return_value=_mock_response(f"```json\n{result_json}\n```", 200, 300))
         mock_cls.return_value = mock_client
 
         state = await run_eligibility(base_state)

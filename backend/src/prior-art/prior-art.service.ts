@@ -50,10 +50,10 @@ export class PriorArtService {
     projectId: string,
     feasibilityRunId: string,
     narrative: string,
-    apiKey: string,
+    ollamaUrl: string,
     usptoApiKey?: string,
   ): void {
-    this.runSearch(projectId, feasibilityRunId, narrative, apiKey, usptoApiKey).catch((err) =>
+    this.runSearch(projectId, feasibilityRunId, narrative, ollamaUrl, usptoApiKey).catch((err) =>
       console.error(`[PriorArt] search failed for project ${projectId}:`, err),
     );
   }
@@ -62,7 +62,7 @@ export class PriorArtService {
     projectId: string,
     feasibilityRunId: string,
     narrative: string,
-    apiKey: string,
+    ollamaUrl: string,
     usptoApiKey?: string,
   ): Promise<void> {
     // Determine version
@@ -82,8 +82,8 @@ export class PriorArtService {
     this.sse.emit(projectId, { type: 'prior_art_start', searchId: search.id });
 
     try {
-      // Step 1: Extract search queries via Claude Haiku
-      const queries = await this.extractSearchQueries(narrative, apiKey);
+      // Step 1: Extract search queries via Ollama
+      const queries = await this.extractSearchQueries(narrative, ollamaUrl);
 
       await this.prisma.priorArtSearch.update({
         where: { id: search.id },
@@ -178,7 +178,7 @@ export class PriorArtService {
     }
   }
 
-  private async extractSearchQueries(narrative: string, apiKey: string): Promise<string[]> {
+  private async extractSearchQueries(narrative: string, ollamaUrl: string): Promise<string[]> {
     const truncated = narrative.slice(0, 2000);
     const prompt = `You are a patent search specialist. Given the invention description below, produce exactly 3 search queries for the USPTO PatentsView full-text patent database.
 
@@ -194,24 +194,20 @@ ${truncated}
 Output format: ["query one", "query two", "query three"]`;
 
     try {
-      const res = await fetch('https://api.anthropic.com/v1/messages', {
+      const res = await fetch(`${ollamaUrl}/api/chat`, {
         method: 'POST',
-        headers: {
-          'x-api-key': apiKey,
-          'anthropic-version': '2023-06-01',
-          'content-type': 'application/json',
-        },
+        headers: { 'content-type': 'application/json' },
         body: JSON.stringify({
-          model: 'claude-haiku-4-5-20251001',
-          max_tokens: 200,
+          model: 'gemma4:26b',
+          stream: false,
           messages: [{ role: 'user', content: prompt }],
         }),
-        signal: AbortSignal.timeout(60_000),
+        signal: AbortSignal.timeout(120_000),
       });
 
-      if (!res.ok) throw new Error(`Anthropic API ${res.status}`);
-      const data = (await res.json()) as { content?: { text?: string }[] };
-      const text = data.content?.[0]?.text ?? '[]';
+      if (!res.ok) throw new Error(`Ollama API ${res.status}`);
+      const data = (await res.json()) as { message?: { content?: string } };
+      const text = data.message?.content ?? '[]';
       const jsonMatch = text.match(/\[.*\]/s);
       if (jsonMatch) {
         const parsed = JSON.parse(jsonMatch[0]) as string[];

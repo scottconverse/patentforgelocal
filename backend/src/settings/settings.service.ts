@@ -108,7 +108,9 @@ export class SettingsService implements OnModuleInit {
     if (dto.interStageDelaySeconds !== undefined) data.interStageDelaySeconds = dto.interStageDelaySeconds;
     if (dto.exportPath !== undefined) data.exportPath = dto.exportPath;
     if (dto.autoExport !== undefined) data.autoExport = dto.autoExport;
-    if (dto.costCapUsd !== undefined) data.costCapUsd = dto.costCapUsd;
+    if (dto.ollamaModel !== undefined) data.ollamaModel = dto.ollamaModel;
+    if (dto.ollamaUrl !== undefined) data.ollamaUrl = dto.ollamaUrl;
+    if (dto.modelReady !== undefined) data.modelReady = dto.modelReady;
     if (dto.usptoApiKey !== undefined) data.usptoApiKey = encrypt(dto.usptoApiKey, this.salt);
 
     const raw = await this.prisma.appSettings.upsert({
@@ -142,53 +144,29 @@ export class SettingsService implements OnModuleInit {
   }
 
   /**
-   * Validate an Anthropic API key by making a minimal request server-side.
-   * This keeps the key out of the browser — it only travels from browser to
-   * our backend, never directly to Anthropic from the client.
+   * Validate Ollama connectivity by checking the /api/tags endpoint.
+   * Returns valid: true if Ollama is reachable and has at least one model.
    */
-  async validateApiKey(apiKey: string): Promise<{ valid: boolean; error?: string }> {
+  async validateOllamaConnection(ollamaUrl: string): Promise<{ valid: boolean; error?: string; models?: string[] }> {
+    const baseUrl = ollamaUrl || 'http://127.0.0.1:11434';
     try {
-      const response = await fetch('https://api.anthropic.com/v1/messages', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'x-api-key': apiKey,
-          'anthropic-version': '2023-06-01',
-        },
-        body: JSON.stringify({
-          model: 'claude-haiku-4-5-20251001',
-          max_tokens: 1,
-          messages: [{ role: 'user', content: 'Hi' }],
-        }),
+      const response = await fetch(`${baseUrl}/api/tags`, {
+        method: 'GET',
+        signal: AbortSignal.timeout(10_000),
       });
 
-      if (response.ok) {
-        return { valid: true };
-      } else if (response.status === 401) {
-        return { valid: false, error: 'Invalid API key. Please check the key and try again.' };
-      } else if (response.status === 403) {
-        return { valid: false, error: 'API key does not have permission. Check your Anthropic account.' };
-      } else {
-        // Parse the Anthropic error body for actionable messages (billing, rate limit, etc.)
-        try {
-          const body = await response.json() as { error?: { message?: string } };
-          const msg = body?.error?.message ?? '';
-          if (msg.includes('credit balance')) {
-            return { valid: false, error: 'API key is valid but your Anthropic account has no credits. Add credits at console.anthropic.com.' };
-          }
-          if (msg.includes('rate limit') || response.status === 429) {
-            return { valid: false, error: 'Rate limited by Anthropic. Wait a moment and try again.' };
-          }
-          if (msg) {
-            return { valid: false, error: `Anthropic error: ${msg}` };
-          }
-        } catch {
-          // Response body wasn't JSON — fall through to generic
-        }
-        return { valid: false, error: `Unexpected error (${response.status}). Try again later.` };
+      if (!response.ok) {
+        return { valid: false, error: `Ollama returned HTTP ${response.status}. Is Ollama running at ${baseUrl}?` };
       }
+
+      const data = (await response.json()) as { models?: Array<{ name: string }> };
+      const models = data.models?.map((m) => m.name) ?? [];
+      if (models.length === 0) {
+        return { valid: false, error: 'Ollama is running but has no models installed. Run: ollama pull gemma4:26b', models: [] };
+      }
+      return { valid: true, models };
     } catch {
-      return { valid: false, error: 'Could not reach the Anthropic API. Check your internet connection.' };
+      return { valid: false, error: `Could not reach Ollama at ${baseUrl}. Make sure Ollama is running.` };
     }
   }
 

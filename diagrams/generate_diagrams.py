@@ -102,7 +102,7 @@ def gen_architecture():
     arrow(ax, 0.64, 0.42, 0.64, 0.31, AMBER, label='Prisma', label_offset=(0.04, 0))
 
     # ── External APIs (right side) ──
-    make_box(ax, 1.1, 0.7, 0.22, 0.1, 'Anthropic', 'Claude API (SSE)', PURPLE, 9)
+    make_box(ax, 1.1, 0.7, 0.22, 0.1, 'Ollama', 'Gemma 4 (Local)', PURPLE, 9)
     arrow(ax, 0.78, 0.7, 1.1, 0.75, PURPLE, lw=1, label='SSE stream', label_offset=(0, 0.02))
 
     make_box(ax, 1.1, 0.52, 0.22, 0.1, 'USPTO ODP', 'Open Data Portal API', PURPLE, 9)
@@ -319,8 +319,8 @@ def gen_database_schema():
     ], ACCENT)
 
     entity_box(0.57, 0.78, 0.2, 0.2, 'AppSettings', [
-        'id: "singleton"', 'anthropicApiKey', 'defaultModel',
-        'researchModel', 'maxTokens', 'interStageDelay'
+        'id: "singleton"', 'ollamaApiKey', 'defaultModel',
+        'ollamaModel', 'ollamaUrl', 'modelReady'
     ], ACCENT)
 
     # ── Row 2: Feasibility ──
@@ -483,7 +483,7 @@ def gen_docker_topology():
     arrow(ax, 0.59, 0.24, 0.59, 0.19, AMBER, style='->', lw=1)
 
     # External APIs
-    ax.text(1.2, 0.38, 'Anthropic API', ha='center', va='center', color=PURPLE, fontsize=9,
+    ax.text(1.2, 0.38, 'Ollama (Local)', ha='center', va='center', color=PURPLE, fontsize=9,
             bbox=dict(boxstyle='round,pad=0.3', facecolor=BG, edgecolor=PURPLE))
     arrow(ax, 1.1, 0.57, 1.15, 0.42, PURPLE, label='HTTPS', label_offset=(0.05, 0))
 

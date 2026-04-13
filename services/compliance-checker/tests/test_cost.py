@@ -1,25 +1,17 @@
-"""Tests for cost estimation."""
+"""Tests for token usage formatting utility."""
 
-from src.cost import estimate_cost
-
-
-def test_sonnet_cost():
-    cost = estimate_cost("claude-sonnet-4-20250514", 10000, 5000)
-    expected = (10000 / 1_000_000) * 3.00 + (5000 / 1_000_000) * 15.00
-    assert abs(cost - expected) < 0.000001
+from src.cost import format_token_usage
 
 
-def test_haiku_cost():
-    cost = estimate_cost("claude-haiku-4-5-20251001", 10000, 5000)
-    expected = (10000 / 1_000_000) * 0.80 + (5000 / 1_000_000) * 4.00
-    assert abs(cost - expected) < 0.000001
-
-
-def test_unknown_model_uses_default():
-    cost = estimate_cost("unknown-model", 10000, 5000)
-    expected = (10000 / 1_000_000) * 3.00 + (5000 / 1_000_000) * 15.00
-    assert abs(cost - expected) < 0.000001
+def test_basic_formatting():
+    result = format_token_usage(10000, 5000)
+    assert result == "10,000 in / 5,000 out"
 
 
 def test_zero_tokens():
-    assert estimate_cost("claude-sonnet-4-20250514", 0, 0) == 0.0
+    assert format_token_usage(0, 0) == "0 in / 0 out"
+
+
+def test_large_numbers():
+    result = format_token_usage(1_000_000, 500_000)
+    assert result == "1,000,000 in / 500,000 out"

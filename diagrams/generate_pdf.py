@@ -157,7 +157,7 @@ def generate():
         'it runs a 6-stage feasibility analysis pipeline, automates prior art discovery, drafts '
         'independent and dependent patent claims, performs compliance pre-screening against patent '
         'law requirements, and generates a complete USPTO-formatted patent application. Every '
-        "capability uses Anthropic's Claude API with multi-agent LangGraph pipelines for the "
+        "capability uses Ollama local inference (Gemma 4) with multi-agent LangGraph pipelines for the "
         'drafting, compliance, and application generation services.'
     )
     pdf.body_text(
@@ -178,7 +178,7 @@ def generate():
     pdf.chapter_title('2. What PatentForge Does')
     features = [
         ('Structured technical analysis', ' - 6-stage AI pipeline restates your invention in patent terminology, searches for related art, identifies potential issues, and organizes findings into a structured report.'),
-        ('Prior art discovery', ' - automated patent search via PatentsView API with AI-powered query extraction and relevance scoring, plus Claude web search for papers, products, and open-source projects.'),
+        ('Prior art discovery', ' - automated patent search via PatentsView API with AI-powered query extraction and relevance scoring, plus Ollama web search for papers, products, and open-source projects.'),
         ('Claim drafting', ' - multi-agent AI pipeline (Planner, Writer, Examiner) generates independent and dependent patent claims with prior art awareness.'),
         ('Compliance pre-screening', ' - four automated checks (35 USC 112a, 112b, MPEP 608, 35 USC 101) with pass/fail/warn results and fix suggestions.'),
         ('Application generation', ' - 5-agent sequential pipeline generates a complete USPTO-formatted patent application (background, summary, detailed description, abstract, figure descriptions) with Word export following 37 CFR 1.52.'),
@@ -186,7 +186,7 @@ def generate():
         ('Cost transparency', ' - pre-run cost estimate with per-stage token tracking so you know what the AI processing will cost before you start.'),
         ('Resume from interruption', ' - pick up where you left off if a run stops mid-pipeline.'),
         ('Multiple export formats', ' - HTML, Word (.docx), and Markdown for sharing with your attorney.'),
-        ('Self-hosted & private', ' - runs on your machine; invention data stays local except for Anthropic API calls.'),
+        ('Self-hosted & private', ' - runs on your machine; all AI processing happens locally.'),
         ('Legal guardrails', ' - clickwrap agreement, embedded disclaimers, watermarked exports, dual license for prompt content.'),
     ]
     for bold, rest in features:
@@ -211,7 +211,7 @@ def generate():
     pdf.bold_bullet('Compliance Checker (port 3004)', ' - Four parallel compliance checks against patent law requirements with MPEP citations and fix suggestions. Python, FastAPI, LangGraph.')
 
     pdf.section_title('External Services')
-    pdf.bold_bullet('Anthropic Claude API', ' - LLM processing with web search tool for grounded research in Stages 2, 3, and 4.')
+    pdf.bold_bullet('Ollama (Gemma 4)', ' - Local LLM processing with optional web search for grounded research in Stages 2, 3, and 4.')
     pdf.bold_bullet('PatentsView API', ' - USPTO patent database search for automated prior art discovery.')
     pdf.bold_bullet('LiteLLM Pricing', ' - Dynamic model cost estimation with 1-hour cached pricing data.')
 
@@ -225,7 +225,7 @@ def generate():
     )
     stages = [
         ('Stage 1: Technical Intake & Restatement', 'Restates your invention in precise technical language. Identifies core components, inventive concept candidates, and CPC classifications. Flags information gaps.'),
-        ('Stage 2: Prior Art Research', 'Searches for existing patents, academic papers, products, and open-source projects using Claude web search and PatentsView data. Produces an element-by-element comparison table and white space assessment.'),
+        ('Stage 2: Prior Art Research', 'Searches for existing patents, academic papers, products, and open-source projects using Ollama web search and PatentsView data. Produces an element-by-element comparison table and white space assessment.'),
         ('Stage 3: Patentability Assessment', 'Maps the invention against patent law requirements under 35 USC 101 (eligibility), 102 (novelty), 103 (obviousness), and 112 (enablement). Identifies anticipated examiner concerns.'),
         ('Stage 4: Deep Dive Analysis', 'Domain-specific analysis of the technology areas relevant to the invention. Patent landscape, strongest/weakest elements, claim framing considerations.'),
         ('Stage 5: IP Landscape Assessment', 'Presents filing indicators, recommended IP protection mix, filing strategy, cost estimates, freedom-to-operate flags, and an overall assessment.'),
@@ -312,7 +312,7 @@ def generate():
     pdf.add_diagram('data-flow.png', 'Figure 2: Cross-Stage Data Flow')
     pdf.body_text(
         'Key characteristics: each stage receives the full output of all prior stages as context. '
-        'Stages 2, 3, and 4 use Anthropic web search for grounded research. The backend also '
+        'Stages 2, 3, and 4 use Ollama web search (optional) for grounded research. The backend also '
         'queries PatentsView independently for verified USPTO patent data that feeds into Stage 2. '
         'Every export (HTML, Word, Markdown) includes a hardcoded legal disclaimer footer that '
         'persists even if the AI output is truncated.'
@@ -352,8 +352,8 @@ def generate():
     pdf.chapter_title('12. Configuration')
     pdf.body_text('All settings are configurable via the Settings page in the web UI:')
     settings = [
-        ('Anthropic API Key', 'Required. Your Claude API key (BYOK model).'),
-        ('Default Model', 'Model for most pipeline stages. Default: claude-sonnet-4-20250514.'),
+        ('Ollama API Key (optional)', 'Optional — enables web search during analysis.'),
+        ('Default Model', 'Model for most pipeline stages. Default: gemma4:26b.'),
         ('Research Model', 'Optional cheaper model for Stage 2 (e.g., Haiku).'),
         ('Max Tokens', 'Maximum tokens per stage response. Default: 32,000.'),
         ('Inter-Stage Delay', 'Pause between stages for rate limit protection. Default: 5 seconds.'),
@@ -375,7 +375,7 @@ def generate():
         ('Embedded per-stage disclaimer', ' - every stage output begins with an italic disclaimer notice that survives copy-paste.'),
         ('Export watermarks', ' - all generated reports (HTML, Word, on-screen) include a persistent legal disclaimer.'),
         ('Hardcoded HTML footer', ' - the report exporter includes a disclaimer div outside the AI content that persists even if AI output is truncated.'),
-        ('API key disclaimer', ' - Settings page notes the user is connecting to their own Anthropic account.'),
+        ('API key disclaimer', ' - Settings page notes the user is using local AI processing — no data leaves your machine.'),
         ('Evidence-based framing', ' - output uses "indicators" and "assessment" language rather than prescriptive legal advice.'),
     ]
     for bold, rest in guardrails:

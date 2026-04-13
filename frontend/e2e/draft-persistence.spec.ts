@@ -42,7 +42,7 @@ test.describe('Draft Persistence', () => {
 
   test.beforeEach(async () => {
     projectId = await createProject('E2E Draft Persistence Test');
-    await updateSettings({ anthropicApiKey: 'test-key-for-e2e' });
+    await updateSettings({ modelReady: true, ollamaModel: 'gemma4:26b', ollamaUrl: 'http://localhost:11434' });
   });
 
   test.afterEach(async () => {
@@ -374,7 +374,7 @@ test.describe('Draft Persistence — API Layer', () => {
 
   test.beforeEach(async () => {
     projectId = await createProject('E2E Invention API Layer Test');
-    await updateSettings({ anthropicApiKey: 'test-key-for-e2e' });
+    await updateSettings({ modelReady: true, ollamaModel: 'gemma4:26b', ollamaUrl: 'http://localhost:11434' });
   });
 
   test.afterEach(async () => {

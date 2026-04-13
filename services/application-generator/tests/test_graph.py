@@ -28,7 +28,7 @@ class TestFinalizeNode:
     async def test_finalize_returns_graph_state(self):
         """finalize() must return GraphState (not dict) for consistent LangGraph state handling."""
         state = GraphState(
-            api_key="sk-ant-test",
+            ollama_url="http://127.0.0.1:11434",
             background="# Background\nSome background text.",
             summary="# Summary\nSome summary text.",
             step="figures",
@@ -37,16 +37,10 @@ class TestFinalizeNode:
         assert isinstance(result, GraphState)
 
     @pytest.mark.asyncio
-    async def test_finalize_scrubs_api_key(self):
-        state = GraphState(api_key="sk-ant-supersecret", background="text")
-        result = await finalize(state)
-        assert result.api_key == ""
-
-    @pytest.mark.asyncio
     async def test_finalize_strips_heading_lines(self):
         """finalize() removes markdown heading lines (lines starting with #)."""
         state = GraphState(
-            api_key="",
+            ollama_url="http://127.0.0.1:11434",
             background="# Background\nActual background content.",
             summary="## Summary Title\nSummary content.",
         )
@@ -59,7 +53,7 @@ class TestFinalizeNode:
     @pytest.mark.asyncio
     async def test_finalize_handles_empty_sections(self):
         """finalize() is a no-op for empty string sections."""
-        state = GraphState(api_key="key", background="", summary="", abstract="")
+        state = GraphState(ollama_url="http://127.0.0.1:11434", background="", summary="", abstract="")
         result = await finalize(state)
         assert result.background == ""
         assert result.summary == ""
@@ -67,7 +61,7 @@ class TestFinalizeNode:
 
     @pytest.mark.asyncio
     async def test_finalize_sets_step(self):
-        state = GraphState(api_key="key", step="figures")
+        state = GraphState(ollama_url="http://127.0.0.1:11434", step="figures")
         result = await finalize(state)
         assert result.step == "finalize"
 
@@ -75,7 +69,7 @@ class TestFinalizeNode:
     async def test_finalize_preserves_cost_fields(self):
         """finalize() must preserve token counts and cost — not lose them."""
         state = GraphState(
-            api_key="key",
+            ollama_url="http://127.0.0.1:11434",
             total_input_tokens=50_000,
             total_output_tokens=10_000,
             total_estimated_cost_usd=1.25,

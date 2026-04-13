@@ -85,14 +85,14 @@ describe('Settings API (integration)', () => {
     it('updates defaultModel and persists the change', async () => {
       await request(app.getHttpServer())
         .put('/api/settings')
-        .send({ defaultModel: 'claude-opus-4-20250514' })
+        .send({ defaultModel: 'gemma4:26b' })
         .expect(200);
 
       const res = await request(app.getHttpServer())
         .get('/api/settings')
         .expect(200);
 
-      expect(res.body.defaultModel).toBe('claude-opus-4-20250514');
+      expect(res.body.defaultModel).toBe('gemma4:26b');
     });
 
     it('returns 400 when maxTokens is not a valid integer', async () => {

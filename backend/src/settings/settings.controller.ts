@@ -33,10 +33,10 @@ export class SettingsController {
     return this.systemService.validateOllamaConnection();
   }
 
-  @Post('validate-api-key')
+  @Post('validate-ollama-connection')
   @UseGuards(ThrottlerGuard)
   @Throttle({ default: { limit: 5, ttl: 60_000 } })
-  async validateApiKey(@Body() body: { apiKey: string }) {
-    return this.settingsService.validateApiKey(body.apiKey);
+  async validateOllamaConnection(@Body() body: { ollamaUrl?: string }) {
+    return this.settingsService.validateOllamaConnection(body.ollamaUrl ?? '');
   }
 }

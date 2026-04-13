@@ -32,11 +32,11 @@ const makePrisma = () => ({
 
 const makeSettings = () => ({
   getSettings: jest.fn().mockResolvedValue({
-    anthropicApiKey: 'test-key',
-    defaultModel: 'claude-haiku-4-5-20251001',
+    ollamaApiKey: '',
+    ollamaUrl: 'http://localhost:11434',
+    defaultModel: 'gemma4:26b',
     researchModel: '',
     maxTokens: 16000,
-    costCapUsd: 0,
   }),
 });
 
@@ -121,34 +121,10 @@ describe('ApplicationService — stream helpers', () => {
       expect(result.appId).toBe('new-app');
       expect(result.requestBody.invention_narrative).toContain('Widget');
       expect(result.requestBody.claims_text).toContain('A method of widgeting');
-      expect(result.requestBody.settings.api_key).toBe('test-key');
+      expect(result.requestBody.settings.ollama_url).toBe('http://localhost:11434');
       expect(result.requestBody.feasibility_stage_1).toBe('Stage 1');
     });
 
-    it('throws BadRequestException when cost cap exceeded', async () => {
-      mockSettings.getSettings.mockResolvedValue({
-        anthropicApiKey: 'test-key',
-        defaultModel: 'claude-haiku-4-5-20251001',
-        researchModel: '',
-        maxTokens: 16000,
-        costCapUsd: 1.0,
-      });
-      mockPrisma.project.findUnique.mockResolvedValue({
-        id: 'p1',
-        invention: { title: 'Test', description: 'Desc' },
-      });
-      mockPrisma.claimDraft.findFirst.mockResolvedValue({
-        id: 'd1',
-        version: 1,
-        status: 'COMPLETE',
-        specLanguage: null,
-        claims: [{ claimNumber: 1, text: 'text' }],
-      });
-      mockPrisma.patentApplication.findFirst.mockResolvedValue(null);
-      mockPrisma.patentApplication.findMany.mockResolvedValue([{ estimatedCostUsd: 2.0 }]);
-
-      await expect(service.prepareGeneration('p1')).rejects.toThrow(BadRequestException);
-    });
   });
 
   describe('saveStreamComplete', () => {
@@ -263,7 +239,7 @@ describe('ApplicationController — streamGeneration SSE', () => {
   it('returns 502 when upstream fetch fails', async () => {
     mockService.prepareGeneration.mockResolvedValue({
       appId: 'app-1',
-      requestBody: { settings: { api_key: 'key' } },
+      requestBody: { settings: { ollama_url: 'key' } },
     });
     mockFetch.mockRejectedValue(new Error('ECONNREFUSED'));
 
@@ -276,7 +252,7 @@ describe('ApplicationController — streamGeneration SSE', () => {
   it('sets SSE headers and forwards events when upstream succeeds', async () => {
     mockService.prepareGeneration.mockResolvedValue({
       appId: 'app-1',
-      requestBody: { settings: { api_key: 'key' } },
+      requestBody: { settings: { ollama_url: 'key' } },
     });
 
     const ssePayload =
@@ -315,7 +291,7 @@ describe('ApplicationController — streamGeneration SSE', () => {
   it('marks app as error when upstream returns non-OK status', async () => {
     mockService.prepareGeneration.mockResolvedValue({
       appId: 'app-1',
-      requestBody: { settings: { api_key: 'key' } },
+      requestBody: { settings: { ollama_url: 'key' } },
     });
 
     mockFetch.mockResolvedValue({
@@ -333,7 +309,7 @@ describe('ApplicationController — streamGeneration SSE', () => {
   it('marks app as error when stream ends without complete event', async () => {
     mockService.prepareGeneration.mockResolvedValue({
       appId: 'app-1',
-      requestBody: { settings: { api_key: 'key' } },
+      requestBody: { settings: { ollama_url: 'key' } },
     });
 
     const ssePayload = 'event: step\ndata: {"step":"background"}\n\n';
