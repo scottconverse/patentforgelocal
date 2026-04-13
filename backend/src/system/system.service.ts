@@ -8,7 +8,7 @@ const OLLAMA_URL = (() => {
   return host.startsWith('http://') || host.startsWith('https://') ? host : `http://${host}`;
 })();
 
-interface SystemCheckResult {
+export interface SystemCheckResult {
   ramGB: number;
   diskFreeGB: number;
   cpuCores: number;
@@ -19,7 +19,7 @@ interface SystemCheckResult {
   ollamaRunning: boolean;
 }
 
-interface PullProgress {
+export interface PullProgress {
   status: string;
   completed: number;
   total: number;
