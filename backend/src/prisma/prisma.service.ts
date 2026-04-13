@@ -247,6 +247,9 @@ CREATE TABLE "OdpApiUsage" (
 CREATE TABLE "AppSettings" (
     "id" TEXT NOT NULL PRIMARY KEY DEFAULT 'singleton',
     "ollamaApiKey" TEXT NOT NULL DEFAULT '',
+    "ollamaModel" TEXT NOT NULL DEFAULT 'gemma4:26b',
+    "ollamaUrl" TEXT NOT NULL DEFAULT 'http://localhost:11434',
+    "modelReady" BOOLEAN NOT NULL DEFAULT false,
     "defaultModel" TEXT NOT NULL DEFAULT 'gemma4:26b',
     "researchModel" TEXT NOT NULL DEFAULT '',
     "maxTokens" INTEGER NOT NULL DEFAULT 32000,
