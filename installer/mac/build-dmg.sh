@@ -35,12 +35,8 @@ if [ -d "runtime/python" ]; then
   cp -r runtime/python/* "${APP_DIR}/Contents/Resources/runtime/python/"
 fi
 
-# Bundle Ollama
-echo "  Copying Ollama runtime..."
-mkdir -p "${APP_DIR}/Contents/Resources/runtime/ollama"
-if [ -d "runtime/ollama" ]; then
-  cp -r runtime/ollama/* "${APP_DIR}/Contents/Resources/runtime/ollama/"
-fi
+# Ollama is NOT bundled in the DMG to keep size under GitHub's 2 GiB limit.
+# The tray app downloads Ollama on first run if not found.
 
 # Create Info.plist
 cat > "${APP_DIR}/Contents/Info.plist" << EOF
@@ -73,6 +69,9 @@ EOF
 # To notarize: xcrun notarytool submit "build/${APP_NAME}-${VERSION}.dmg" --apple-id ... --team-id ...
 # Without signing, users must right-click → Open or run: xattr -cr /Applications/PatentForgeLocal.app
 echo "  NOTE: DMG is unsigned. Users will see Gatekeeper warning on first launch."
+
+# Flush writes before creating DMG (prevents "Resource busy" on CI)
+sync
 
 # Create .dmg
 mkdir -p build
