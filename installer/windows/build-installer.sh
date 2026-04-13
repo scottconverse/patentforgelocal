@@ -45,11 +45,11 @@ check_dir() {
 
 echo ""
 echo "Checking build artifacts..."
-check_file "patentforge-tray.exe"
-check_file "patentforge-backend.exe"
-check_file "patentforge-feasibility.exe"
-check_dir  "patentforge-backend-prisma"
-check_dir  "patentforge-feasibility-prompts"
+check_file "patentforgelocal-tray.exe"
+check_file "patentforgelocal-backend.exe"
+check_file "patentforgelocal-feasibility.exe"
+check_dir  "patentforgelocal-backend-prisma"
+check_dir  "patentforgelocal-feasibility-prompts"
 check_dir  "runtime/python"
 check_dir  "services/claim-drafter/src"
 check_dir  "services/application-generator/src"
@@ -72,11 +72,11 @@ mkdir -p "$REPO_ROOT/build"
 # --- Compile the installer ---
 echo ""
 echo "Compiling installer..."
-"$ISCC" "$REPO_ROOT/installer/windows/patentforge.iss"
+"$ISCC" "$REPO_ROOT/installer/windows/patentforgelocal.iss"
 
 # Read version from the .iss file to find the output filename
-ISS_VERSION=$(grep '#define MyAppVersion' "$REPO_ROOT/installer/windows/patentforge.iss" | sed 's/.*"\(.*\)"/\1/')
-OUTPUT="$REPO_ROOT/build/PatentForge-${ISS_VERSION}-Setup.exe"
+ISS_VERSION=$(grep '#define MyAppVersion' "$REPO_ROOT/installer/windows/patentforgelocal.iss" | sed 's/.*"\(.*\)"/\1/')
+OUTPUT="$REPO_ROOT/build/PatentForgeLocal-${ISS_VERSION}-Setup.exe"
 if [ -f "$OUTPUT" ]; then
     SIZE=$(du -h "$OUTPUT" | cut -f1)
     echo ""

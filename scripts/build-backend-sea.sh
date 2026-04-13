@@ -31,10 +31,15 @@ node --experimental-sea-config sea-config.json
 # Step 5: Copy node binary and inject
 echo "  Creating standalone executable..."
 NODE_BIN=$(node -e "console.log(process.execPath)")
-cp "$NODE_BIN" "$ROOT_DIR/patentforgelocal-backend.exe"
+EXT=""
+if [[ "$OSTYPE" == "msys" ]] || [[ "$OSTYPE" == "cygwin" ]] || [[ "$(uname -s)" == MINGW* ]]; then
+  EXT=".exe"
+fi
+OUTPUT_BIN="$ROOT_DIR/patentforgelocal-backend${EXT}"
+cp "$NODE_BIN" "$OUTPUT_BIN"
 
 # Inject the blob
-npx postject "$ROOT_DIR/patentforgelocal-backend.exe" NODE_SEA_BLOB sea-prep.blob \
+npx postject "$OUTPUT_BIN" NODE_SEA_BLOB sea-prep.blob \
   --sentinel-fuse NODE_SEA_FUSE_fce680ab2cc467b6e072b8b5df1996b2
 
 # Step 6: Copy Prisma engine alongside
@@ -53,7 +58,7 @@ done
 cp prisma/schema.prisma "$ROOT_DIR/patentforgelocal-backend-prisma/"
 
 echo ""
-echo "  Done! Binary: patentforgelocal-backend.exe ($(du -h "$ROOT_DIR/patentforgelocal-backend.exe" | cut -f1))"
+echo "  Done! Binary: patentforgelocal-backend${EXT} ($(du -h "$OUTPUT_BIN" | cut -f1))"
 echo "  Prisma files: patentforgelocal-backend-prisma/"
 ls -1 "$ROOT_DIR/patentforgelocal-backend-prisma/"
 echo ""
