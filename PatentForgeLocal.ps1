@@ -5,6 +5,15 @@ $root = Split-Path -Parent $MyInvocation.MyCommand.Path
 
 Write-Host "PatentForgeLocal starting..." -ForegroundColor Cyan
 
+# ─── Hardware Detection ──────────────────────────────────────────────────────
+$hwEnvFile = Join-Path $root ".env.hardware"
+$detectScript = Join-Path $root "scripts\detect_hardware.ps1"
+if ((Test-Path $detectScript) -and -not (Test-Path $hwEnvFile)) {
+    Write-Host "  Running hardware detection (first run)..." -ForegroundColor Yellow
+    & $detectScript
+    Write-Host ""
+}
+
 # ─── Find Node.js ─────────────────────────────────────────────────────────────
 $node = $null
 $nodeSearchPaths = @(

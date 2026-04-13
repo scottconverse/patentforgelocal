@@ -14,6 +14,7 @@ build/
 *.sea
 *.gguf
 tray/cmd/tray/tray
+tray/tray
 
 # Runtime bundles (downloaded during build, not committed)
 runtime/ollama/
