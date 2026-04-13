@@ -35,8 +35,12 @@ if [ -d "runtime/python" ]; then
   cp -r runtime/python/* "${APP_DIR}/Contents/Resources/runtime/python/"
 fi
 
-# Ollama is NOT bundled in the DMG to keep size under GitHub's 2 GiB limit.
-# The tray app downloads Ollama on first run if not found.
+# Bundle Ollama
+if [ -d "runtime/ollama" ]; then
+  echo "  Copying Ollama runtime..."
+  mkdir -p "${APP_DIR}/Contents/Resources/runtime/ollama"
+  cp -r runtime/ollama/* "${APP_DIR}/Contents/Resources/runtime/ollama/"
+fi
 
 # Create Info.plist
 cat > "${APP_DIR}/Contents/Info.plist" << EOF

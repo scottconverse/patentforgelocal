@@ -34,8 +34,12 @@ if [ -d "runtime/python" ]; then
   cp -r runtime/python/* "${APP_DIR}/usr/bin/runtime/python/"
 fi
 
-# Ollama is NOT bundled in the AppImage to stay under GitHub's 2 GiB release
-# asset limit. The tray app downloads Ollama on first run if not found.
+# Bundle Ollama
+if [ -d "runtime/ollama" ]; then
+  echo "  Copying Ollama runtime..."
+  mkdir -p "${APP_DIR}/usr/bin/runtime/ollama"
+  cp -r runtime/ollama/* "${APP_DIR}/usr/bin/runtime/ollama/"
+fi
 
 # Copy icon
 cp tray/internal/assets/icon.png "${APP_DIR}/usr/share/icons/hicolor/256x256/apps/patentforgelocal.png"
