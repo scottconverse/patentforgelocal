@@ -19,7 +19,7 @@ jobs:
 
       - uses: actions/setup-node@v4
         with:
-          node-version: '20'
+          node-version: '22'
 
       - uses: actions/setup-python@v5
         with:
@@ -28,7 +28,7 @@ jobs:
       # Build tray app
       - name: Build tray app
         working-directory: tray
-        run: go build -ldflags "-X main.version=${{ github.ref_name }}" -o ../patentforge-tray.exe ./cmd/tray
+        run: go build -ldflags "-X main.version=${{ github.ref_name }}" -o ../patentforgelocal-tray.exe ./cmd/tray
 
       # Build backend dependencies and SEA
       - name: Install backend dependencies
@@ -61,9 +61,7 @@ jobs:
         working-directory: frontend
         run: npm run build
 
-      # Frontend dist stays at frontend/dist/ — .iss and tray both reference it there
-
-      # Bundle portable Python
+      # Bundle portable Python + service dependencies
       - name: Bundle Python
         run: bash scripts/bundle-python.sh windows
         shell: bash
@@ -84,7 +82,7 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: windows-installer
-          path: build/PatentForge-*-Setup.exe
+          path: build/PatentForgeLocal-*-Setup.exe
 
   build-mac:
     runs-on: macos-latest
@@ -97,7 +95,7 @@ jobs:
 
       - uses: actions/setup-node@v4
         with:
-          node-version: '20'
+          node-version: '22'
 
       - uses: actions/setup-python@v5
         with:
@@ -105,7 +103,7 @@ jobs:
 
       - name: Build tray app
         working-directory: tray
-        run: CGO_ENABLED=1 go build -ldflags "-X main.version=${{ github.ref_name }}" -o ../patentforge-tray ./cmd/tray
+        run: CGO_ENABLED=1 go build -ldflags "-X main.version=${{ github.ref_name }}" -o ../patentforgelocal-tray ./cmd/tray
 
       - name: Install backend dependencies
         working-directory: backend
@@ -146,7 +144,7 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: mac-dmg
-          path: build/PatentForge-*.dmg
+          path: build/PatentForgeLocal-*.dmg
 
   build-linux:
     runs-on: ubuntu-latest
@@ -159,7 +157,7 @@ jobs:
 
       - uses: actions/setup-node@v4
         with:
-          node-version: '20'
+          node-version: '22'
 
       - uses: actions/setup-python@v5
         with:
@@ -170,7 +168,7 @@ jobs:
 
       - name: Build tray app
         working-directory: tray
-        run: CGO_ENABLED=1 go build -ldflags "-X main.version=${{ github.ref_name }}" -o ../patentforge-tray ./cmd/tray
+        run: CGO_ENABLED=1 go build -ldflags "-X main.version=${{ github.ref_name }}" -o ../patentforgelocal-tray ./cmd/tray
 
       - name: Install backend dependencies
         working-directory: backend
@@ -211,7 +209,7 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: linux-appimage
-          path: build/PatentForge-*.AppImage
+          path: build/PatentForgeLocal-*.AppImage
 
   create-release:
     needs: [build-windows, build-mac, build-linux]

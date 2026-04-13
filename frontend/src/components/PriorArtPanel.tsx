@@ -40,6 +40,7 @@ export default function PriorArtPanel({ projectId, search, onUpdate, onPatentCli
 
       es.addEventListener('prior_art_complete', refresh);
       es.addEventListener('prior_art_error', refresh);
+      es.addEventListener('prior_art_warning', refresh);
       es.addEventListener('prior_art_queries', refresh);
 
       return () => {
@@ -104,6 +105,29 @@ export default function PriorArtPanel({ projectId, search, onUpdate, onPatentCli
         </p>
         <p className="text-gray-400 mt-2">
           The feasibility analysis still uses AI web search for prior art research (Stage 2).
+        </p>
+      </Alert>
+    );
+  }
+
+  // Search completed but found nothing — likely no USPTO API key configured
+  if (search.status === 'COMPLETE' && search.results.length === 0) {
+    return (
+      <Alert variant="warning">
+        <p className="font-semibold">No prior art results found</p>
+        <p className="mt-2">
+          This usually means no{' '}
+          <a href="/settings" className="text-blue-400 hover:underline">
+            USPTO API key
+          </a>{' '}
+          is configured. Add a free API key from{' '}
+          <a href="https://data.uspto.gov" target="_blank" rel="noopener noreferrer" className="text-blue-400 hover:underline">
+            data.uspto.gov
+          </a>{' '}
+          in Settings to enable patent database search.
+        </p>
+        <p className="text-gray-400 mt-2">
+          The feasibility analysis still uses AI knowledge for prior art research (Stage 2), but structured patent data improves results significantly.
         </p>
       </Alert>
     );
