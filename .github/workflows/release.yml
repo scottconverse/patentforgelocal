@@ -69,6 +69,8 @@ jobs:
       - name: Bundle Ollama
         run: bash scripts/bundle-ollama.sh windows
         shell: bash
+        env:
+          GH_TOKEN: ${{ github.token }}
 
       # Build installer
       - name: Install Inno Setup
@@ -136,6 +138,8 @@ jobs:
 
       - name: Bundle Ollama (Mac)
         run: bash scripts/bundle-ollama.sh mac
+        env:
+          GH_TOKEN: ${{ github.token }}
 
       - name: Create .app bundle and .dmg
         run: bash installer/mac/build-dmg.sh
@@ -201,6 +205,8 @@ jobs:
 
       - name: Bundle Ollama (Linux)
         run: bash scripts/bundle-ollama.sh linux
+        env:
+          GH_TOKEN: ${{ github.token }}
 
       - name: Create AppImage
         run: bash installer/linux/build-appimage.sh
