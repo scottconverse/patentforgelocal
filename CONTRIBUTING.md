@@ -100,6 +100,26 @@ PatentForgeLocal uses Ollama for local AI inference. No API keys required.
 
 7. **Verify Ollama is running** -- the system check panel in Settings (gear icon) shows Ollama and model status.
 
+### Stopping Services
+
+When using the `PatentForgeLocal.bat` launcher, stop all services with:
+```powershell
+.\PatentForgeLocal-stop.ps1
+```
+This reads process IDs from `logs\pids.txt` and stops each service. It also kills any leftover processes on ports 3000-3004.
+
+### Log Files
+
+The launcher writes service logs to `logs/`:
+- `backend.log`, `backend-error.log`
+- `feasibility.log`, `feasibility-error.log`
+- `claim-drafter.log`, `claim-drafter-error.log`
+- `application-generator.log`, `application-generator-error.log`
+- `compliance-checker.log`, `compliance-checker-error.log`
+- `pids.txt` — tracked process IDs for graceful shutdown
+
+Logs are overwritten on each launch. Check `-error.log` files first when debugging.
+
 ### Docker Setup (optional alternative)
 
 Docker is not required for local development. The `PatentForgeLocal.bat` launcher handles starting all services locally. Docker is available as an alternative if you prefer containerized deployment.

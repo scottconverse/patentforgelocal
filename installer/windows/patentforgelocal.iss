@@ -53,7 +53,7 @@ Source: "..\..\patentforgelocal-feasibility-prompts\*"; DestDir: "{app}\patentfo
 Source: "..\..\runtime\python\*"; DestDir: "{app}\runtime\python"; Flags: ignoreversion recursesubdirs createallsubdirs
 
 ; Ollama runtime (portable, bundled)
-Source: "..\..\runtime\ollama\*"; DestDir: "{app}\runtime\ollama"; Flags: ignoreversion recursesubdirs createallsubdirs
+Source: "..\..\runtime\ollama\*"; DestDir: "{app}\runtime\ollama"; Flags: ignoreversion recursesubdirs createallsubdirs skipifsourcedoesntexist
 
 ; Python services
 Source: "..\..\services\claim-drafter\src\*"; DestDir: "{app}\services\claim-drafter\src"; Flags: ignoreversion recursesubdirs createallsubdirs

@@ -1,4 +1,4 @@
-# PatentForgeLocal User Manual — v0.1.0
+# PatentForgeLocal User Manual — v0.1.1
 
 A step-by-step guide for using PatentForgeLocal to research and prepare for a patent consultation.
 
@@ -94,9 +94,9 @@ Download the installer for your operating system:
 
 | Operating System | File to Download |
 |-----------------|-----------------|
-| **Windows** | `PatentForgeLocal-0.1.0-Setup.exe` |
-| **Mac** | `PatentForgeLocal-0.1.0.dmg` |
-| **Linux** | `PatentForgeLocal-0.1.0.AppImage` |
+| **Windows** | `PatentForgeLocal-0.1.1-Setup.exe` |
+| **Mac** | `PatentForgeLocal-0.1.1.dmg` |
+| **Linux** | `PatentForgeLocal-0.1.1.AppImage` |
 
 ### Step 2: Run the Installer
 
@@ -115,8 +115,8 @@ Download the installer for your operating system:
 
 **On Linux:**
 1. Open a terminal in the folder where you downloaded the file
-2. Make it executable: `chmod +x PatentForgeLocal-0.1.0.AppImage`
-3. Run it: `./PatentForgeLocal-0.1.0.AppImage`
+2. Make it executable: `chmod +x PatentForgeLocal-0.1.1.AppImage`
+3. Run it: `./PatentForgeLocal-0.1.1.AppImage`
 4. On some systems, you may need to install FUSE first: `sudo apt install libfuse2`
 
 ### What Gets Installed
@@ -700,6 +700,23 @@ Both keys are free to obtain. Neither is required to use PatentForgeLocal — th
 1. Make sure you have completed a full feasibility analysis first (all 6 stages) — claims require analysis results as input
 2. For compliance checks, make sure you have generated claims first
 3. Only one claim draft or compliance check can run at a time per project. If a previous run was interrupted, refresh the page — PatentForgeLocal automatically cleans up stale runs on restart.
+
+### Stopping PatentForgeLocal Manually
+
+If closing the window does not stop the background services (you notice high CPU or memory usage after closing):
+
+1. **Windows:** Open a PowerShell window in the PatentForgeLocal folder and run: `.\PatentForgeLocal-stop.ps1`
+2. This reads the process IDs from `logs\pids.txt` and stops each service gracefully
+3. As a safety net, it also checks ports 3000-3004 and kills any remaining processes
+
+### Finding Log Files
+
+If something goes wrong and you need to share details with a support person:
+
+1. Open the `logs` folder inside your PatentForgeLocal installation directory
+2. Each service has its own log file: `backend.log`, `feasibility.log`, `claim-drafter.log`, etc.
+3. Error output is in separate files ending in `-error.log` (e.g., `backend-error.log`)
+4. These files are overwritten each time you launch PatentForgeLocal
 
 ### Getting More Help
 

@@ -58,6 +58,12 @@ cat > "${APP_DIR}/Contents/Info.plist" << EOF
 </plist>
 EOF
 
+# Code signing (requires Apple Developer account + certificate)
+# To sign: codesign --deep --force --sign "Developer ID Application: Your Name" "${APP_DIR}"
+# To notarize: xcrun notarytool submit "build/${APP_NAME}-${VERSION}.dmg" --apple-id ... --team-id ...
+# Without signing, users must right-click → Open or run: xattr -cr /Applications/PatentForgeLocal.app
+echo "  NOTE: DMG is unsigned. Users will see Gatekeeper warning on first launch."
+
 # Create .dmg
 mkdir -p build
 hdiutil create -volname "${APP_NAME}" -srcfolder "${APP_DIR}" -ov -format UDZO "build/${APP_NAME}-${VERSION}.dmg"

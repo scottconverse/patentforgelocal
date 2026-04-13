@@ -1,4 +1,4 @@
-# PatentForgeLocal v0.1.0
+# PatentForgeLocal v0.1.1
 
 **Private patent analysis, running entirely on your machine.**
 
@@ -26,6 +26,10 @@ PatentForgeLocal is a fully local version of [PatentForge](https://github.com/sc
 3. **Follow the wizard** -- the system check verifies your hardware, downloads the model if needed, and launches the app
 
 No API keys required. No cloud accounts. No recurring costs.
+
+> **Download sizes:** Windows installer ~1.2 GB, Mac DMG ~800 MB, Linux AppImage ~700 MB. The installers bundle Ollama and a portable Python runtime so everything works offline.
+>
+> **macOS note:** The DMG is unsigned. On first launch, right-click the app and select "Open", then confirm. Or run: `xattr -cr /Applications/PatentForgeLocal.app`
 
 ## System Requirements
 

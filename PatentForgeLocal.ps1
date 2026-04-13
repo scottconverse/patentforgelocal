@@ -202,11 +202,37 @@ if (-not $ollamaRunning) {
         }
     }
     if (-not $ollamaRunning) {
-        Write-Host ""
-        Write-Host "ERROR: Ollama is not running and could not be started." -ForegroundColor Red
-        Write-Host "  Install Ollama from https://ollama.com or place the binary in runtime\ollama\" -ForegroundColor Yellow
-        Read-Host "Press Enter to exit"
-        exit 1
+        # Last resort: download and install Ollama
+        Write-Host "  Ollama not found. Downloading installer..." -ForegroundColor Yellow
+        $ollamaInstaller = Join-Path $env:TEMP "OllamaSetup.exe"
+        try {
+            Invoke-WebRequest -Uri "https://ollama.com/download/OllamaSetup.exe" -OutFile $ollamaInstaller -TimeoutSec 300
+            Write-Host "  Installing Ollama (this may take a minute)..." -ForegroundColor Yellow
+            Start-Process -FilePath $ollamaInstaller -ArgumentList "/VERYSILENT /NORESTART" -Wait
+            Start-Sleep -Seconds 3
+            # Try to start the freshly installed Ollama
+            $systemOllama = (Get-Command ollama -ErrorAction SilentlyContinue).Source
+            if ($systemOllama) {
+                Start-Process -FilePath $systemOllama -ArgumentList "serve" -WindowStyle Hidden
+                $ollamaDeadline2 = (Get-Date).AddSeconds(15)
+                while ((Get-Date) -lt $ollamaDeadline2) {
+                    Start-Sleep -Seconds 1
+                    try {
+                        $r = Invoke-WebRequest -Uri "http://127.0.0.1:11434/api/tags" -TimeoutSec 2 -ErrorAction SilentlyContinue
+                        if ($r.StatusCode -eq 200) { $ollamaRunning = $true; break }
+                    } catch { }
+                }
+            }
+        } catch {
+            Write-Host "  Download failed: $_" -ForegroundColor Red
+        }
+        if (-not $ollamaRunning) {
+            Write-Host ""
+            Write-Host "ERROR: Could not install or start Ollama." -ForegroundColor Red
+            Write-Host "  Install manually from https://ollama.com then re-run this launcher." -ForegroundColor Yellow
+            Read-Host "Press Enter to exit"
+            exit 1
+        }
     }
 }
 Write-Host "  Ollama: running" -ForegroundColor Green

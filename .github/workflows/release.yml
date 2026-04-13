@@ -221,13 +221,27 @@ jobs:
         with:
           path: artifacts/
 
-      - name: Create GitHub Release
-        uses: softprops/action-gh-release@v2
-        with:
-          files: |
-            artifacts/windows-installer/*
-            artifacts/mac-dmg/*
-            artifacts/linux-appimage/*
-          generate_release_notes: true
-          draft: false
-          prerelease: false
+      - name: Create draft release
+        run: gh release create "${{ github.ref_name }}" --draft --generate-notes --title "PatentForgeLocal ${{ github.ref_name }}"
+        env:
+          GH_TOKEN: ${{ github.token }}
+
+      - name: Upload Windows installer
+        run: gh release upload "${{ github.ref_name }}" artifacts/windows-installer/* --clobber
+        env:
+          GH_TOKEN: ${{ github.token }}
+
+      - name: Upload Mac DMG
+        run: gh release upload "${{ github.ref_name }}" artifacts/mac-dmg/* --clobber
+        env:
+          GH_TOKEN: ${{ github.token }}
+
+      - name: Upload Linux AppImage
+        run: gh release upload "${{ github.ref_name }}" artifacts/linux-appimage/* --clobber
+        env:
+          GH_TOKEN: ${{ github.token }}
+
+      - name: Publish release
+        run: gh release edit "${{ github.ref_name }}" --draft=false
+        env:
+          GH_TOKEN: ${{ github.token }}

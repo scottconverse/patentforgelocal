@@ -55,15 +55,69 @@ print('All imports OK')
         ;;
 
     mac)
-        echo "  Mac Python bundling will be handled by CI"
-        echo "  Using python-build-standalone releases from indygreg/python-build-standalone"
-        # Placeholder — CI will download the appropriate release
+        # Download python-build-standalone for macOS
+        ARCH=$(uname -m)
+        if [ "$ARCH" = "arm64" ]; then
+            PBS_ARCH="aarch64-apple-darwin"
+        else
+            PBS_ARCH="x86_64-apple-darwin"
+        fi
+        PBS_TAG="20241219"
+        URL="https://github.com/indygreg/python-build-standalone/releases/download/${PBS_TAG}/cpython-${PYTHON_VERSION}+${PBS_TAG}-${PBS_ARCH}-install_only.tar.gz"
+        echo "  Downloading Python ${PYTHON_VERSION} for macOS (${ARCH})..."
+        curl -L -o python-standalone.tar.gz "$URL"
+        tar xzf python-standalone.tar.gz -C runtime/python/ --strip-components=1
+        rm python-standalone.tar.gz
+
+        # Install service dependencies
+        echo "  Installing service dependencies..."
+        runtime/python/bin/python3 -m pip install \
+            -r scripts/requirements-portable.txt \
+            --no-warn-script-location --quiet 2>&1 | tail -5
+
+        # Verify core imports
+        echo "  Verifying imports..."
+        runtime/python/bin/python3 -c "
+import fastapi
+import openai
+import langgraph
+import uvicorn
+import pydantic
+import sse_starlette
+import docx
+print('All imports OK')
+"
         ;;
 
     linux)
-        echo "  Linux Python bundling will be handled by CI"
-        echo "  Using python-build-standalone releases from indygreg/python-build-standalone"
-        # Placeholder — CI will download the appropriate release
+        # Download python-build-standalone for Linux
+        ARCH=$(uname -m)
+        PBS_ARCH="${ARCH}-unknown-linux-gnu"
+        PBS_TAG="20241219"
+        URL="https://github.com/indygreg/python-build-standalone/releases/download/${PBS_TAG}/cpython-${PYTHON_VERSION}+${PBS_TAG}-${PBS_ARCH}-install_only.tar.gz"
+        echo "  Downloading Python ${PYTHON_VERSION} for Linux (${ARCH})..."
+        curl -L -o python-standalone.tar.gz "$URL"
+        tar xzf python-standalone.tar.gz -C runtime/python/ --strip-components=1
+        rm python-standalone.tar.gz
+
+        # Install service dependencies
+        echo "  Installing service dependencies..."
+        runtime/python/bin/python3 -m pip install \
+            -r scripts/requirements-portable.txt \
+            --no-warn-script-location --quiet 2>&1 | tail -5
+
+        # Verify core imports
+        echo "  Verifying imports..."
+        runtime/python/bin/python3 -c "
+import fastapi
+import openai
+import langgraph
+import uvicorn
+import pydantic
+import sse_starlette
+import docx
+print('All imports OK')
+"
         ;;
 
     *)
