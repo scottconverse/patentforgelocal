@@ -21,14 +21,24 @@ cp patentforgelocal-backend "${APP_DIR}/usr/bin/"
 cp patentforgelocal-feasibility "${APP_DIR}/usr/bin/"
 cp -r patentforgelocal-backend-prisma "${APP_DIR}/usr/bin/"
 cp -r patentforgelocal-feasibility-prompts "${APP_DIR}/usr/bin/"
-cp -r runtime "${APP_DIR}/usr/bin/"
-cp -r services "${APP_DIR}/usr/bin/"
+
+# Copy Python services (source only, no node_modules/tests/__pycache__)
+for svc in claim-drafter application-generator compliance-checker; do
+  mkdir -p "${APP_DIR}/usr/bin/services/${svc}"
+  cp -r "services/${svc}/src" "${APP_DIR}/usr/bin/services/${svc}/"
+done
+
+# Copy portable Python runtime
+if [ -d "runtime/python" ]; then
+  mkdir -p "${APP_DIR}/usr/bin/runtime/python"
+  cp -r runtime/python/* "${APP_DIR}/usr/bin/runtime/python/"
+fi
 
 # Bundle Ollama
 echo "  Copying Ollama runtime..."
-mkdir -p "${APP_DIR}/usr/lib/patentforgelocal/runtime/ollama"
+mkdir -p "${APP_DIR}/usr/bin/runtime/ollama"
 if [ -d "runtime/ollama" ]; then
-  cp -r runtime/ollama/* "${APP_DIR}/usr/lib/patentforgelocal/runtime/ollama/"
+  cp -r runtime/ollama/* "${APP_DIR}/usr/bin/runtime/ollama/"
 fi
 
 # Copy icon
