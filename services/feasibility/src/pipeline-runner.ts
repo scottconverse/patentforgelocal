@@ -61,7 +61,7 @@ function buildUserMessage(
 
     case 2: {
       const priorArtSection = settings?.priorArtContext
-        ? `\n\n---\n\n## PatentsView Prior Art Results\n\nThe following patents were retrieved from the USPTO PatentsView database and are relevant to this invention. Reference them by patent number in your analysis.\n\n${settings.priorArtContext}`
+        ? `\n\n---\n\n## USPTO-ODP Prior Art Results\n\nThe following patents were retrieved from the USPTO Open Data Portal and are relevant to this invention. Reference them by patent number in your analysis.\n\n${settings.priorArtContext}`
         : '';
       return (
         `## Invention (Technical Restatement from Stage 1)\n\n${stage1}` +
@@ -90,7 +90,7 @@ function buildUserMessage(
         `## Technical Restatement\n\n${stage1}` +
         `\n\n## Prior Art Found\n\n${stage2}` +
         `\n\n## Patentability Analysis\n\n${stage3}` +
-        `\n\n## AI & 3D Print Deep Dive\n\n${stage4}` +
+        `\n\n## Deep Dive Analysis\n\n${stage4}` +
         `\n\n## Original Description\n\n${narrative}`
       );
 
