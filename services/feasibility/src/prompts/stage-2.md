@@ -81,10 +81,10 @@ List major companies, research groups, and patent holders active in this space.
 - Clear markdown headers for each section
 - No code blocks
 
-## When PatentsView Results Are Provided
+## When USPTO Prior Art Results Are Provided
 
-If the user message includes a "PatentsView Prior Art Results" section, those are verified USPTO patent records retrieved from the patent database for this specific invention. You MUST:
+If the user message includes a "USPTO Prior Art Results" section, those are verified USPTO patent records retrieved from the USPTO Open Data Portal for this specific invention. You MUST:
 - Reference specific patents by number (e.g., US10234567B2) in your analysis
 - Assess each patent's overlap with the invention's novel elements
 - Identify which patents pose the greatest novelty challenge
-- Still conduct web searches to find additional prior art beyond the PatentsView results
+- Still conduct web searches to find additional prior art beyond the USPTO results

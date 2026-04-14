@@ -33,7 +33,7 @@ const makeResult = (overrides: Partial<PriorArtResult> = {}): PriorArtResult => 
   abstract: 'A method for processing widgets efficiently.',
   relevanceScore: 0.85,
   snippet: 'Key finding about widgets.',
-  source: 'PatentsView',
+  source: 'USPTO-ODP',
   ...overrides,
 });
 

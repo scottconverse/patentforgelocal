@@ -53,7 +53,6 @@ function makeDefaultParams(overrides?: Partial<UseFeasibilityRunParams>): UseFea
     getLatestRun: vi.fn().mockReturnValue(null),
     setViewMode: vi.fn(),
     setToast: vi.fn(),
-    setCostModal: vi.fn(),
     setError: vi.fn(),
     loadProject: vi.fn().mockResolvedValue(undefined),
     setPriorArtSearch: vi.fn(),
@@ -274,30 +273,6 @@ describe('useFeasibilityRun', () => {
     expect(api.settings.get).not.toHaveBeenCalled();
   });
 
-  it('handleRunFeasibility with valid settings shows confirmation modal', async () => {
-    const setCostModal = vi.fn();
-    (api.settings.get as any).mockResolvedValue({
-      modelReady: true,
-      defaultModel: 'gemma4:26b',
-      ollamaModel: 'gemma4:26b',
-    });
-
-    const params = makeDefaultParams({ setCostModal });
-
-    const { result } = renderHook(() => useFeasibilityRun(params));
-
-    await act(async () => {
-      await result.current.handleRunFeasibility();
-    });
-
-    expect(setCostModal).toHaveBeenCalledTimes(1);
-    const modalArg = setCostModal.mock.calls[0][0];
-    expect(modalArg).toHaveProperty('tokenCost', 0);
-    expect(modalArg).toHaveProperty('webSearchCost', 0);
-    expect(modalArg).toHaveProperty('model', 'gemma4:26b');
-    expect(modalArg).toHaveProperty('source', 'static');
-  });
-
   it('handleRunFeasibility blocks when description is under 50 words and sets descriptionError', async () => {
     const shortInvention: InventionInput = {
       id: 'inv-short',
@@ -346,13 +321,6 @@ describe('useFeasibilityRun', () => {
 
     // descriptionError should be null since mockInvention has 50+ words
     expect(result.current.descriptionError).toBeNull();
-  });
-
-  it('pendingRunRef is accessible and starts as null', () => {
-    const params = makeDefaultParams();
-    const { result } = renderHook(() => useFeasibilityRun(params));
-
-    expect(result.current.pendingRunRef.current).toBeNull();
   });
 
   it('exposes setStages and setRunError setters', () => {

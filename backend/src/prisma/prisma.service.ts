@@ -130,7 +130,7 @@ CREATE TABLE "PriorArtResult" (
     "relevanceScore" REAL NOT NULL,
     "snippet" TEXT,
     "claimMapping" TEXT,
-    "source" TEXT NOT NULL DEFAULT 'PatentsView',
+    "source" TEXT NOT NULL DEFAULT 'USPTO-ODP',
     CONSTRAINT "PriorArtResult_searchId_fkey" FOREIGN KEY ("searchId") REFERENCES "PriorArtSearch" ("id") ON DELETE CASCADE ON UPDATE CASCADE
 );
 CREATE TABLE "ClaimDraft" (

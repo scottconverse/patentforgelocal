@@ -77,7 +77,7 @@ export class PriorArtController {
           : '',
         (r.relevanceScore * 100).toFixed(0) + '%',
         csvEscape((r.abstract ?? '').slice(0, 500)),
-        r.source ?? 'PatentsView',
+        r.source ?? 'USPTO-ODP',
       ].join(',');
     });
 

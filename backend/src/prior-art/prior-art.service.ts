@@ -104,7 +104,7 @@ export class PriorArtService {
         setPatentSearchApiKey(usptoApiKey);
         const odpResult = await searchODPMulti(queries, usptoApiKey);
         rawResults = odpResult.results;
-        source = 'USPTO ODP';
+        source = 'USPTO-ODP';
 
         // Log ODP usage for tracking
         await this.prisma.odpApiUsage
@@ -187,7 +187,7 @@ export class PriorArtService {
 
   private async extractSearchQueries(narrative: string, ollamaUrl: string, defaultModel: string): Promise<string[]> {
     const truncated = narrative.slice(0, 2000);
-    const prompt = `You are a patent search specialist. Given the invention description below, produce exactly 3 search queries for the USPTO PatentsView full-text patent database.
+    const prompt = `You are a patent search specialist. Given the invention description below, produce exactly 3 search queries for the USPTO Open Data Portal patent database.
 
 Rules:
 - Each query targets a different aspect of the invention (mechanism, application domain, key novel element)

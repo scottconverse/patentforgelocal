@@ -58,7 +58,7 @@ describe('CSV row formatting', () => {
         : '',
       (result.relevanceScore * 100).toFixed(0) + '%',
       csvEscape((result.abstract ?? '').slice(0, 500)),
-      result.source ?? 'PatentsView',
+      result.source ?? 'USPTO-ODP',
     ].join(',');
   }
 
@@ -68,7 +68,7 @@ describe('CSV row formatting', () => {
       title: 'Widget Method',
       relevanceScore: 0.85,
       abstract: 'A method for widgets.',
-      source: 'PatentsView',
+      source: 'USPTO-ODP',
     };
     const detail = {
       filingDate: '2021-03-20',
@@ -87,7 +87,7 @@ describe('CSV row formatting', () => {
     expect(row).toContain('John Smith; Jane Doe');
     expect(row).toContain('G06N3/08; G06F16/00');
     expect(row).toContain('85%');
-    expect(row).toContain('PatentsView');
+    expect(row).toContain('USPTO-ODP');
   });
 
   it('handles missing enrichment data gracefully', () => {
@@ -96,7 +96,7 @@ describe('CSV row formatting', () => {
       title: 'Test Patent',
       relevanceScore: 0.42,
       abstract: null,
-      source: 'PatentsView',
+      source: 'USPTO-ODP',
     };
 
     const row = buildCsvRow(result, null);
@@ -112,7 +112,7 @@ describe('CSV row formatting', () => {
       title: 'Method, System, and Apparatus',
       relevanceScore: 0.7,
       abstract: 'An abstract.',
-      source: 'PatentsView',
+      source: 'USPTO-ODP',
     };
 
     const row = buildCsvRow(result, null);

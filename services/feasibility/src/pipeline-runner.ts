@@ -61,7 +61,7 @@ function buildUserMessage(
 
     case 2: {
       const priorArtSection = settings?.priorArtContext
-        ? `\n\n---\n\n## USPTO-ODP Prior Art Results\n\nThe following patents were retrieved from the USPTO Open Data Portal and are relevant to this invention. Reference them by patent number in your analysis.\n\n${settings.priorArtContext}`
+        ? `\n\n---\n\n## USPTO Prior Art Results\n\nThe following patents were retrieved from the USPTO Open Data Portal and are relevant to this invention. Reference them by patent number in your analysis.\n\n${settings.priorArtContext}`
         : '';
       return (
         `## Invention (Technical Restatement from Stage 1)\n\n${stage1}` +
@@ -90,7 +90,7 @@ function buildUserMessage(
         `## Technical Restatement\n\n${stage1}` +
         `\n\n## Prior Art Found\n\n${stage2}` +
         `\n\n## Patentability Analysis\n\n${stage3}` +
-        `\n\n## Deep Dive Analysis\n\n${stage4}` +
+        `\n\n## ${STAGE_DEFINITIONS[3].name}\n\n${stage4}` +
         `\n\n## Original Description\n\n${narrative}`
       );
 
@@ -98,11 +98,11 @@ function buildUserMessage(
       const stage5 = previousOutputs.get(5) ?? '';
       return (
         `## Original Inventor Description\n\n${narrative}` +
-        `\n\n## Stage 1: Technical Intake & Restatement\n\n${stage1}` +
-        `\n\n## Stage 2: Prior Art Research\n\n${stage2}` +
-        `\n\n## Stage 3: Patentability Analysis\n\n${stage3}` +
-        `\n\n## Stage 4: Deep Dive Analysis\n\n${stage4}` +
-        `\n\n## Stage 5: IP Strategy & Recommendations\n\n${stage5}`
+        `\n\n## Stage 1: ${STAGE_DEFINITIONS[0].name}\n\n${stage1}` +
+        `\n\n## Stage 2: ${STAGE_DEFINITIONS[1].name}\n\n${stage2}` +
+        `\n\n## Stage 3: ${STAGE_DEFINITIONS[2].name}\n\n${stage3}` +
+        `\n\n## Stage 4: ${STAGE_DEFINITIONS[3].name}\n\n${stage4}` +
+        `\n\n## Stage 5: ${STAGE_DEFINITIONS[4].name}\n\n${stage5}`
       );
     }
 

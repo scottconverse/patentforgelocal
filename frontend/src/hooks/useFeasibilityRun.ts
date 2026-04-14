@@ -64,15 +64,6 @@ export interface UseFeasibilityRunParams {
   getLatestRun: (p: Project | null) => FeasibilityRun | null;
   setViewMode: (vm: ViewMode) => void;
   setToast: (t: { message: string; detail?: string; type?: 'success' | 'error' | 'info' } | null) => void;
-  setCostModal: (m: {
-    tokenCost: number;
-    webSearchCost: number;
-    cap: number;
-    model: string;
-    source: 'history' | 'static';
-    runsUsed: number;
-    stageCount?: number;
-  } | null) => void;
   setError: (e: string | null) => void;
   loadProject: () => Promise<void>;
   setPriorArtSearch: (pa: PriorArtSearch | null) => void;
@@ -94,7 +85,6 @@ export interface UseFeasibilityRunReturn {
   cancelling: boolean;
   isRunning: boolean;
   isPipelineStreaming: boolean;
-  pendingRunRef: React.MutableRefObject<(() => Promise<void>) | null>;
   runIdRef: React.MutableRefObject<string | null>;
   abortRef: React.MutableRefObject<AbortController | null>;
   handleRunFeasibility: (invention?: InventionInput) => Promise<void>;
@@ -119,7 +109,6 @@ export function useFeasibilityRun(params: UseFeasibilityRunParams): UseFeasibili
     getLatestRun,
     setViewMode,
     setToast,
-    setCostModal,
     setError,
     loadProject,
     setPriorArtSearch,
@@ -143,7 +132,6 @@ export function useFeasibilityRun(params: UseFeasibilityRunParams): UseFeasibili
   const abortRef = useRef<AbortController | null>(null);
   const isRunningRef = useRef(false);
   const runIdRef = useRef<string | null>(null);
-  const pendingRunRef = useRef<(() => Promise<void>) | null>(null);
 
   // Compute displayStages — used by sidebar, resume, and re-run.
   // Prefer the `stages` state when it has real (non-placeholder) data, because
@@ -198,9 +186,8 @@ export function useFeasibilityRun(params: UseFeasibilityRunParams): UseFeasibili
       return;
     }
 
-    const model = appSettings.defaultModel || appSettings.ollamaModel || 'gemma4:26b';
-  // Local inference is free — start analysis immediately
-  await proceedWithRun(appSettings, inv);
+    // Local inference is free — start immediately, no confirmation needed.
+    await proceedWithRun(appSettings, inv);
   }
 
   // Resume a failed/interrupted run from the first incomplete stage,
@@ -235,10 +222,8 @@ export function useFeasibilityRun(params: UseFeasibilityRunParams): UseFeasibili
       return;
     }
 
-    const model = appSettings.defaultModel || appSettings.ollamaModel || 'gemma4:26b';
-    const remainingStages = 6 - resumeFrom + 1;
-  // Local inference is free — resume analysis immediately
-  await proceedWithRun(appSettings, inv, resumeFrom, completedOutputs);
+    // Local inference is free — resume immediately, no confirmation needed.
+    await proceedWithRun(appSettings, inv, resumeFrom, completedOutputs);
   }
 
   async function proceedWithRun(
@@ -627,7 +612,6 @@ export function useFeasibilityRun(params: UseFeasibilityRunParams): UseFeasibili
     cancelling,
     isRunning,
     isPipelineStreaming,
-    pendingRunRef,
     runIdRef,
     abortRef,
     handleRunFeasibility,

@@ -142,7 +142,7 @@ export default function PriorArtPanel({ projectId, search, onUpdate, onPatentCli
             {search.results.length} patent{search.results.length !== 1 ? 's' : ''} found
           </h3>
           <p className="text-xs text-gray-500 mt-0.5">
-            Source: {search.results[0]?.source === 'USPTO ODP' ? 'USPTO Open Data Portal' : 'USPTO PatentsView'} ·{' '}
+            Source: {search.results[0]?.source === 'USPTO-ODP' ? 'USPTO Open Data Portal' : search.results[0]?.source ?? 'USPTO Open Data Portal'} ·{' '}
             {search.completedAt ? new Date(search.completedAt).toLocaleString() : ''}
           </p>
         </div>

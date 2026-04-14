@@ -54,8 +54,6 @@ export default function ProjectDetail() {
     null,
   );
 
-  // Cost confirmation modal
-
   // Patent detail drawer
   const [drawerPatent, setDrawerPatent] = useState<string | null>(null);
 
@@ -355,8 +353,6 @@ export default function ProjectDetail() {
       {toast && (
         <Toast message={toast.message} detail={toast.detail} type={toast.type} onClose={() => setToast(null)} />
       )}
-
-      {/* Cost Confirmation Modal */}
 
       {/* Patent Detail Drawer */}
       <PatentDetailDrawer patentNumber={drawerPatent} onClose={() => setDrawerPatent(null)} />
