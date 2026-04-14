@@ -226,8 +226,6 @@ test.describe('Mobile viewport — project detail with sidebar', () => {
 
     // Start the pipeline
     await page.click('button:has-text("Save & Run Feasibility")');
-    await expect(page.locator('text=Confirm Analysis Run')).toBeVisible({ timeout: 10_000 });
-    await page.click('button:has-text("Start Analysis")');
 
     // Wait for pipeline to complete (mocked — fast)
     await expect(page.locator('text=Feasibility analysis complete')).toBeVisible({ timeout: 30_000 });
@@ -254,8 +252,6 @@ test.describe('Mobile viewport — project detail with sidebar', () => {
     await page.locator('textarea[placeholder*="detailed description"]').fill(DESCRIPTION);
 
     await page.click('button:has-text("Save & Run Feasibility")');
-    await expect(page.locator('text=Confirm Analysis Run')).toBeVisible({ timeout: 10_000 });
-    await page.click('button:has-text("Start Analysis")');
     await expect(page.locator('text=Feasibility analysis complete')).toBeVisible({ timeout: 30_000 });
 
     await screenshot(page, 'tablet-feasibility-complete-768');

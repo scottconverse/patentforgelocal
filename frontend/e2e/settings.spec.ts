@@ -49,13 +49,13 @@ test.describe('Settings Page', () => {
     await updateSettings({ modelReady: true, ollamaModel: 'gemma4:26b', ollamaUrl: 'http://localhost:11434' });
   });
 
-  test('model dropdown reflects saved selection', async ({ page, consoleErrors }) => {
+  test('model status shows configured model', async ({ page, consoleErrors }) => {
     await page.goto('/settings');
     await expect(page.locator('button:has-text("Save Settings")')).toBeVisible({ timeout: 10_000 });
 
-    const modelSelect = page.locator('select').first();
-    await expect(modelSelect).toBeVisible();
-    await screenshot(page, 'settings-model-dropdown');
+    // Model is displayed as read-only status (not a select dropdown — local inference uses Ollama's configured model)
+    await expect(page.locator('text=gemma4:26b')).toBeVisible();
+    await screenshot(page, 'settings-model-status');
   });
 
   test('responsive: settings page at mobile viewport', async ({ page, consoleErrors }) => {
@@ -65,6 +65,6 @@ test.describe('Settings Page', () => {
 
     // All controls should be visible and not overflow
     await expect(page.locator('button:has-text("Save Settings")')).toBeVisible();
-    await expect(page.locator('select').first()).toBeVisible();
+    await expect(page.locator('text=gemma4:26b')).toBeVisible();
   });
 });

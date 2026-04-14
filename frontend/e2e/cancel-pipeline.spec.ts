@@ -186,13 +186,6 @@ test.describe('Cancel Mid-Pipeline', () => {
     // Click "Save & Run Feasibility" to start the pipeline
     await page.click('button:has-text("Save & Run Feasibility")');
 
-    // Cost confirmation modal appears
-    await expect(page.locator('text=Confirm Analysis Run')).toBeVisible({ timeout: 10_000 });
-    await screenshot(page, 'cancel-cost-modal');
-
-    // Click "Start Analysis"
-    await page.click('button:has-text("Start Analysis")');
-
     // Wait for Stage 1 to start and stage list to appear
     await expect(page.locator('text=Technical Intake & Restatement')).toBeVisible({ timeout: 10_000 });
     await screenshot(page, 'cancel-stage-1-active');
@@ -237,15 +230,8 @@ test.describe('Cancel Mid-Pipeline', () => {
     // Click the Run button to verify a new run can be initiated
     await runButton.click();
 
-    // Cost modal should appear again for the new run
-    await expect(page.locator('text=Confirm Analysis Run')).toBeVisible({ timeout: 10_000 });
-    await screenshot(page, 'cancel-new-run-modal');
-
-    // Clean up by closing the modal — CostConfirmModal does not use role="dialog",
-    // so scope to the modal container using the heading text
-    const modal = page.locator('div:has(h2:text("Confirm Analysis Run"))').last();
-    await modal.locator('button:has-text("Cancel")').click();
-    await expect(page.locator('text=Confirm Analysis Run')).not.toBeVisible({ timeout: 5_000 });
+    // Verify the run button is clickable (pipeline can restart)
+    await screenshot(page, 'cancel-new-run-available');
   });
 
   test('cancel shows no error banners after cancellation', async ({ page, consoleErrors }) => {
@@ -254,8 +240,6 @@ test.describe('Cancel Mid-Pipeline', () => {
     await fillInventionForm(page, projectId);
 
     await page.click('button:has-text("Save & Run Feasibility")');
-    await expect(page.locator('text=Confirm Analysis Run')).toBeVisible({ timeout: 10_000 });
-    await page.click('button:has-text("Start Analysis")');
 
     // Wait for Stage 2 to be active
     await expect(page.locator('text=Prior Art Research')).toBeVisible({ timeout: 10_000 });
@@ -294,8 +278,6 @@ test.describe('Cancel Mid-Pipeline', () => {
     await fillInventionForm(page, projectId);
 
     await page.click('button:has-text("Save & Run Feasibility")');
-    await expect(page.locator('text=Confirm Analysis Run')).toBeVisible({ timeout: 10_000 });
-    await page.click('button:has-text("Start Analysis")');
 
     // Wait for Stage 2 to be active
     await expect(page.locator('text=Prior Art Research')).toBeVisible({ timeout: 10_000 });

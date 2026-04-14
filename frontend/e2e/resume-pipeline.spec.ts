@@ -247,8 +247,6 @@ test.describe('Resume Pipeline', () => {
     await fillInventionForm(page, projectId);
 
     await page.click('button:has-text("Save & Run Feasibility")');
-    await expect(page.locator('text=Confirm Analysis Run')).toBeVisible({ timeout: 10_000 });
-    await page.click('button:has-text("Start Analysis")');
 
     // Wait for the error message from the failed stage 2
     await expect(page.locator('text=Rate limited after 3 retries')).toBeVisible({ timeout: 15_000 });
@@ -276,15 +274,8 @@ test.describe('Resume Pipeline', () => {
     // Set up fresh mocks for the resumed run (full success)
     await setupMocks(page, buildMockSSEResponse());
 
-    // Click Resume
+    // Click Resume — pipeline starts immediately (local inference, no cost modal)
     await resumeButton.click();
-
-    // Cost modal should appear for the new run
-    await expect(page.locator('text=Confirm Analysis Run')).toBeVisible({ timeout: 10_000 });
-    await screenshot(page, 'resume-cost-modal');
-
-    // Start the resumed analysis
-    await page.click('button:has-text("Start Analysis")');
 
     // Verify new streaming session starts — stage names should appear
     await expect(page.locator('text=Technical Intake & Restatement')).toBeVisible({ timeout: 15_000 });
@@ -307,8 +298,6 @@ test.describe('Resume Pipeline', () => {
     await fillInventionForm(page, projectId);
 
     await page.click('button:has-text("Save & Run Feasibility")');
-    await expect(page.locator('text=Confirm Analysis Run')).toBeVisible({ timeout: 10_000 });
-    await page.click('button:has-text("Start Analysis")');
 
     // Wait for stream-ended state (connection lost or similar message)
     await expect(

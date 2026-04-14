@@ -170,8 +170,6 @@ async function fillInventionForm(page: Page, projectId: string, title = 'E2E Edi
 /** Run the mocked feasibility pipeline to completion. Returns when pipeline_complete is shown. */
 async function runFeasibilityToCompletion(page: Page) {
   await page.click('button:has-text("Save & Run Feasibility")');
-  await expect(page.locator('text=Confirm Analysis Run')).toBeVisible({ timeout: 10_000 });
-  await page.click('button:has-text("Start Analysis")');
   await expect(page.locator('text=Feasibility analysis complete')).toBeVisible({ timeout: 30_000 });
 }
 

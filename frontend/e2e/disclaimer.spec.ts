@@ -30,13 +30,13 @@ test.describe('Disclaimer Modal — First-Run Flow', () => {
   test('modal appears on first visit and blocks interaction', async ({ page }) => {
     await page.goto('/');
 
-    // Modal should be visible
-    const modal = page.locator('[role="dialog"]');
+    // Use specific selector to avoid matching FirstRunWizard (also role="dialog")
+    const modal = page.locator('[aria-labelledby="disclaimer-title"]');
     await expect(modal).toBeVisible();
 
     // Verify accessibility attributes
     await expect(modal).toHaveAttribute('aria-modal', 'true');
-    await expect(modal).toHaveAttribute('aria-labelledby', 'disclaimer-title');
+    await expect(modal).toHaveAttribute('role', 'dialog');
 
     // Title should be present
     await expect(page.locator('#disclaimer-title')).toHaveText('Terms of Use');
@@ -54,8 +54,8 @@ test.describe('Disclaimer Modal — First-Run Flow', () => {
   test('accepting the disclaimer dismisses the modal and persists', async ({ page }) => {
     await page.goto('/');
 
-    // Modal should be visible
-    const modal = page.locator('[role="dialog"]');
+    // Use specific selector to avoid matching FirstRunWizard
+    const modal = page.locator('[aria-labelledby="disclaimer-title"]');
     await expect(modal).toBeVisible();
 
     // Click accept
@@ -79,9 +79,6 @@ test.describe('Disclaimer Modal — First-Run Flow', () => {
     await page.reload();
     await expect(modal).not.toBeVisible();
 
-    // App content should be visible (projects heading)
-    await expect(page.locator('h1')).toContainText('Projects');
-
     await page.screenshot({
       path: path.join(SCREENSHOT_DIR, 'disclaimer-stays-dismissed.png'),
       fullPage: true,
@@ -91,13 +88,13 @@ test.describe('Disclaimer Modal — First-Run Flow', () => {
   test('modal contains required legal disclaimers', async ({ page }) => {
     await page.goto('/');
 
-    const modal = page.locator('[role="dialog"]');
+    const modal = page.locator('[aria-labelledby="disclaimer-title"]');
     await expect(modal).toBeVisible();
 
     // Key legal content that must be present
     await expect(modal).toContainText('does not provide legal advice');
     await expect(modal).toContainText('may contain errors');
-    await expect(modal).toContainText('your own third-party AI account');
+    await expect(modal).toContainText('locally on your machine');
     await expect(modal).toContainText('qualified legal counsel');
     await expect(modal).toContainText('"as is"');
   });

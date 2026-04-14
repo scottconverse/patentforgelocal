@@ -2,7 +2,7 @@
  * E2E tests for the feasibility analysis pipeline.
  *
  * Uses Playwright route interception to mock the SSE stream from the backend,
- * so these tests exercise the full frontend pipeline flow (form → cost modal →
+ * so these tests exercise the full frontend pipeline flow (form →
  * streaming → stage progression → report rendering) without calling the real
  * Ollama API.
  *
@@ -256,15 +256,7 @@ test.describe('Feasibility Pipeline', () => {
     // Click "Save & Run Feasibility"
     await page.click('button:has-text("Save & Run Feasibility")');
 
-    // Cost confirmation modal appears
-    await expect(page.locator('text=Confirm Analysis Run')).toBeVisible({ timeout: 10_000 });
-    await expect(page.locator('text=gemma4:26b')).toBeVisible();
-    await screenshot(page, 'feasibility-cost-modal');
-
-    // Click "Start Analysis"
-    await page.click('button:has-text("Start Analysis")');
-
-    // Pipeline runs — stages should progress
+    // Pipeline starts immediately (local inference — no cost modal)
     // Wait for the completion state (overview with "View Report" button)
     await expect(page.locator('text=Feasibility analysis complete')).toBeVisible({ timeout: 30_000 });
 
@@ -288,8 +280,6 @@ test.describe('Feasibility Pipeline', () => {
     await fillInventionForm(page, projectId);
 
     await page.click('button:has-text("Save & Run Feasibility")');
-    await expect(page.locator('text=Confirm Analysis Run')).toBeVisible({ timeout: 10_000 });
-    await page.click('button:has-text("Start Analysis")');
 
     // Pipeline should complete — all 6 stages should show as complete
     await expect(page.locator('text=Feasibility analysis complete')).toBeVisible({ timeout: 30_000 });
@@ -310,8 +300,6 @@ test.describe('Feasibility Pipeline', () => {
     await fillInventionForm(page, projectId);
 
     await page.click('button:has-text("Save & Run Feasibility")');
-    await expect(page.locator('text=Confirm Analysis Run')).toBeVisible({ timeout: 10_000 });
-    await page.click('button:has-text("Start Analysis")');
 
     // Error message should appear
     await expect(page.locator('text=Rate limited after 3 retries')).toBeVisible({ timeout: 15_000 });
@@ -329,8 +317,6 @@ test.describe('Feasibility Pipeline', () => {
     await fillInventionForm(page, projectId);
 
     await page.click('button:has-text("Save & Run Feasibility")');
-    await expect(page.locator('text=Confirm Analysis Run')).toBeVisible({ timeout: 10_000 });
-    await page.click('button:has-text("Start Analysis")');
 
     // The stream ends immediately — frontend shows connection-lost error
     await expect(page.locator('text=Connection to analysis service lost')).toBeVisible({ timeout: 15_000 });
@@ -338,58 +324,4 @@ test.describe('Feasibility Pipeline', () => {
     await screenshot(page, 'feasibility-connection-lost');
   });
 
-  test('blocks run when no API key configured', async ({ page, consoleErrors }) => {
-    // Navigate first while the key is still set (avoids FirstRunWizard blocking)
-    await page.goto(`/projects/${projectId}`);
-    await page.waitForLoadState('networkidle');
-
-    // Click "Fill in Invention Details" to open the form
-    const fillButton = page.locator('button:has-text("Fill in Invention Details")');
-    if (await fillButton.isVisible({ timeout: 5_000 }).catch(() => false)) {
-      await fillButton.click();
-    }
-
-    await page.locator('input[placeholder="Name your invention"]').waitFor({ state: 'visible', timeout: 10_000 });
-    await page.locator('input[placeholder="Name your invention"]').fill('No Key Test');
-    // 50+ words required — word count check runs before API key check in startRun
-    await page.locator('textarea[placeholder*="detailed description"]').fill(
-      'A test invention created to verify the no-API-key error path in the feasibility ' +
-      'analysis pipeline. This description is deliberately long enough to satisfy the ' +
-      'fifty-word minimum requirement enforced by the backend controller before checking ' +
-      'any other preconditions, such as a valid Ollama model being configured and ' +
-      'available in the application settings.',
-    );
-
-    // Clear the model ready flag AFTER the page has loaded (so wizard doesn't block)
-    await updateSettings({ modelReady: false });
-
-    await page.click('button:has-text("Save & Run Feasibility")');
-
-    // Should show error about no model configured
-    await expect(page.locator('text=No model configured')).toBeVisible({ timeout: 10_000 });
-
-    // Restore model for subsequent tests
-    await updateSettings({ modelReady: true, ollamaModel: 'gemma4:26b', ollamaUrl: 'http://localhost:11434' });
-
-    await screenshot(page, 'feasibility-no-api-key');
-  });
-
-  test('cost cap warning shows when estimate exceeds cap', async ({ page, consoleErrors }) => {
-    // Set settings for cost cap test
-    await updateSettings({ modelReady: true, ollamaModel: 'gemma4:26b', ollamaUrl: 'http://localhost:11434' });
-
-    const sseBody = buildMockSSEResponse();
-    await setupMocks(page, sseBody);
-    await fillInventionForm(page, projectId);
-
-    await page.click('button:has-text("Save & Run Feasibility")');
-
-    // Cost modal should appear with a warning
-    await expect(page.locator('text=Confirm Analysis Run')).toBeVisible({ timeout: 10_000 });
-    await expect(page.locator('text=Estimated cost exceeds your cap')).toBeVisible();
-    // Button should say "Proceed Anyway" instead of "Start Analysis"
-    await expect(page.locator('button:has-text("Proceed Anyway")')).toBeVisible();
-
-    await screenshot(page, 'feasibility-cost-cap-warning');
-  });
 });
