@@ -175,7 +175,7 @@ describe('PriorArtPanel', () => {
   it('shows empty results message when search is complete but no results', () => {
     const search = makeSearch({ results: [] });
     render(<PriorArtPanel projectId={projectId} search={search} onUpdate={onUpdate} />);
-    expect(screen.getByText('No relevant patents found for this invention.')).toBeInTheDocument();
+    expect(screen.getByText('No prior art results found')).toBeInTheDocument();
   });
 
   it('displays snippet or abstract preview in result cards', () => {

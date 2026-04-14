@@ -13,14 +13,14 @@ export const RunStatus = {
   CANCELLED: 'CANCELLED',
 } as const;
 
-export type RunStatus = (typeof RunStatus)[keyof typeof RunStatus];
+export type RunStatusValue = (typeof RunStatus)[keyof typeof RunStatus];
 
 export const ProjectStatus = {
   INTAKE: 'INTAKE',
   FEASIBILITY: 'FEASIBILITY',
 } as const;
 
-export type ProjectStatus = (typeof ProjectStatus)[keyof typeof ProjectStatus];
+export type ProjectStatusValue = (typeof ProjectStatus)[keyof typeof ProjectStatus];
 
 export const CheckResultStatus = {
   PASS: 'PASS',
@@ -28,4 +28,4 @@ export const CheckResultStatus = {
   WARNING: 'WARNING',
 } as const;
 
-export type CheckResultStatus = (typeof CheckResultStatus)[keyof typeof CheckResultStatus];
+export type CheckResultStatusValue = (typeof CheckResultStatus)[keyof typeof CheckResultStatus];
