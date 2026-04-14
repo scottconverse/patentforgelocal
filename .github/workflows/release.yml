@@ -144,6 +144,26 @@ jobs:
       - name: Create .app bundle and .dmg
         run: bash installer/mac/build-dmg.sh
 
+      - name: Smoke-test DMG structure (structural only — not runtime)
+        run: |
+          set -e
+          DMG_FILE=$(ls build/PatentForgeLocal-*.dmg | head -1)
+          echo "Found DMG: $DMG_FILE"
+          MOUNT_DIR=$(mktemp -d)
+          hdiutil attach "$DMG_FILE" -mountpoint "$MOUNT_DIR" -nobrowse -quiet
+          APP_PATH=$(ls -d "$MOUNT_DIR"/*.app | head -1)
+          echo "App: $APP_PATH"
+          EXEC_NAME=$(defaults read "$APP_PATH/Contents/Info" CFBundleExecutable)
+          echo "CFBundleExecutable: $EXEC_NAME"
+          WRAPPER="$APP_PATH/Contents/MacOS/$EXEC_NAME"
+          REAL_BIN="$APP_PATH/Contents/MacOS/$EXEC_NAME-bin"
+          test -f "$WRAPPER" && echo "OK: wrapper exists" || (echo "FAIL: wrapper missing" && exit 1)
+          test -x "$WRAPPER" && echo "OK: wrapper is executable" || (echo "FAIL: wrapper not executable" && exit 1)
+          test -f "$REAL_BIN"  && echo "OK: real binary exists" || (echo "FAIL: real binary missing" && exit 1)
+          bash -n "$WRAPPER"   && echo "OK: wrapper syntax valid" || (echo "FAIL: wrapper syntax invalid" && exit 1)
+          hdiutil detach "$MOUNT_DIR" -quiet
+          echo "Mac DMG structural smoke test passed"
+
       - name: Upload Mac installer
         uses: actions/upload-artifact@v4
         with:
