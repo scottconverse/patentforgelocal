@@ -21,7 +21,6 @@ import ApplicationTab from '../components/ApplicationTab';
 import PriorArtPanel from '../components/PriorArtPanel';
 import PatentDetailDrawer from '../components/PatentDetailDrawer';
 import Toast from '../components/Toast';
-import CostConfirmModal from '../components/CostConfirmModal';
 import { statusColors } from '../utils/statusColors';
 
 export default function ProjectDetail() {
@@ -56,15 +55,6 @@ export default function ProjectDetail() {
   );
 
   // Cost confirmation modal
-  const [costModal, setCostModal] = useState<{
-    tokenCost: number;
-    webSearchCost: number;
-    cap: number;
-    model: string;
-    source: 'history' | 'static';
-    runsUsed: number;
-    stageCount?: number;
-  } | null>(null);
 
   // Patent detail drawer
   const [drawerPatent, setDrawerPatent] = useState<string | null>(null);
@@ -95,7 +85,6 @@ export default function ProjectDetail() {
     setRunError,
     cancelling,
     isPipelineStreaming,
-    pendingRunRef,
     runIdRef,
     abortRef,
     handleRunFeasibility,
@@ -111,7 +100,6 @@ export default function ProjectDetail() {
     getLatestRun,
     setViewMode,
     setToast,
-    setCostModal,
     setError,
     loadProject,
     setPriorArtSearch,
@@ -369,21 +357,6 @@ export default function ProjectDetail() {
       )}
 
       {/* Cost Confirmation Modal */}
-      {costModal && (
-        <CostConfirmModal
-          tokenCost={costModal.tokenCost}
-          webSearchCost={costModal.webSearchCost}
-          cap={costModal.cap}
-          model={costModal.model}
-          source={costModal.source}
-          runsUsed={costModal.runsUsed}
-          stageCount={costModal.stageCount}
-          onConfirm={() => {
-            pendingRunRef.current?.();
-          }}
-          onCancel={() => setCostModal(null)}
-        />
-      )}
 
       {/* Patent Detail Drawer */}
       <PatentDetailDrawer patentNumber={drawerPatent} onClose={() => setDrawerPatent(null)} />
