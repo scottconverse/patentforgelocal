@@ -2,11 +2,10 @@
   "version": "0.0.1",
   "configurations": [
     {
-      "name": "frontend",
-      "runtimeExecutable": "npm",
-      "runtimeArgs": ["run", "dev"],
-      "port": 8080,
-      "cwd": "frontend"
+      "name": "patentforgelocal",
+      "runtimeExecutable": "node",
+      "runtimeArgs": ["-e", "setTimeout(()=>{},999999999)"],
+      "port": 3000
     }
   ]
 }

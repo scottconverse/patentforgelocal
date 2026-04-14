@@ -23,7 +23,7 @@ import { SystemModule } from './system/system.module';
       ? [
           ServeStaticModule.forRoot({
             rootPath: process.env.FRONTEND_DIST_PATH || join(__dirname, '..', '..', 'frontend', 'dist'),
-            exclude: ['/api/(.*)'],
+            exclude: ['/api{/*path}'],
           }),
         ]
       : []),

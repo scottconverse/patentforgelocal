@@ -63,6 +63,25 @@ Full changelog: [CHANGELOG.md](CHANGELOG.md)
 
 ---
 
+### Title: v0.1.1 Release — Installers, Auto-Setup, and 30+ Bug Fixes
+
+**Body:**
+
+v0.1.1 adds native installers for all three platforms, automatic Ollama/model setup, and fixes over 30 bugs found during end-to-end testing on clean machines.
+
+**Highlights:**
+- **One-click installers** — Windows (.exe via Inno Setup), macOS (.dmg), Linux (.AppImage) with bundled runtimes
+- **Automatic Ollama setup** — the launcher detects, downloads, and starts Ollama automatically on first run; pulls gemma4:26b if not already present
+- **GPU/NPU detection** — scripts auto-detect AMD iGPU, NVIDIA GPU, and NPU hardware; injects ROCm environment variables for AMD acceleration
+- **System tray app** — Go-based tray manages all 6 services as child processes with graceful shutdown
+- **Security fixes** — removed known-public internal service secret fallback, added download token endpoint for secure exports
+
+**Bug fixes include:** double context-manager close crash, claim regeneration data corruption, stale Prisma schema in SEA binary, environment variable stripping in tray, and Ollama version compatibility.
+
+Full changelog: [CHANGELOG.md](CHANGELOG.md)
+
+---
+
 ## Category: Q&A
 
 ### Post 1

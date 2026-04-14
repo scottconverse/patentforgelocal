@@ -1,5 +1,5 @@
 import 'reflect-metadata';
-import { existsSync } from 'fs';
+import { existsSync, readFileSync } from 'fs';
 import { join } from 'path';
 import { NestFactory } from '@nestjs/core';
 import { ValidationPipe } from '@nestjs/common';
@@ -128,6 +128,28 @@ async function bootstrap() {
 
   // Optional token-based auth — set PATENTFORGE_TOKEN env var to enable
   app.useGlobalGuards(new AuthGuard());
+
+  // SPA fallback — serve index.html for non-API GET requests that don't
+  // match a static file. This enables client-side routing (e.g. /projects/:id).
+  // Uses Express middleware (not a route) to avoid path-to-regexp v8 wildcard issues.
+  if (process.env.NODE_ENV === 'production') {
+    const frontendDist =
+      process.env.FRONTEND_DIST_PATH || join(__dirname, '..', '..', 'frontend', 'dist');
+    const indexPath = join(frontendDist, 'index.html');
+    if (existsSync(indexPath)) {
+      const indexHtml = readFileSync(indexPath, 'utf-8');
+      const expressApp = app.getHttpAdapter().getInstance();
+      // Register after all NestJS routes — express 'use' at this point acts as a
+      // final fallback because NestJS routes are already mounted.
+      expressApp.use((req: any, res: any, next: any) => {
+        // Only intercept GET requests for client-side routes (no dot = not a file)
+        if (req.method === 'GET' && !req.originalUrl.startsWith('/api/') && !req.originalUrl.includes('.')) {
+          return res.type('text/html').send(indexHtml);
+        }
+        next();
+      });
+    }
+  }
 
   const port = parseInt(process.env.PORT || '3000', 10);
   await app.listen(port);

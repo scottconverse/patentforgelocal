@@ -49,7 +49,21 @@ app.post('/analyze', requireInternalSecret, async (req, res) => {
     return;
   }
 
-  // Set SSE headers
+  if (!settings.model) {
+    res.status(400).json({ error: 'settings.model is required. Configure a default model in Settings.' });
+    return;
+  }
+
+  // Wrap the narrative in an InventionInput.
+  // rawNarrative is set so the pipeline passes it through as-is (no double-labelling).
+  const input: InventionInput = {
+    title: 'Invention',
+    description: inventionNarrative,
+    rawNarrative: inventionNarrative,
+  };
+
+  // Set SSE headers — all validation checks must happen BEFORE this point,
+  // because once headers are flushed we cannot send a JSON error response.
   res.setHeader('Content-Type', 'text/event-stream');
   res.setHeader('Cache-Control', 'no-cache');
   res.setHeader('Connection', 'keep-alive');
@@ -68,19 +82,6 @@ app.post('/analyze', requireInternalSecret, async (req, res) => {
   function sendEvent(eventType: string, data: unknown): void {
     if (res.writableEnded) return;
     res.write(`event: ${eventType}\ndata: ${JSON.stringify(data)}\n\n`);
-  }
-
-  // Wrap the narrative in an InventionInput.
-  // rawNarrative is set so the pipeline passes it through as-is (no double-labelling).
-  const input: InventionInput = {
-    title: 'Invention',
-    description: inventionNarrative,
-    rawNarrative: inventionNarrative,
-  };
-
-  if (!settings.model) {
-    res.status(400).json({ error: 'settings.model is required. Configure a default model in Settings.' });
-    return;
   }
 
   // Apply defaults to settings — model is required, no silent fallback to expensive model
