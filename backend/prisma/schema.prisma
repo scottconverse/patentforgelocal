@@ -93,7 +93,7 @@ model PriorArtResult {
   relevanceScore Float
   snippet        String?
   claimMapping   String?
-  source         String         @default("PatentsView")
+  source         String         @default("USPTO-ODP")
 }
 
 model ClaimDraft {
