@@ -18,7 +18,7 @@ test.describe('Settings Page', () => {
     await page.goto('/settings');
 
     await expect(page.locator('h1, h2').filter({ hasText: /settings/i })).toBeVisible({ timeout: 10_000 });
-    await expect(page.locator('text=Ollama')).toBeVisible();
+    await expect(page.locator('label:has-text("Ollama API Key")')).toBeVisible();
     await expect(page.locator('label:has-text("USPTO Open Data Portal Key")')).toBeVisible();
     await expect(page.locator('button:has-text("Save Settings")')).toBeVisible();
     await screenshot(page, 'settings-page-loaded');
@@ -26,7 +26,7 @@ test.describe('Settings Page', () => {
 
   test('can save and persist API key settings', async ({ page, consoleErrors }) => {
     await page.goto('/settings');
-    await expect(page.locator('text=Ollama')).toBeVisible({ timeout: 10_000 });
+    await expect(page.locator('label:has-text("Ollama API Key")')).toBeVisible({ timeout: 10_000 });
 
     // Use placeholder to target the Ollama URL input
     const testUrl = 'http://localhost:11434';

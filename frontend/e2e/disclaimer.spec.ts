@@ -21,10 +21,13 @@ if (!fs.existsSync(SCREENSHOT_DIR)) {
 
 test.describe('Disclaimer Modal — First-Run Flow', () => {
   test.beforeEach(async ({ page }) => {
-    // Clear localStorage so the disclaimer modal appears fresh
-    await page.addInitScript(() => {
-      localStorage.removeItem('patentforge_disclaimer_accepted');
-    });
+    // Navigate first, then clear localStorage and reload so the disclaimer modal appears fresh.
+    // Using page.evaluate instead of addInitScript because addInitScript fires on EVERY
+    // navigation (including reload), which would re-clear localStorage after the user accepts
+    // and break the persistence test.
+    await page.goto('/');
+    await page.evaluate(() => localStorage.removeItem('patentforge_disclaimer_accepted'));
+    await page.reload();
   });
 
   test('modal appears on first visit and blocks interaction', async ({ page }) => {
