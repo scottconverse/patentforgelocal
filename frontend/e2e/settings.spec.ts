@@ -24,14 +24,13 @@ test.describe('Settings Page', () => {
     await screenshot(page, 'settings-page-loaded');
   });
 
-  test('can save and persist API key settings', async ({ page, consoleErrors }) => {
+  test('can save and persist USPTO API key settings', async ({ page, consoleErrors }) => {
     await page.goto('/settings');
-    await expect(page.locator('label:has-text("Ollama API Key")')).toBeVisible({ timeout: 10_000 });
+    await expect(page.locator('label:has-text("USPTO Open Data Portal Key")')).toBeVisible({ timeout: 10_000 });
 
-    // Use placeholder to target the Ollama URL input
-    const testUrl = 'http://localhost:11434';
-    const ollamaInput = page.locator('input[placeholder*="localhost"]').first();
-    await ollamaInput.fill(testUrl);
+    // Fill the USPTO API key field (Ollama URL is not user-editable — it's a status display)
+    const usptoInput = page.locator('input[placeholder*="30-character"]').first();
+    await usptoInput.fill('test-key-for-e2e-verification1');
     await screenshot(page, 'settings-key-filled');
 
     await page.click('button:has-text("Save Settings")');
@@ -43,10 +42,8 @@ test.describe('Settings Page', () => {
     );
     await screenshot(page, 'settings-saved-confirmation');
 
-    // Verify the save completed by checking the UI showed confirmation
-    // (Separate GET is racy with concurrent test workers sharing the singleton settings row)
     // Restore valid settings so subsequent tests don't trigger the FirstRunWizard
-    await updateSettings({ modelReady: true, ollamaModel: 'gemma4:26b', ollamaUrl: 'http://localhost:11434' });
+    await updateSettings({ modelReady: true, ollamaModel: 'gemma4:26b', ollamaUrl: 'http://localhost:11434', usptoApiKey: '' });
   });
 
   test('model status shows configured model', async ({ page, consoleErrors }) => {
