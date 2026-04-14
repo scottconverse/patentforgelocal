@@ -40,9 +40,12 @@ export class SystemService {
     let diskFreeGB = 0;
     try {
       if (process.platform === 'win32') {
-        const out = execSync('wmic logicaldisk where "DeviceID=\'C:\'" get FreeSpace /value', { encoding: 'utf-8' });
-        const match = out.match(/FreeSpace=(\d+)/);
-        if (match) diskFreeGB = Math.round(parseInt(match[1], 10) / (1024 ** 3));
+          const out = execSync(
+            `C:\\Windows\\System32\\WindowsPowerShell\\v1.0\\powershell.exe -NoProfile -NonInteractive -Command "(Get-CimInstance Win32_LogicalDisk -Filter 'DeviceID=''C:''').FreeSpace"`,
+            { encoding: 'utf-8' },
+          );
+          const freeBytes = parseInt(out.trim(), 10);
+          if (!isNaN(freeBytes)) diskFreeGB = Math.round(freeBytes / (1024 ** 3));
       } else {
         const out = execSync("df -k / | tail -1 | awk '{print $4}'", { encoding: 'utf-8' });
         diskFreeGB = Math.round(parseInt(out.trim(), 10) / (1024 ** 2));
@@ -56,11 +59,15 @@ export class SystemService {
     let gpuName = '';
     try {
       if (process.platform === 'win32') {
-        const out = execSync('wmic path win32_videocontroller get name /value', { encoding: 'utf-8' });
-        const match = out.match(/Name=(.+)/);
-        if (match) {
-          gpuName = match[1].trim();
-          gpuDetected = /nvidia|radeon|arc/i.test(gpuName);
+          const out = execSync(
+            `C:\\Windows\\System32\\WindowsPowerShell\\v1.0\\powershell.exe -NoProfile -NonInteractive -Command "(Get-CimInstance Win32_VideoController).Name"`,
+            { encoding: 'utf-8' },
+          );
+          const name = out.trim().split('\n')[0].trim();
+          if (name) {
+            gpuName = name;
+            gpuDetected = /nvidia|radeon|arc/i.test(gpuName);
+          }
         }
       } else if (process.platform === 'linux') {
         const out = execSync('lspci | grep -i vga', { encoding: 'utf-8' });
