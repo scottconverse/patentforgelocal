@@ -1,4 +1,4 @@
-# PatentForgeLocal v0.1.1
+# PatentForgeLocal v0.1.2
 
 **Private patent analysis, running entirely on your machine.**
 

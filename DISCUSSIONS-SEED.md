@@ -82,6 +82,23 @@ Full changelog: [CHANGELOG.md](CHANGELOG.md)
 
 ---
 
+### Title: v0.1.2 Release — Pipeline Fixes, Cost Modal Removed, Windows System Check
+
+**Body:**
+
+v0.1.2 fixes critical issues that prevented feasibility analysis from running on installed binaries and removes unnecessary friction from the analysis workflow.
+
+**What changed:**
+- **Analysis starts immediately** — the cost confirmation modal is gone. Local inference is free; there's nothing to confirm. Click "Run Feasibility Analysis" and it starts.
+- **Stage labels corrected** — "AI & 3D Print Deep Dive" (upstream artifact) replaced with the correct "Deep Dive Analysis" label throughout all pipeline prompts.
+- **Windows system check works** — disk space and GPU detection now use PowerShell instead of deprecated `wmic`, fixing detection failures on Windows 11 and SEA binaries.
+- **PatentsView references updated** — all user-facing references to the dead PatentsView API replaced with "USPTO-ODP" (the actual data source since March 2026).
+- **Mac CI smoke test** — CI now structurally verifies the DMG wrapper script after every build.
+
+Full changelog: [CHANGELOG.md](CHANGELOG.md)
+
+---
+
 ## Category: Q&A
 
 ### Post 1

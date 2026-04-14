@@ -1,6 +1,6 @@
 {
   "name": "patentforge-feasibility",
-  "version": "0.1.1",
+  "version": "0.1.2",
   "private": true,
   "scripts": {
     "build": "tsc && node -e \"const fs=require('fs');fs.mkdirSync('dist/prompts',{recursive:true});fs.readdirSync('src/prompts').filter(f=>f.endsWith('.md')).forEach(f=>fs.copyFileSync('src/prompts/'+f,'dist/prompts/'+f))\"",

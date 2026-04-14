@@ -1,4 +1,4 @@
-# PatentForgeLocal User Manual — v0.1.1
+# PatentForgeLocal User Manual — v0.1.2
 
 A step-by-step guide for using PatentForgeLocal to research and prepare for a patent consultation.
 
@@ -94,9 +94,9 @@ Download the installer for your operating system:
 
 | Operating System | File to Download |
 |-----------------|-----------------|
-| **Windows** | `PatentForgeLocal-0.1.1-Setup.exe` |
-| **Mac** | `PatentForgeLocal-0.1.1.dmg` |
-| **Linux** | `PatentForgeLocal-0.1.1.AppImage` |
+| **Windows** | `PatentForgeLocal-0.1.2-Setup.exe` |
+| **Mac** | `PatentForgeLocal-0.1.2.dmg` |
+| **Linux** | `PatentForgeLocal-0.1.2.AppImage` |
 
 ### Step 2: Run the Installer
 
@@ -115,8 +115,8 @@ Download the installer for your operating system:
 
 **On Linux:**
 1. Open a terminal in the folder where you downloaded the file
-2. Make it executable: `chmod +x PatentForgeLocal-0.1.1.AppImage`
-3. Run it: `./PatentForgeLocal-0.1.1.AppImage`
+2. Make it executable: `chmod +x PatentForgeLocal-0.1.2.AppImage`
+3. Run it: `./PatentForgeLocal-0.1.2.AppImage`
 4. On some systems, you may need to install FUSE first: `sudo apt install libfuse2`
 
 ### What Gets Installed
