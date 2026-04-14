@@ -199,13 +199,8 @@ export function useFeasibilityRun(params: UseFeasibilityRunParams): UseFeasibili
     }
 
     const model = appSettings.defaultModel || appSettings.ollamaModel || 'gemma4:26b';
-
-    // Store run closure and show confirmation modal
-    pendingRunRef.current = async () => {
-      setCostModal(null);
-      await proceedWithRun(appSettings, inv);
-    };
-    setCostModal({ tokenCost: 0, webSearchCost: 0, cap: 0, model, source: 'static', runsUsed: 0 });
+  // Local inference is free — start analysis immediately
+  await proceedWithRun(appSettings, inv);
   }
 
   // Resume a failed/interrupted run from the first incomplete stage,
@@ -242,20 +237,8 @@ export function useFeasibilityRun(params: UseFeasibilityRunParams): UseFeasibili
 
     const model = appSettings.defaultModel || appSettings.ollamaModel || 'gemma4:26b';
     const remainingStages = 6 - resumeFrom + 1;
-
-    pendingRunRef.current = async () => {
-      setCostModal(null);
-      await proceedWithRun(appSettings, inv, resumeFrom, completedOutputs);
-    };
-    setCostModal({
-      tokenCost: 0,
-      webSearchCost: 0,
-      cap: 0,
-      model,
-      source: 'static',
-      runsUsed: 0,
-      stageCount: remainingStages,
-    });
+  // Local inference is free — resume analysis immediately
+  await proceedWithRun(appSettings, inv, resumeFrom, completedOutputs);
   }
 
   async function proceedWithRun(
