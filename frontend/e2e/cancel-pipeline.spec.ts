@@ -287,12 +287,12 @@ test.describe('Cancel Mid-Pipeline', () => {
     const cancelButton = page.locator('button:has-text("Cancel Analysis")');
     await cancelButton.click();
 
-    // Wait for cancellation message OR pipeline completion — the mock SSE stream
-    // may finish before the cancel request completes, producing a connection-lost
-    // or completed state instead of a clean cancellation message.
-    await expect(
-      page.locator('text=Analysis cancelled.').or(page.locator('text=Run Feasibility')).or(page.locator('text=Connection lost')),
-    ).toBeVisible({ timeout: 15_000 });
+    // Wait for cancellation or connection-lost message — the mock SSE ends
+    // synchronously after stage 2, so the frontend may show either message.
+    // Uses the same pattern as the passing test at line 210-212.
+    const cancelledMsg = page.locator('text=Analysis cancelled.');
+    const connectionLostMsg = page.locator('text=Connection to analysis service lost');
+    await expect(cancelledMsg.or(connectionLostMsg)).toBeVisible({ timeout: 15_000 });
 
     // Navigate to overview — after navigating away from the running view, the
     // Run Feasibility button should be accessible (no longer in running state).
