@@ -5,6 +5,24 @@ All notable changes to PatentForgeLocal will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html). 
 
+## [0.1.2] - 2026-04-13
+
+### Changed
+
+- **Feasibility analysis starts immediately** — removed the cost confirmation modal that preceded every run. Local Ollama inference costs nothing; the confirmation friction was inherited from the upstream cloud API and no longer serves a purpose. The first-run legal disclaimer (UPL notice) is still shown via DisclaimerModal on first launch.
+
+### Fixed
+
+- **Stage 4 label corrected** — the Stage 4 context section header in pipeline prompts read "AI & 3D Print Deep Dive" (upstream PatentForge artifact). Now correctly reads "Deep Dive Analysis" matching the stage name displayed in the UI and in Stage 6's comprehensive report.
+- **Stage 2 prior art context label updated** — the stage 2 user message header referenced "PatentsView Prior Art Results" / "USPTO PatentsView database" after PatentsView shut down March 2026. Now reads "USPTO-ODP Prior Art Results" / "USPTO Open Data Portal" to match the actual data source.
+- **Windows disk/GPU detection in SEA binary** — system check used `wmic` which is absent from PATH-stripped Single Executable Application binaries and deprecated on Windows 11. Replaced both `wmic logicaldisk` and `wmic path win32_videocontroller` with `Get-CimInstance` called via absolute path (`C:\Windows\System32\WindowsPowerShell\v1.0\powershell.exe`). System check now correctly reports disk free space and GPU name on Windows.
+- **PriorArtResult source label** — Prisma schema `@default("PatentsView")` on `PriorArtResult.source` changed to `@default("USPTO-ODP")`. New prior art search records now get the correct data source label.
+
+### Added
+
+- **Mac DMG structural smoke test in CI** — after each release build, CI now mounts the DMG, verifies the Ollama wrapper script exists and is executable, the real binary exists, and runs `bash -n` syntax validation on the wrapper. Runtime Ollama download flow still requires manual Mac testing before release.
+
+
 ## [0.1.1] - 2026-04-13
 
 ### Added
