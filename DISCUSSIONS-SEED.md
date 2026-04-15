@@ -115,6 +115,27 @@ Full changelog: [CHANGELOG.md](CHANGELOG.md)
 
 ---
 
+### Title: v0.1.4 Release — Feasibility Crash Fix, Branding Corrections, Model DB Migration
+
+**Body:**
+
+v0.1.4 fixes a critical crash that occurred on every feasibility analysis run in installed binaries, corrects product branding throughout the app, and ensures the model setting is properly migrated for users upgrading from v0.1.2.
+
+**Critical fix — feasibility crash:**
+The feasibility service binary bundled context-mode's SQLite native addon (`better_sqlite3.node`) with an absolute path baked in at CI build time. On any user machine, that path didn't exist, causing an immediate crash when starting a feasibility analysis ("Stage 7 error: No such built-in module"). The binary now resolves the addon path relative to its own executable location at runtime.
+
+**Branding fix:**
+Several UI elements, page titles, and documents still showed "PatentForge" instead of "PatentForgeLocal" — a copy-paste artifact from the upstream fork. The app header, browser tab title, and all documentation now consistently say PatentForgeLocal.
+
+**Model migration:**
+Users who installed v0.1.2 before the default model was changed in v0.1.3 may have had their Settings database record stuck on `gemma4:26b`. On startup, the backend now automatically migrates that record to `gemma4:e4b` so the tray and Settings page show the correct model.
+
+If you were seeing feasibility analyses crash immediately, update to v0.1.4.
+
+Full changelog: [CHANGELOG.md](CHANGELOG.md)
+
+---
+
 ## Category: Q&A
 
 ### Post 1
