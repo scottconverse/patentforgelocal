@@ -1,4 +1,4 @@
-# PatentForgeLocal v0.1.2
+# PatentForgeLocal v0.1.3
 
 **Private patent analysis, running entirely on your machine.**
 
@@ -6,7 +6,7 @@ PatentForgeLocal is a fully local version of [PatentForge](https://github.com/sc
 
 ## Key Features
 
-- **Fully local AI** -- Ollama + Gemma 4 26B runs on your hardware. No cloud API calls, no API keys, no usage fees
+- **Fully local AI** -- Ollama + Gemma 4 4B runs on your hardware. No cloud API calls, no API keys, no usage fees
 - **6-stage feasibility analysis** -- technical intake, prior art research, patentability assessment, deep dive, IP landscape, consolidated report
 - **AI claim drafting** -- 3-agent pipeline (Planner, Writer, Examiner) generates independent and dependent patent claims
 - **Patent application generation** -- 5-agent pipeline produces complete USPTO-formatted applications with Word export

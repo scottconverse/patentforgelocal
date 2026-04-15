@@ -82,11 +82,11 @@ Full changelog: [CHANGELOG.md](CHANGELOG.md)
 
 ---
 
-### Title: v0.1.2 Release — Pipeline Fixes, Cost Modal Removed, Windows System Check
+### Title: v0.1.3 Release — Pipeline Fixes, Cost Modal Removed, Windows System Check
 
 **Body:**
 
-v0.1.2 fixes critical issues that prevented feasibility analysis from running on installed binaries and removes unnecessary friction from the analysis workflow.
+v0.1.3 fixes critical issues that prevented feasibility analysis from running on installed binaries and removes unnecessary friction from the analysis workflow.
 
 **What changed:**
 - **Analysis starts immediately** — the cost confirmation modal is gone. Local inference is free; there's nothing to confirm. Click "Run Feasibility Analysis" and it starts.

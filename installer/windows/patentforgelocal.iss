@@ -3,7 +3,7 @@
 ; https://jrsoftware.org/ishelp/
 
 #define MyAppName "PatentForgeLocal"
-#define MyAppVersion "0.1.2"
+#define MyAppVersion "0.1.3"
 #define MyAppPublisher "Scott Converse"
 #define MyAppURL "https://scottconverse.github.io/patentforgelocal/"
 #define MyAppExeName "patentforgelocal-tray.exe"
