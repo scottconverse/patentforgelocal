@@ -82,11 +82,11 @@ Full changelog: [CHANGELOG.md](CHANGELOG.md)
 
 ---
 
-### Title: v0.1.3 Release — Pipeline Fixes, Cost Modal Removed, Windows System Check
+### Title: v0.1.2 Release — Pipeline Fixes, Cost Modal Removed, Windows System Check
 
 **Body:**
 
-v0.1.3 fixes critical issues that prevented feasibility analysis from running on installed binaries and removes unnecessary friction from the analysis workflow.
+v0.1.2 fixes critical issues that prevented feasibility analysis from running on installed binaries and removes unnecessary friction from the analysis workflow.
 
 **What changed:**
 - **Analysis starts immediately** — the cost confirmation modal is gone. Local inference is free; there's nothing to confirm. Click "Run Feasibility Analysis" and it starts.
@@ -94,6 +94,22 @@ v0.1.3 fixes critical issues that prevented feasibility analysis from running on
 - **Windows system check works** — disk space and GPU detection now use PowerShell instead of deprecated `wmic`, fixing detection failures on Windows 11 and SEA binaries.
 - **PatentsView references updated** — all user-facing references to the dead PatentsView API replaced with "USPTO-ODP" (the actual data source since March 2026).
 - **Mac CI smoke test** — CI now structurally verifies the DMG wrapper script after every build.
+
+Full changelog: [CHANGELOG.md](CHANGELOG.md)
+
+---
+
+### Title: v0.1.3 Release — Default Model Switched to gemma4:e4b (Fixes System Crashes)
+
+**Body:**
+
+v0.1.3 switches the default model from `gemma4:26b` to `gemma4:e4b` to fix hard system crashes on 32 GB machines.
+
+**The problem:** `gemma4:26b` loads 18 GB of weights into RAM regardless of its MoE architecture. On 32 GB systems — especially AMD iGPU machines where GPU and system RAM are shared — peak usage during inference exceeded available memory, causing a hard crash requiring reboot.
+
+**The fix:** `gemma4:e4b` (Dense 4B, 9.6 GB) leaves ~20 GB of headroom during active inference. Quality impact is minimal: gemma4:26b only activates ~4B parameters per forward pass anyway, so real-world output quality is comparable.
+
+If you were experiencing hard crashes or black screens during patent analysis, update to v0.1.3.
 
 Full changelog: [CHANGELOG.md](CHANGELOG.md)
 
