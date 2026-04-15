@@ -162,7 +162,7 @@ export class SettingsService implements OnModuleInit {
       const data = (await response.json()) as { models?: Array<{ name: string }> };
       const models = data.models?.map((m) => m.name) ?? [];
       if (models.length === 0) {
-        return { valid: false, error: 'Ollama is running but has no models installed. Run: ollama pull gemma4:26b', models: [] };
+        return { valid: false, error: 'Ollama is running but has no models installed. Run: ollama pull gemma4:e4b', models: [] };
       }
       return { valid: true, models };
     } catch {

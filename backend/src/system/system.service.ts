@@ -87,7 +87,7 @@ export class SystemService {
     // Ollama status + model check
     let ollamaRunning = false;
     let modelDownloaded = false;
-    const modelName = process.env.OLLAMA_MODEL || 'gemma4:26b';
+    const modelName = process.env.OLLAMA_MODEL || 'gemma4:e4b';
 
     try {
       const resp = await fetch(`${OLLAMA_URL}/api/tags`, { signal: AbortSignal.timeout(3000) });
@@ -121,7 +121,7 @@ export class SystemService {
       return { started: false, error: 'Pull already in progress' };
     }
 
-    const modelName = process.env.OLLAMA_MODEL || 'gemma4:26b';
+    const modelName = process.env.OLLAMA_MODEL || 'gemma4:e4b';
     this.pulling = true;
     this.pullProgress = { status: 'pulling', completed: 0, total: 0, percent: 0 };
 
@@ -139,7 +139,7 @@ export class SystemService {
   }
 
   async validateOllamaConnection(): Promise<{ connected: boolean; model: string; error?: string }> {
-    const modelName = process.env.OLLAMA_MODEL || 'gemma4:26b';
+    const modelName = process.env.OLLAMA_MODEL || 'gemma4:e4b';
     try {
       const resp = await fetch(`${OLLAMA_URL}/api/tags`, { signal: AbortSignal.timeout(5000) });
       if (!resp.ok) {

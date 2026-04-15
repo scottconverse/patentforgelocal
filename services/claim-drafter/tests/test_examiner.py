@@ -142,7 +142,7 @@ class TestExaminerAgent:
             invention_narrative="A widget.",
             draft_claims_raw="Claims.",
             ollama_url="http://127.0.0.1:11434",
-            default_model="gemma4:26b",
+            default_model="gemma4:e4b",
         )
 
         with patch("src.agents.examiner.openai") as mock_openai:
@@ -155,7 +155,7 @@ class TestExaminerAgent:
             await run_examiner(state)
 
             call_kwargs = mock_client.chat.completions.create.call_args.kwargs
-            assert call_kwargs["model"] == "gemma4:26b"
+            assert call_kwargs["model"] == "gemma4:e4b"
 
 
 class TestParseRevisionVerdict:

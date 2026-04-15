@@ -6,7 +6,7 @@ test.describe('Project Lifecycle', () => {
 
   // Ensure an API key is set so the FirstRunWizard does not block navigation
   test.beforeAll(async () => {
-    await updateSettings({ modelReady: true, ollamaModel: 'gemma4:26b', ollamaUrl: 'http://localhost:11434' });
+    await updateSettings({ modelReady: true, ollamaModel: 'gemma4:e4b', ollamaUrl: 'http://localhost:11434' });
   });
 
   test.afterEach(async () => {

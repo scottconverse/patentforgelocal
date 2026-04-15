@@ -25,7 +25,7 @@ class TestInternalAuth:
         client = TestClient(app)
         resp = client.post("/draft/sync", json={
             "invention_narrative": "test",
-            "settings": {"ollama_url": "http://127.0.0.1:11434", "default_model": "gemma4:26b"}
+            "settings": {"ollama_url": "http://127.0.0.1:11434", "default_model": "gemma4:e4b"}
         })
         # Should get past auth. Pipeline returns 200 with status=ERROR (Ollama not running).
         assert resp.status_code == 200
@@ -40,7 +40,7 @@ class TestInternalAuth:
             client = TestClient(srv.app)
             resp = client.post("/draft/sync", json={
                 "invention_narrative": "test",
-                "settings": {"ollama_url": "http://127.0.0.1:11434", "default_model": "gemma4:26b"}
+                "settings": {"ollama_url": "http://127.0.0.1:11434", "default_model": "gemma4:e4b"}
             })
             assert resp.status_code == 403
             assert "internal service secret" in resp.json()["detail"].lower()
@@ -58,7 +58,7 @@ class TestInternalAuth:
                 "/draft/sync",
                 json={
                     "invention_narrative": "test",
-                    "settings": {"ollama_url": "http://127.0.0.1:11434", "default_model": "gemma4:26b"}
+                    "settings": {"ollama_url": "http://127.0.0.1:11434", "default_model": "gemma4:e4b"}
                 },
                 headers={"X-Internal-Secret": "test-secret-123"},
             )
@@ -79,7 +79,7 @@ class TestInternalAuth:
                 "/draft/sync",
                 json={
                     "invention_narrative": "test",
-                    "settings": {"ollama_url": "http://127.0.0.1:11434", "default_model": "gemma4:26b"}
+                    "settings": {"ollama_url": "http://127.0.0.1:11434", "default_model": "gemma4:e4b"}
                 },
                 headers={"X-Internal-Secret": "wrong-secret"},
             )

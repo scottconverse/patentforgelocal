@@ -100,7 +100,7 @@ class TestWriterAgent:
             invention_narrative="A widget.",
             planner_strategy="Strategy.",
             ollama_url="http://127.0.0.1:11434",
-            default_model="gemma4:26b",
+            default_model="gemma4:e4b",
         )
 
         with patch("src.agents.writer.openai") as mock_openai:
@@ -113,7 +113,7 @@ class TestWriterAgent:
             await run_writer(state)
 
             call_kwargs = mock_client.chat.completions.create.call_args.kwargs
-            assert call_kwargs["model"] == "gemma4:26b"
+            assert call_kwargs["model"] == "gemma4:e4b"
 
     @pytest.mark.asyncio
     async def test_revision_includes_examiner_feedback_in_prompt(self):

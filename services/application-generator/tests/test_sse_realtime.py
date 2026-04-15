@@ -15,7 +15,7 @@ from src.server import app
 _GENERATE_BODY = {
     "invention_narrative": "A self-heating coffee mug",
     "claims_text": "1. A mug with internal heating.",
-    "settings": {"ollama_url": "http://127.0.0.1:11434", "default_model": "gemma4:26b"},
+    "settings": {"ollama_url": "http://127.0.0.1:11434", "default_model": "gemma4:e4b"},
 }
 
 _AGENT_NODES = ["background", "summary", "detailed_description", "abstract", "figures", "format_ids", "finalize"]

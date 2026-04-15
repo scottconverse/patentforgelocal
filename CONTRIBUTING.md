@@ -28,9 +28,9 @@ PatentForgeLocal uses Ollama for local AI inference. No API keys required.
 
 2. **Pull the default model**:
    ```bash
-   runtime/ollama/ollama pull gemma4:26b
+   runtime/ollama/ollama pull gemma4:e4b
    ```
-   The model is ~18 GB. First pull takes a few minutes depending on your connection.
+   The model is ~9.6 GB. First pull takes a few minutes depending on your connection.
 
 ### Getting Started
 

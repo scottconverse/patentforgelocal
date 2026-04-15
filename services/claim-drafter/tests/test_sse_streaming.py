@@ -34,7 +34,7 @@ def _reset_sse_app_status():
 
 MINIMAL_REQUEST = {
     "invention_narrative": "A widget that does things",
-    "settings": {"ollama_url": "http://127.0.0.1:11434", "default_model": "gemma4:26b"},
+    "settings": {"ollama_url": "http://127.0.0.1:11434", "default_model": "gemma4:e4b"},
 }
 
 

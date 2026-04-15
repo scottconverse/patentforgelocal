@@ -84,7 +84,7 @@ async def run_application_pipeline(
     claims_text: str,
     spec_language: str,
     ollama_url: str,
-    default_model: str = "gemma4:26b",
+    default_model: str = "gemma4:e4b",
     research_model: str = "",
     max_tokens: int = 32000,
     on_step: Callable[[str, str], None] | None = None,

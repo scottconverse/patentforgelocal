@@ -48,7 +48,7 @@ function buildSlowMockSSEResponse(): string {
     type: 'stage_complete',
     stage: 1,
     output: 'Stage 1 analysis complete.',
-    model: 'gemma4:26b',
+    model: 'gemma4:e4b',
     webSearchUsed: false,
     inputTokens: 4000,
     outputTokens: 2000,
@@ -110,7 +110,7 @@ async function setupMocks(page: Page, sseBody: string) {
       status: 200,
       contentType: 'application/json',
       body: JSON.stringify({
-        'gemma4:26b': {
+        'gemma4:e4b': {
           input_cost_per_token: 0,
           output_cost_per_token: 0,
         },
@@ -163,9 +163,9 @@ test.describe('Cancel Mid-Pipeline', () => {
     // Ensure settings have an API key configured
     await updateSettings({
       modelReady: true,
-      ollamaModel: 'gemma4:26b',
+      ollamaModel: 'gemma4:e4b',
       ollamaUrl: 'http://localhost:11434',
-      defaultModel: 'gemma4:26b',
+      defaultModel: 'gemma4:e4b',
       maxTokens: 8000,
       interStageDelaySeconds: 0,
     });

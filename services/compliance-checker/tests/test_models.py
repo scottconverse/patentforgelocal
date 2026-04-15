@@ -29,7 +29,7 @@ class TestClaimItem:
 
 class TestComplianceSettings:
     def test_model_required(self):
-        s = ComplianceSettings(default_model="gemma4:26b")
+        s = ComplianceSettings(default_model="gemma4:e4b")
         assert s.ollama_url == "http://127.0.0.1:11434"
         assert s.max_tokens == 16000
 
@@ -44,7 +44,7 @@ class TestComplianceRequest:
             claims=[ClaimItem(claim_number=1, claim_type="INDEPENDENT", text="A method")],
             specification_text="The invention relates to...",
             invention_narrative="A system that...",
-            settings=ComplianceSettings(default_model="gemma4:26b"),
+            settings=ComplianceSettings(default_model="gemma4:e4b"),
         )
         assert len(req.claims) == 1
 
@@ -54,7 +54,7 @@ class TestComplianceRequest:
                 claims=[],
                 specification_text="",
                 invention_narrative="",
-                settings=ComplianceSettings(default_model="gemma4:26b"),
+                settings=ComplianceSettings(default_model="gemma4:e4b"),
             )
 
     def test_max_claims_cap(self):
@@ -64,7 +64,7 @@ class TestComplianceRequest:
                 claims=claims,
                 specification_text="",
                 invention_narrative="",
-                settings=ComplianceSettings(default_model="gemma4:26b"),
+                settings=ComplianceSettings(default_model="gemma4:e4b"),
             )
 
 

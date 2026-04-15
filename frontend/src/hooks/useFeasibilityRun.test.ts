@@ -197,8 +197,8 @@ describe('useFeasibilityRun', () => {
     const setToast = vi.fn();
     (api.settings.get as any).mockResolvedValue({
       modelReady: false,
-      defaultModel: 'gemma4:26b',
-      ollamaModel: 'gemma4:26b',
+      defaultModel: 'gemma4:e4b',
+      ollamaModel: 'gemma4:e4b',
     });
 
     const params = makeDefaultParams({ setToast });
@@ -308,8 +308,8 @@ describe('useFeasibilityRun', () => {
   it('handleRunFeasibility clears descriptionError when description meets minimum', async () => {
     (api.settings.get as any).mockResolvedValue({
       modelReady: true,
-      defaultModel: 'gemma4:26b',
-      ollamaModel: 'gemma4:26b',
+      defaultModel: 'gemma4:e4b',
+      ollamaModel: 'gemma4:e4b',
     });
 
     const params = makeDefaultParams();

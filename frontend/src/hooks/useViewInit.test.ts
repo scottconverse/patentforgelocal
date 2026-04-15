@@ -19,7 +19,7 @@ const makeStage = (n: number, withOutput = false) => ({
   stageNumber: n,
   stageName: `Stage ${n}`,
   status: 'COMPLETE' as const,
-  model: 'gemma4:26b',
+  model: 'gemma4:e4b',
   webSearchUsed: false,
   startedAt: null,
   completedAt: null,

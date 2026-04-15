@@ -32,7 +32,7 @@ type Config struct {
 	PortResearch   int // 3004 — Research service
 
 	// Ollama configuration
-	OllamaModel string // gemma4:26b
+	OllamaModel string // gemma4:e4b
 	ModelsDir   string // <baseDir>/models
 }
 
@@ -50,7 +50,7 @@ func Load(baseDir string) (*Config, error) {
 		PortGeneration: 3002,
 		PortAnalysis:   3003,
 		PortResearch:   3004,
-		OllamaModel:    "gemma4:26b",
+		OllamaModel:    "gemma4:e4b",
 		ModelsDir:      filepath.Join(baseDir, "models"),
 	}
 	cfg.EnvFile = filepath.Join(cfg.ConfigDir, ".env")

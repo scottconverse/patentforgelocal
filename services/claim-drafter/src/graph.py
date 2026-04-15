@@ -68,7 +68,7 @@ async def run_claim_pipeline(
     feasibility_stage_6: str,
     prior_art_context: str,
     ollama_url: str = "http://127.0.0.1:11434",
-    default_model: str = "gemma4:26b",
+    default_model: str = "gemma4:e4b",
     research_model: str = "",
     max_tokens: int = 16000,
     on_step: 'Callable[[str, str], None] | None' = None,  # (node_name, step_name) — no state dict exposed
@@ -163,7 +163,7 @@ async def stream_claim_pipeline(
     feasibility_stage_6: str,
     prior_art_context: str,
     ollama_url: str = "http://127.0.0.1:11434",
-    default_model: str = "gemma4:26b",
+    default_model: str = "gemma4:e4b",
     research_model: str = "",
     max_tokens: int = 16000,
 ) -> AsyncGenerator[dict, None]:

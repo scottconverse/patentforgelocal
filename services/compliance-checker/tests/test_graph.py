@@ -57,7 +57,7 @@ class TestCompliancePipeline:
             specification_text="The invention...",
             invention_narrative="A system.",
             ollama_url="http://127.0.0.1:11434",
-            default_model="gemma4:26b",
+            default_model="gemma4:e4b",
         )
 
         assert isinstance(result, ComplianceResponse)
@@ -82,7 +82,7 @@ class TestCompliancePipeline:
             specification_text="",
             invention_narrative="",
             ollama_url="http://127.0.0.1:11434",
-            default_model="gemma4:26b",
+            default_model="gemma4:e4b",
         )
 
         assert result.overall_pass is False
@@ -104,7 +104,7 @@ class TestCompliancePipeline:
             specification_text="",
             invention_narrative="",
             ollama_url="http://127.0.0.1:11434",
-            default_model="gemma4:26b",
+            default_model="gemma4:e4b",
         )
 
         assert result.total_input_tokens == 400
@@ -127,7 +127,7 @@ class TestCompliancePipeline:
             specification_text="",
             invention_narrative="",
             ollama_url="http://127.0.0.1:11434",
-            default_model="gemma4:26b",
+            default_model="gemma4:e4b",
             on_step=lambda name, step: steps.append(name),
         )
 

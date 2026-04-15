@@ -73,7 +73,7 @@ class TestPlannerAgent:
             invention_narrative="A widget that processes data.",
             prior_art_context="US1234 - Prior Widget",
             ollama_url="http://127.0.0.1:11434",
-            default_model="gemma4:26b",
+            default_model="gemma4:e4b",
         )
 
         with patch("src.agents.planner.openai") as mock_openai:
@@ -98,7 +98,7 @@ class TestPlannerAgent:
         state = GraphState(
             invention_narrative="A widget.",
             ollama_url="http://127.0.0.1:11434",
-            default_model="gemma4:26b",
+            default_model="gemma4:e4b",
             research_model="gemma4:12b",
         )
 
@@ -120,7 +120,7 @@ class TestPlannerAgent:
         state = GraphState(
             invention_narrative="A widget.",
             ollama_url="http://127.0.0.1:11434",
-            default_model="gemma4:26b",
+            default_model="gemma4:e4b",
             research_model="",
         )
 
@@ -134,7 +134,7 @@ class TestPlannerAgent:
             await run_planner(state)
 
             call_kwargs = mock_client.chat.completions.create.call_args.kwargs
-            assert call_kwargs["model"] == "gemma4:26b"
+            assert call_kwargs["model"] == "gemma4:e4b"
 
     @pytest.mark.asyncio
     async def test_includes_invention_and_prior_art_in_user_message(self):

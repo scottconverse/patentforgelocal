@@ -119,7 +119,7 @@ export default function Settings() {
             <label className="block text-sm font-medium text-gray-300 mb-1">AI Model</label>
             <div className="flex items-center gap-3 px-3 py-2 bg-gray-800 border border-gray-600 rounded-lg">
               <span className={`w-2 h-2 rounded-full ${settings.modelReady ? 'bg-green-400' : 'bg-red-400'}`} />
-              <span className="text-white">{settings.ollamaModel || 'gemma4:26b'}</span>
+              <span className="text-white">{settings.ollamaModel || 'gemma4:e4b'}</span>
               <span className="text-sm text-gray-400 ml-auto">{settings.modelReady ? 'Running' : 'Not loaded'}</span>
             </div>
           </div>

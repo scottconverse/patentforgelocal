@@ -14,14 +14,14 @@ func TestIsModelAvailable_Found(t *testing.T) {
 		if r.URL.Path == "/api/tags" {
 			json.NewEncoder(w).Encode(map[string]interface{}{
 				"models": []map[string]string{
-					{"name": "gemma4:26b"},
+					{"name": "gemma4:e4b"},
 				},
 			})
 		}
 	}))
 	defer server.Close()
 
-	mgr := NewOllamaManager(server.URL, "gemma4:26b")
+	mgr := NewOllamaManager(server.URL, "gemma4:e4b")
 	available, err := mgr.IsModelAvailable()
 	if err != nil {
 		t.Fatalf("IsModelAvailable() error: %v", err)
@@ -43,7 +43,7 @@ func TestIsModelAvailable_NotFound(t *testing.T) {
 	}))
 	defer server.Close()
 
-	mgr := NewOllamaManager(server.URL, "gemma4:26b")
+	mgr := NewOllamaManager(server.URL, "gemma4:e4b")
 	available, err := mgr.IsModelAvailable()
 	if err != nil {
 		t.Fatalf("IsModelAvailable() error: %v", err)
@@ -63,7 +63,7 @@ func TestIsModelAvailable_EmptyModels(t *testing.T) {
 	}))
 	defer server.Close()
 
-	mgr := NewOllamaManager(server.URL, "gemma4:26b")
+	mgr := NewOllamaManager(server.URL, "gemma4:e4b")
 	available, err := mgr.IsModelAvailable()
 	if err != nil {
 		t.Fatalf("IsModelAvailable() error: %v", err)
@@ -74,7 +74,7 @@ func TestIsModelAvailable_EmptyModels(t *testing.T) {
 }
 
 func TestIsModelAvailable_ServerDown(t *testing.T) {
-	mgr := NewOllamaManager("http://127.0.0.1:19999", "gemma4:26b")
+	mgr := NewOllamaManager("http://127.0.0.1:19999", "gemma4:e4b")
 	_, err := mgr.IsModelAvailable()
 	if err == nil {
 		t.Error("IsModelAvailable() expected error for unreachable server, got nil")
@@ -107,14 +107,14 @@ func TestPullModel_Progress(t *testing.T) {
 			// After pull completes, doPull calls IsModelAvailable
 			json.NewEncoder(w).Encode(map[string]interface{}{
 				"models": []map[string]string{
-					{"name": "gemma4:26b"},
+					{"name": "gemma4:e4b"},
 				},
 			})
 		}
 	}))
 	defer server.Close()
 
-	mgr := NewOllamaManager(server.URL, "gemma4:26b")
+	mgr := NewOllamaManager(server.URL, "gemma4:e4b")
 	err := mgr.PullModel()
 	if err != nil {
 		t.Fatalf("PullModel() error: %v", err)
@@ -147,7 +147,7 @@ func TestPullModel_ServerError(t *testing.T) {
 	}))
 	defer server.Close()
 
-	mgr := NewOllamaManager(server.URL, "gemma4:26b")
+	mgr := NewOllamaManager(server.URL, "gemma4:e4b")
 	err := mgr.PullModel()
 	if err != nil {
 		t.Fatalf("PullModel() should not return error on start: %v", err)
@@ -194,13 +194,13 @@ func TestPullModel_DuplicatePull(t *testing.T) {
 			flusher.Flush()
 		case "/api/tags":
 			json.NewEncoder(w).Encode(map[string]interface{}{
-				"models": []map[string]string{{"name": "gemma4:26b"}},
+				"models": []map[string]string{{"name": "gemma4:e4b"}},
 			})
 		}
 	}))
 	defer server.Close()
 
-	mgr := NewOllamaManager(server.URL, "gemma4:26b")
+	mgr := NewOllamaManager(server.URL, "gemma4:e4b")
 
 	err := mgr.PullModel()
 	if err != nil {
@@ -217,7 +217,7 @@ func TestPullModel_DuplicatePull(t *testing.T) {
 }
 
 func TestGetProgress_InitialState(t *testing.T) {
-	mgr := NewOllamaManager("http://127.0.0.1:11434", "gemma4:26b")
+	mgr := NewOllamaManager("http://127.0.0.1:11434", "gemma4:e4b")
 	progress := mgr.GetProgress()
 	if progress.Status != "idle" {
 		t.Errorf("initial status = %q, want %q", progress.Status, "idle")

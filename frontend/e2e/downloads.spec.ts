@@ -68,7 +68,7 @@ test.describe('Download Buttons — Export to Disk', () => {
                 stageName: `Stage ${n}`,
                 status: 'COMPLETE',
                 outputText: null, // project GET excludes outputText
-                model: 'gemma4:26b',
+                model: 'gemma4:e4b',
                 webSearchUsed: false,
                 startedAt: '2025-01-01T00:00:00.000Z',
                 completedAt: '2025-01-01T00:00:10.000Z',
@@ -99,7 +99,7 @@ test.describe('Download Buttons — Export to Disk', () => {
               stageName: `Stage ${n}`,
               status: 'COMPLETE',
               outputText: `## Stage ${n}\n\nMock output for stage ${n}.`,
-              model: 'gemma4:26b',
+              model: 'gemma4:e4b',
               webSearchUsed: false,
               estimatedCostUsd: 0.01,
             })),

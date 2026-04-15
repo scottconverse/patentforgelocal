@@ -16,7 +16,7 @@ def base_state():
         specification_text="The invention uses a processor to execute instructions.",
         invention_narrative="A system that processes data.",
         ollama_url="http://127.0.0.1:11434",
-        default_model="gemma4:26b",
+        default_model="gemma4:e4b",
     )
 
 

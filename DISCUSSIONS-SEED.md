@@ -71,7 +71,7 @@ v0.1.1 adds native installers for all three platforms, automatic Ollama/model se
 
 **Highlights:**
 - **One-click installers** — Windows (.exe via Inno Setup), macOS (.dmg), Linux (.AppImage) with bundled runtimes
-- **Automatic Ollama setup** — the launcher detects, downloads, and starts Ollama automatically on first run; pulls gemma4:26b if not already present
+- **Automatic Ollama setup** — the launcher detects, downloads, and starts Ollama automatically on first run; pulls gemma4:e4b if not already present
 - **GPU/NPU detection** — scripts auto-detect AMD iGPU, NVIDIA GPU, and NPU hardware; injects ROCm environment variables for AMD acceleration
 - **System tray app** — Go-based tray manages all 6 services as child processes with graceful shutdown
 - **Security fixes** — removed known-public internal service secret fallback, added download token endpoint for secure exports
@@ -186,7 +186,7 @@ The default model is Gemma 4 26B, which balances quality and resource usage well
 If you've experimented with other models for patent analysis, share your findings:
 - What model did you try?
 - What hardware are you running on?
-- How was the output quality compared to gemma4:26b?
+- How was the output quality compared to gemma4:e4b?
 - What was the inference speed like?
 
 I'm especially interested in hearing from people running on:
@@ -206,7 +206,7 @@ I'm especially interested in hearing from people running on:
 
 Here's what a complete PatentForgeLocal workflow looks like end-to-end, running entirely on a Ryzen 7 laptop with 32 GB RAM and a Radeon 780M iGPU.
 
-**Setup:** Ollama running with gemma4:26b, PatentForgeLocal system tray started.
+**Setup:** Ollama running with gemma4:e4b, PatentForgeLocal system tray started.
 
 **Step 1 — Describe the invention** (~2 minutes)
 Enter the invention title and description in the web UI. The more specific you are, the better the analysis.

@@ -94,7 +94,7 @@ export default function FirstRunWizard({ onComplete }: FirstRunWizardProps) {
         {/* Step: Model Download */}
         {step === 'model-download' && (
           <ModelDownload
-            modelName="gemma4:26b"
+            modelName="gemma4:e4b"
             onComplete={() => {
               setModelDownloaded(true);
               goNext();

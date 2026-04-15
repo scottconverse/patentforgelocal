@@ -34,7 +34,7 @@ const makeSettings = () => ({
   getSettings: jest.fn().mockResolvedValue({
     ollamaApiKey: '',
     ollamaUrl: 'http://localhost:11434',
-    defaultModel: 'gemma4:26b',
+    defaultModel: 'gemma4:e4b',
     researchModel: '',
     maxTokens: 16000,
   }),

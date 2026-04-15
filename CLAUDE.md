@@ -8,7 +8,7 @@ Full design and implementation plan: `docs/superpowers/specs/2026-04-12-patentfo
 
 ## Key Architecture Decisions
 
-- Default model: `gemma4:26b` (MoE, 18GB, 256K context)
+- Default model: `gemma4:e4b` (Dense 4B, 9.6GB, 128K context)
 - Ollama bundled as portable binary in `runtime/ollama/`
 - Context window management via context-mode (SQLite FTS5 indexing of stage outputs)
 - Web search: Ollama cloud web search API (optional, free account)

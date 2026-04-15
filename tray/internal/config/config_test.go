@@ -41,8 +41,8 @@ func TestLoad_DefaultPorts(t *testing.T) {
 	if cfg.PortOllama != 11434 {
 		t.Errorf("PortOllama = %d, want 11434", cfg.PortOllama)
 	}
-	if cfg.OllamaModel != "gemma4:26b" {
-		t.Errorf("OllamaModel = %q, want %q", cfg.OllamaModel, "gemma4:26b")
+	if cfg.OllamaModel != "gemma4:e4b" {
+		t.Errorf("OllamaModel = %q, want %q", cfg.OllamaModel, "gemma4:e4b")
 	}
 }
 

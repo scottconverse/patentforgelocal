@@ -14,7 +14,7 @@ describe('FeasibilityService.rerunFromStage', () => {
     stageName: name,
     status: 'COMPLETE',
     outputText: `Output for stage ${i + 1}`,
-    model: 'gemma4:26b',
+    model: 'gemma4:e4b',
     webSearchUsed: i === 1, // stage 2 uses web search
     startedAt: new Date('2026-03-30T10:00:00Z'),
     completedAt: new Date('2026-03-30T10:02:00Z'),
@@ -167,7 +167,7 @@ describe('FeasibilityService.rerunFromStage', () => {
     expect(stage1.inputTokens).toBe(5000);
     expect(stage1.outputTokens).toBe(2000);
     expect(stage1.estimatedCostUsd).toBe(0.15);
-    expect(stage1.model).toBe('gemma4:26b');
+    expect(stage1.model).toBe('gemma4:e4b');
   });
 
   it('re-running from stage 1 sets all stages to PENDING', async () => {

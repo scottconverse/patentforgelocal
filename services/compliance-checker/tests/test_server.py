@@ -22,7 +22,7 @@ class TestServerEndpoints:
             "claims": [],
             "specification_text": "",
             "invention_narrative": "",
-            "settings": {"default_model": "gemma4:26b"},
+            "settings": {"default_model": "gemma4:e4b"},
         })
         assert response.status_code == 422
 

@@ -3,6 +3,7 @@
  * Kept for compatibility with components that reference model metadata.
  */
 export const LOCAL_MODELS: Record<string, { label: string; parameterSize: string }> = {
+  'gemma4:e4b': { label: 'Gemma 4 (4B)', parameterSize: '9.6 GB' },
   'gemma4:26b': { label: 'Gemma 4 (27B MoE)', parameterSize: '18 GB' },
   'gemma3:27b': { label: 'Gemma 3 (27B)', parameterSize: '16 GB' },
   'llama4:scout': { label: 'Llama 4 Scout', parameterSize: '17 GB' },

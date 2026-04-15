@@ -223,10 +223,10 @@ model OdpApiUsage {
 model AppSettings {
   id                     String  @id @default("singleton")
   ollamaApiKey           String  @default("")
-  ollamaModel            String  @default("gemma4:26b")
+  ollamaModel            String  @default("gemma4:e4b")
   ollamaUrl              String  @default("http://localhost:11434")
   modelReady             Boolean @default(false)
-  defaultModel           String  @default("gemma4:26b")
+  defaultModel           String  @default("gemma4:e4b")
   researchModel          String  @default("")
   maxTokens              Int     @default(32000)
   interStageDelaySeconds Int     @default(5)

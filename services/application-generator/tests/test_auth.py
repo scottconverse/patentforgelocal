@@ -23,7 +23,7 @@ class TestInternalAuth:
             resp = client.post("/generate/sync", json={
                 "invention_narrative": "test",
                 "claims_text": "1. A method.",
-                "settings": {"ollama_url": "http://127.0.0.1:11434", "default_model": "gemma4:26b"},
+                "settings": {"ollama_url": "http://127.0.0.1:11434", "default_model": "gemma4:e4b"},
             })
             assert resp.status_code == 403
         finally:
@@ -42,7 +42,7 @@ class TestInternalAuth:
                 json={
                     "invention_narrative": "test",
                     "claims_text": "1. A method.",
-                    "settings": {"ollama_url": "http://127.0.0.1:11434", "default_model": "gemma4:26b"},
+                    "settings": {"ollama_url": "http://127.0.0.1:11434", "default_model": "gemma4:e4b"},
                 },
                 headers={"X-Internal-Secret": "test-secret-123"},
             )
@@ -63,7 +63,7 @@ class TestInternalAuth:
                 json={
                     "invention_narrative": "test",
                     "claims_text": "1. A method.",
-                    "settings": {"ollama_url": "http://127.0.0.1:11434", "default_model": "gemma4:26b"},
+                    "settings": {"ollama_url": "http://127.0.0.1:11434", "default_model": "gemma4:e4b"},
                 },
                 headers={"X-Internal-Secret": "wrong"},
             )

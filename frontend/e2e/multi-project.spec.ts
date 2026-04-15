@@ -11,7 +11,7 @@ import { createProject, deleteProject, updateSettings } from './helpers';
 test.describe('Multiple Projects — CRUD and Cascade', () => {
   // Ensure API key is set so FirstRunWizard doesn't block navigation
   test.beforeAll(async () => {
-    await updateSettings({ modelReady: true, ollamaModel: 'gemma4:26b', ollamaUrl: 'http://localhost:11434' });
+    await updateSettings({ modelReady: true, ollamaModel: 'gemma4:e4b', ollamaUrl: 'http://localhost:11434' });
   });
 
   const projectIds: string[] = [];

@@ -5,6 +5,12 @@ All notable changes to PatentForgeLocal will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html). 
 
+## [Unreleased]
+
+### Changed
+
+- **Default model switched from `gemma4:26b` to `gemma4:e4b`** — the 26b MoE model requires 18 GB of weights in RAM regardless of its 4B active-parameter count, leaving insufficient headroom on 32 GB systems (particularly AMD iGPU machines where GPU and system RAM are shared). `gemma4:e4b` (Dense 4B, 9.6 GB) provides ~20 GB of headroom during active inference and is the correct default for 32 GB hardware.
+
 ## [0.1.2] - 2026-04-13
 
 ### Changed

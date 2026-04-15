@@ -135,7 +135,7 @@ async function setupProjectWithFeasibilityAndClaims(page: Page, projectId: strin
         data: {
           status: 'COMPLETE',
           outputText: `Mock stage ${i} output for testing.`,
-          model: 'gemma4:26b',
+          model: 'gemma4:e4b',
         },
       });
     }
@@ -150,7 +150,7 @@ test.describe('SSE Step Progress — Claims Tab', () => {
   let projectId: string;
 
   test.beforeAll(async () => {
-    await updateSettings({ modelReady: true, ollamaModel: 'gemma4:26b', ollamaUrl: 'http://localhost:11434', defaultModel: 'gemma4:26b' });
+    await updateSettings({ modelReady: true, ollamaModel: 'gemma4:e4b', ollamaUrl: 'http://localhost:11434', defaultModel: 'gemma4:e4b' });
     projectId = await createProject('SSE Progress Test');
     // Save invention with 50+ word description
     await fetch(`http://localhost:3000/api/projects/${projectId}/invention`, {
@@ -220,7 +220,7 @@ test.describe('SSE Step Progress — Compliance Tab', () => {
   let projectId: string;
 
   test.beforeAll(async () => {
-    await updateSettings({ modelReady: true, ollamaModel: 'gemma4:26b', ollamaUrl: 'http://localhost:11434', defaultModel: 'gemma4:26b' });
+    await updateSettings({ modelReady: true, ollamaModel: 'gemma4:e4b', ollamaUrl: 'http://localhost:11434', defaultModel: 'gemma4:e4b' });
     projectId = await createProject('SSE Compliance Test');
     await fetch(`http://localhost:3000/api/projects/${projectId}/invention`, {
       method: 'PUT',
@@ -273,7 +273,7 @@ test.describe('SSE Step Progress — Application Tab', () => {
   let projectId: string;
 
   test.beforeAll(async () => {
-    await updateSettings({ modelReady: true, ollamaModel: 'gemma4:26b', ollamaUrl: 'http://localhost:11434', defaultModel: 'gemma4:26b' });
+    await updateSettings({ modelReady: true, ollamaModel: 'gemma4:e4b', ollamaUrl: 'http://localhost:11434', defaultModel: 'gemma4:e4b' });
     projectId = await createProject('SSE Application Test');
     await fetch(`http://localhost:3000/api/projects/${projectId}/invention`, {
       method: 'PUT',

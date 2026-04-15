@@ -38,7 +38,7 @@ def _connection_error():
 
 
 CALL_KWARGS = dict(
-    model="gemma4:26b",
+    model="gemma4:e4b",
     max_tokens=1024,
     system="test system",
     messages=[{"role": "user", "content": "test"}],

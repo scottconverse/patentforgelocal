@@ -223,7 +223,7 @@ describe('streamMessage', () => {
         ollamaUrl: `http://127.0.0.1:${port}`,
         systemPrompt: 'Analyze patents.',
         userMessage: 'Find prior art',
-        model: 'gemma4:26b',
+        model: 'gemma4:e4b',
         maxTokens: 1000,
         useWebSearch: true,
         ollamaApiKey: 'test-key',
@@ -254,7 +254,7 @@ describe('streamMessage', () => {
         ollamaUrl: `http://127.0.0.1:${port}`,
         systemPrompt: 'Test.',
         userMessage: 'Hello',
-        model: 'gemma4:26b',
+        model: 'gemma4:e4b',
         maxTokens: 100,
         useWebSearch: true,
         // NO ollamaApiKey

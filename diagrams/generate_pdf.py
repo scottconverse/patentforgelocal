@@ -353,7 +353,7 @@ def generate():
     pdf.body_text('All settings are configurable via the Settings page in the web UI:')
     settings = [
         ('Ollama API Key (optional)', 'Optional — enables web search during analysis.'),
-        ('Default Model', 'Model for most pipeline stages. Default: gemma4:26b.'),
+        ('Default Model', 'Model for most pipeline stages. Default: gemma4:e4b.'),
         ('Research Model', 'Optional cheaper model for Stage 2 (e.g., Haiku).'),
         ('Max Tokens', 'Maximum tokens per stage response. Default: 32,000.'),
         ('Inter-Stage Delay', 'Pause between stages for rate limit protection. Default: 5 seconds.'),

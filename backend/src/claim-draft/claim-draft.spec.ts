@@ -32,7 +32,7 @@ const mockPrisma = {
 const mockSettings = {
   getSettings: jest.fn().mockResolvedValue({
     ollamaApiKey: 'test-key',
-    defaultModel: 'gemma4:26b',
+    defaultModel: 'gemma4:e4b',
     researchModel: '',
     maxTokens: 16000,
   }),

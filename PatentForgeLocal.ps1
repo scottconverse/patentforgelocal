@@ -238,12 +238,12 @@ if (-not $ollamaRunning) {
 Write-Host "  Ollama: running" -ForegroundColor Green
 
 # ─── Check model is downloaded ───────────────────────────────────────────────
-$defaultModel = "gemma4:26b"
+$defaultModel = "gemma4:e4b"
 $modelReady = $false
 try {
     $tags = (Invoke-WebRequest -Uri "http://127.0.0.1:11434/api/tags" -TimeoutSec 5).Content | ConvertFrom-Json
     foreach ($m in $tags.models) {
-        if ($m.name -match "^gemma4:(26b|27b)") { $modelReady = $true; break }
+        if ($m.name -match "^gemma4:(e4b|e2b)") { $modelReady = $true; break }
     }
 } catch { }
 

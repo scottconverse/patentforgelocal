@@ -4,13 +4,13 @@ import { getSettings, updateSettings } from './helpers';
 test.describe('Settings Page', () => {
   // Ensure an API key is set so the FirstRunWizard does not block navigation
   test.beforeAll(async () => {
-    await updateSettings({ modelReady: true, ollamaModel: 'gemma4:26b', ollamaUrl: 'http://localhost:11434' });
+    await updateSettings({ modelReady: true, ollamaModel: 'gemma4:e4b', ollamaUrl: 'http://localhost:11434' });
   });
 
   test.afterAll(async () => {
     await updateSettings({
       usptoApiKey: '',
-      defaultModel: 'gemma4:26b',
+      defaultModel: 'gemma4:e4b',
     });
   });
 
@@ -43,7 +43,7 @@ test.describe('Settings Page', () => {
     await screenshot(page, 'settings-saved-confirmation');
 
     // Restore valid settings so subsequent tests don't trigger the FirstRunWizard
-    await updateSettings({ modelReady: true, ollamaModel: 'gemma4:26b', ollamaUrl: 'http://localhost:11434', usptoApiKey: '' });
+    await updateSettings({ modelReady: true, ollamaModel: 'gemma4:e4b', ollamaUrl: 'http://localhost:11434', usptoApiKey: '' });
   });
 
   test('model status shows configured model', async ({ page, consoleErrors }) => {
@@ -51,7 +51,7 @@ test.describe('Settings Page', () => {
     await expect(page.locator('button:has-text("Save Settings")')).toBeVisible({ timeout: 10_000 });
 
     // Model is displayed as read-only status (not a select dropdown — local inference uses Ollama's configured model)
-    await expect(page.locator('text=gemma4:26b')).toBeVisible();
+    await expect(page.locator('text=gemma4:e4b')).toBeVisible();
     await screenshot(page, 'settings-model-status');
   });
 
@@ -62,6 +62,6 @@ test.describe('Settings Page', () => {
 
     // All controls should be visible and not overflow
     await expect(page.locator('button:has-text("Save Settings")')).toBeVisible();
-    await expect(page.locator('text=gemma4:26b')).toBeVisible();
+    await expect(page.locator('text=gemma4:e4b')).toBeVisible();
   });
 });
