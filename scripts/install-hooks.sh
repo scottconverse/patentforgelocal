@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 #
-# Install PatentForge git hooks.
+# Install PatentForgeLocal git hooks.
 # Run once after cloning: bash scripts/install-hooks.sh
 #
 
@@ -19,7 +19,7 @@ if [ ! -d "$ROOT/.git" ]; then
     exit 1
 fi
 
-echo "Installing PatentForge git hooks..."
+echo "Installing PatentForgeLocal git hooks..."
 
 for hook in "$HOOKS_SRC"/*; do
     name=$(basename "$hook")

@@ -15,6 +15,36 @@ npm run build
 echo "  Bundling with ncc..."
 npx ncc build dist/server.js -o sea-build --minify
 
+# Step 2b: Copy better-sqlite3 native binding and patch hardcoded CI path
+echo "  Patching better-sqlite3 native binding path..."
+mkdir -p "$ROOT_DIR/patentforgelocal-feasibility-native"
+SQLITE3_NODE=$(find node_modules/better-sqlite3/build/Release -name "better_sqlite3.node" 2>/dev/null | head -1)
+if [ -n "$SQLITE3_NODE" ]; then
+  cp "$SQLITE3_NODE" "$ROOT_DIR/patentforgelocal-feasibility-native/better_sqlite3.node"
+  echo "  Copied better_sqlite3.node from $SQLITE3_NODE"
+  # Patch the ncc bundle: replace any absolute path to better_sqlite3.node with
+  # a process.execPath-relative path so the binary works on any machine.
+  node -e "
+    const fs = require('fs');
+    let content = fs.readFileSync('sea-build/index.js', 'utf8');
+    const before = content.length;
+    // Match any quoted absolute path ending in better_sqlite3.node (handles any CI workspace)
+    content = content.replace(
+      /\"([^\"]*[\\\\/]better_sqlite3\\.node)\"/g,
+      'require(\"path\").join(require(\"path\").dirname(process.execPath),\"patentforgelocal-feasibility-native\",\"better_sqlite3.node\")'
+    );
+    content = content.replace(
+      /'([^']*[\\\\/]better_sqlite3\\.node)'/g,
+      'require(\"path\").join(require(\"path\").dirname(process.execPath),\"patentforgelocal-feasibility-native\",\"better_sqlite3.node\")'
+    );
+    fs.writeFileSync('sea-build/index.js', content);
+    const patched = content.length !== before || content.includes('patentforgelocal-feasibility-native');
+    console.log(patched ? '  better_sqlite3 path patched successfully' : '  WARNING: better_sqlite3 path not found in bundle — patch may be needed');
+  "
+else
+  echo "  WARNING: better_sqlite3.node not found in node_modules — native binding will not be bundled"
+fi
+
 # Step 3: Create SEA config
 cat > sea-config.json << 'SEAEOF'
 {

@@ -5,7 +5,7 @@ SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
 ROOT_DIR="$(dirname "$SCRIPT_DIR")"
 cd "$ROOT_DIR"
 
-echo "=== PatentForge SEA Build Validation ==="
+echo "=== PatentForgeLocal SEA Build Validation ==="
 echo ""
 
 # Build both

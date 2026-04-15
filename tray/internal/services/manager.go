@@ -86,6 +86,7 @@ func (m *Manager) buildServices() []*Service {
 		fmt.Sprintf("PORT=%d", m.cfg.PortUI),
 		fmt.Sprintf("FRONTEND_DIST_PATH=%s", filepath.Join(baseDir, "frontend", "dist")),
 		fmt.Sprintf("PRISMA_QUERY_ENGINE_LIBRARY=%s", findPrismaEngine(baseDir)),
+		fmt.Sprintf("BETTER_SQLITE3_BINDING=%s", filepath.Join(baseDir, "patentforgelocal-backend-prisma", "better_sqlite3.node")),
 		fmt.Sprintf("FEASIBILITY_URL=%s", feasibilityURL),
 		fmt.Sprintf("CLAIM_DRAFTER_URL=%s", claimDrafterURL),
 		fmt.Sprintf("APPLICATION_GENERATOR_URL=%s", appGeneratorURL),
@@ -106,6 +107,7 @@ func (m *Manager) buildServices() []*Service {
 	feasibilityEnv := append(copyEnv(baseEnv),
 		fmt.Sprintf("INTERNAL_SERVICE_SECRET=%s", m.cfg.ServiceSecret),
 		fmt.Sprintf("PORT=%d", m.cfg.PortAPI),
+		fmt.Sprintf("BETTER_SQLITE3_BINDING=%s", filepath.Join(baseDir, "patentforgelocal-feasibility-native", "better_sqlite3.node")),
 	)
 
 	feasibility := &Service{

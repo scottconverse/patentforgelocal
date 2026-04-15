@@ -1,5 +1,5 @@
 /**
- * Shared Playwright fixtures for PatentForge E2E tests.
+ * Shared Playwright fixtures for PatentForgeLocal E2E tests.
  *
  * Every test automatically gets:
  * 1. Disclaimer modal dismissed (via localStorage)

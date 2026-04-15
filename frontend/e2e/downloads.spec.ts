@@ -49,7 +49,7 @@ test.describe('Download Buttons — Export to Disk', () => {
             title: 'Test Invention',
             description:
               'A test invention with enough words to pass the fifty word minimum ' +
-              'requirement for feasibility analysis to begin in the PatentForge ' +
+              'requirement for feasibility analysis to begin in the PatentForgeLocal ' +
               'pipeline system during end-to-end testing of the download feature.',
           },
           feasibility: [

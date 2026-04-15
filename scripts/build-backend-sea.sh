@@ -15,6 +15,32 @@ npx nest build
 echo "  Bundling with ncc..."
 npx ncc build dist/main.js -o sea-build --minify
 
+# Step 2b: Copy better-sqlite3 native binding and patch hardcoded CI path
+echo "  Patching better-sqlite3 native binding path..."
+mkdir -p "$ROOT_DIR/patentforgelocal-backend-prisma"
+SQLITE3_NODE=$(find node_modules/better-sqlite3/build/Release -name "better_sqlite3.node" 2>/dev/null | head -1)
+if [ -n "$SQLITE3_NODE" ]; then
+  cp "$SQLITE3_NODE" "$ROOT_DIR/patentforgelocal-backend-prisma/better_sqlite3.node"
+  echo "  Copied better_sqlite3.node from $SQLITE3_NODE"
+  node -e "
+    const fs = require('fs');
+    let content = fs.readFileSync('sea-build/index.js', 'utf8');
+    content = content.replace(
+      /\"([^\"]*[\\\\/]better_sqlite3\\.node)\"/g,
+      'require(\"path\").join(require(\"path\").dirname(process.execPath),\"patentforgelocal-backend-prisma\",\"better_sqlite3.node\")'
+    );
+    content = content.replace(
+      /'([^']*[\\\\/]better_sqlite3\\.node)'/g,
+      'require(\"path\").join(require(\"path\").dirname(process.execPath),\"patentforgelocal-backend-prisma\",\"better_sqlite3.node\")'
+    );
+    fs.writeFileSync('sea-build/index.js', content);
+    const patched = content.includes('patentforgelocal-backend-prisma');
+    console.log(patched ? '  better_sqlite3 path patched successfully' : '  WARNING: better_sqlite3 path not found in bundle');
+  "
+else
+  echo "  WARNING: better_sqlite3.node not found in node_modules"
+fi
+
 # Step 3: Create SEA config
 cat > sea-config.json << 'SEAEOF'
 {

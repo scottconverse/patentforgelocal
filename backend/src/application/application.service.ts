@@ -8,7 +8,7 @@ const INTERNAL_SECRET =
   process.env.INTERNAL_SERVICE_SECRET ||
   (() => {
     console.warn(
-      '[PatentForge] INTERNAL_SERVICE_SECRET is not set — using insecure default. ' +
+      '[PatentForgeLocal] INTERNAL_SERVICE_SECRET is not set — using insecure default. ' +
         'Add it to backend/.env for any networked deployment. Generate one: openssl rand -hex 32',
     );
     return '';

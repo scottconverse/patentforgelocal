@@ -35,7 +35,7 @@ ax.set_ylim(0, 9)
 ax.axis('off')
 fig.patch.set_facecolor('white')
 
-ax.text(6, 8.7, 'PatentForge \u2014 Federated System Architecture', ha='center', fontsize=16, fontweight='bold', color=blue_dark)
+ax.text(6, 8.7, 'PatentForgeLocal \u2014 Federated System Architecture', ha='center', fontsize=16, fontweight='bold', color=blue_dark)
 
 draw_box(ax, 3.5, 7.2, 5, 1.2, 'React Frontend', 'TypeScript + Vite + Tailwind CSS', blue_light, blue_mid, fontsize=11)
 ax.annotate('', xy=(6, 6.3), xytext=(6, 7.2), arrowprops=dict(arrowstyle='->', color=blue_mid, lw=2))
@@ -79,7 +79,7 @@ ax.set_xlim(0, 14)
 ax.set_ylim(0, 5)
 ax.axis('off')
 fig.patch.set_facecolor('white')
-ax.text(7, 4.7, 'PatentForge \u2014 User Journey', ha='center', fontsize=16, fontweight='bold', color=blue_dark)
+ax.text(7, 4.7, 'PatentForgeLocal \u2014 User Journey', ha='center', fontsize=16, fontweight='bold', color=blue_dark)
 
 stages = [
     (0.3, 'INTAKE', 'Invention\nDisclosure', green_light, green),
@@ -120,7 +120,7 @@ ax.set_xlim(0, 11)
 ax.set_ylim(0, 8)
 ax.axis('off')
 fig.patch.set_facecolor('white')
-ax.text(5.5, 7.7, 'PatentForge \u2014 Cross-Stage Data Flow', ha='center', fontsize=16, fontweight='bold', color=blue_dark)
+ax.text(5.5, 7.7, 'PatentForgeLocal \u2014 Cross-Stage Data Flow', ha='center', fontsize=16, fontweight='bold', color=blue_dark)
 
 nodes = [
     (1, 6.8, 2.5, 0.5, 'Invention Intake (11 fields)', green_light, green),
@@ -174,7 +174,7 @@ ax.set_xlim(0, 13)
 ax.set_ylim(0, 8)
 ax.axis('off')
 fig.patch.set_facecolor('white')
-ax.text(6.5, 7.7, 'PatentForge \u2014 Database Schema (ERD)', ha='center', fontsize=16, fontweight='bold', color=blue_dark)
+ax.text(6.5, 7.7, 'PatentForgeLocal \u2014 Database Schema (ERD)', ha='center', fontsize=16, fontweight='bold', color=blue_dark)
 
 def draw_entity(ax, x, y, w, h, name, fields, pk_color):
     ax.add_patch(FancyBboxPatch((x, y+h-0.45), w, 0.45, boxstyle="round,pad=0.05,rounding_size=0.08", facecolor=pk_color, edgecolor=pk_color, linewidth=1.5))
@@ -224,7 +224,7 @@ ax.set_xlim(0, 12)
 ax.set_ylim(0, 7)
 ax.axis('off')
 fig.patch.set_facecolor('white')
-ax.text(6, 6.7, 'PatentForge \u2014 Docker Deployment Topology', ha='center', fontsize=16, fontweight='bold', color=blue_dark)
+ax.text(6, 6.7, 'PatentForgeLocal \u2014 Docker Deployment Topology', ha='center', fontsize=16, fontweight='bold', color=blue_dark)
 
 ax.add_patch(FancyBboxPatch((0.3, 0.3), 11.4, 6, boxstyle="round,pad=0.2", facecolor='#F8F8F8', edgecolor='#2496ED', linewidth=2, linestyle='--'))
 ax.text(1, 6.1, 'Docker Compose Network', fontsize=10, fontweight='bold', color='#2496ED')

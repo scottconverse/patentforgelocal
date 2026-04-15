@@ -1,5 +1,5 @@
 """
-PatentForge v0.8.5 — README-FULL.pdf Generator
+PatentForgeLocal v0.8.5 — README-FULL.pdf Generator
 Generates a professional PDF with architecture diagrams.
 """
 import os
@@ -9,12 +9,12 @@ DIAGRAMS_DIR = os.path.dirname(os.path.abspath(__file__))
 ROOT_DIR = os.path.dirname(DIAGRAMS_DIR)
 OUTPUT = os.path.join(ROOT_DIR, 'README-FULL.pdf')
 
-class PatentForgePDF(FPDF):
+class PatentForgeLocalPDF(FPDF):
     def header(self):
         if self.page_no() > 1:
             self.set_font('Helvetica', 'I', 8)
             self.set_text_color(130, 130, 130)
-            self.cell(0, 8, 'PatentForge v0.8.5 - AI-Powered Full-Lifecycle Patent Platform', align='L')
+            self.cell(0, 8, 'PatentForgeLocal v0.8.5 - AI-Powered Full-Lifecycle Patent Platform', align='L')
             self.cell(0, 8, f'Page {self.page_no()}', align='R', new_x='LMARGIN', new_y='NEXT')
             self.line(10, 14, 200, 14)
             self.ln(4)
@@ -23,7 +23,7 @@ class PatentForgePDF(FPDF):
         self.set_y(-15)
         self.set_font('Helvetica', 'I', 7)
         self.set_text_color(150, 150, 150)
-        self.cell(0, 10, 'PatentForge is a research tool, not a legal service. The author is not a lawyer. See LEGAL_NOTICE.md.', align='C')
+        self.cell(0, 10, 'PatentForgeLocal is a research tool, not a legal service. The author is not a lawyer. See LEGAL_NOTICE.md.', align='C')
 
     def chapter_title(self, title):
         self.set_font('Helvetica', 'B', 16)
@@ -96,7 +96,7 @@ class PatentForgePDF(FPDF):
 
 
 def generate():
-    pdf = PatentForgePDF()
+    pdf = PatentForgeLocalPDF()
     pdf.set_auto_page_break(auto=True, margin=20)
 
     # ── COVER PAGE ──
@@ -104,7 +104,7 @@ def generate():
     pdf.ln(50)
     pdf.set_font('Helvetica', 'B', 32)
     pdf.set_text_color(30, 30, 30)
-    pdf.cell(0, 15, 'PatentForge', align='C', new_x='LMARGIN', new_y='NEXT')
+    pdf.cell(0, 15, 'PatentForgeLocal', align='C', new_x='LMARGIN', new_y='NEXT')
     pdf.set_font('Helvetica', '', 14)
     pdf.set_text_color(100, 100, 100)
     pdf.cell(0, 10, 'AI-Powered Full-Lifecycle Patent Platform', align='C', new_x='LMARGIN', new_y='NEXT')
@@ -115,7 +115,7 @@ def generate():
     pdf.ln(15)
     pdf.set_font('Helvetica', 'I', 9)
     pdf.set_text_color(130, 130, 130)
-    pdf.multi_cell(0, 5, 'PatentForge is a research tool, not a legal service. The author of this tool is not a lawyer. '
+    pdf.multi_cell(0, 5, 'PatentForgeLocal is a research tool, not a legal service. The author of this tool is not a lawyer. '
                          'The AI systems that execute these prompts are not lawyers. No attorney-client relationship '
                          'is created by using this tool. See LEGAL_NOTICE.md for full details.', align='C')
     pdf.ln(10)
@@ -128,7 +128,7 @@ def generate():
     pdf.chapter_title('Table of Contents')
     toc = [
         '1. Overview',
-        '2. What PatentForge Does',
+        '2. What PatentForgeLocal Does',
         '3. System Architecture',
         '4. The 6-Stage Feasibility Pipeline',
         '5. Claim Drafting',
@@ -152,7 +152,7 @@ def generate():
     pdf.add_page()
     pdf.chapter_title('1. Overview')
     pdf.body_text(
-        'PatentForge is an open-source, self-hosted web application that guides inventors through '
+        'PatentForgeLocal is an open-source, self-hosted web application that guides inventors through '
         'the full patent lifecycle using AI. Starting from a plain-language invention description, '
         'it runs a 6-stage feasibility analysis pipeline, automates prior art discovery, drafts '
         'independent and dependent patent claims, performs compliance pre-screening against patent '
@@ -161,21 +161,21 @@ def generate():
         'drafting, compliance, and application generation services.'
     )
     pdf.body_text(
-        'PatentForge also supports prosecution tracking to monitor the status of filed applications '
-        'over time. The goal throughout is preparation, not replacement. PatentForge helps you walk '
+        'PatentForgeLocal also supports prosecution tracking to monitor the status of filed applications '
+        'over time. The goal throughout is preparation, not replacement. PatentForgeLocal helps you walk '
         'into your first attorney meeting with your invention clearly described, related prior art '
         'identified, draft claims in hand, and a complete application draft ready for professional '
         'review - so you make the most of your attorney\'s time and arrive informed.'
     )
     pdf.disclaimer_box(
-        'PatentForge is a research tool, not a legal service. The author is not a lawyer. '
+        'PatentForgeLocal is a research tool, not a legal service. The author is not a lawyer. '
         'The AI systems are not lawyers. No attorney-client relationship is created. '
         'AI-generated analysis may contain errors, omissions, or hallucinated references. '
         'Always consult a registered patent attorney before making filing decisions.'
     )
 
     # ── 2. WHAT IT DOES ──
-    pdf.chapter_title('2. What PatentForge Does')
+    pdf.chapter_title('2. What PatentForgeLocal Does')
     features = [
         ('Structured technical analysis', ' - 6-stage AI pipeline restates your invention in patent terminology, searches for related art, identifies potential issues, and organizes findings into a structured report.'),
         ('Prior art discovery', ' - automated patent search via PatentsView API with AI-powered query extraction and relevance scoring, plus Ollama web search for papers, products, and open-source projects.'),
@@ -196,11 +196,11 @@ def generate():
     pdf.add_page()
     pdf.chapter_title('3. System Architecture')
     pdf.body_text(
-        'PatentForge uses a six-service federated architecture. Each service is independently '
+        'PatentForgeLocal uses a six-service federated architecture. Each service is independently '
         'deployable and communicates via HTTP requests and Server-Sent Events (SSE) for real-time '
         'streaming. SQLite is used for local development; PostgreSQL for Docker deployment.'
     )
-    pdf.add_diagram('architecture.png', 'Figure 1: PatentForge System Architecture (v0.8.5)')
+    pdf.add_diagram('architecture.png', 'Figure 1: PatentForgeLocal System Architecture (v0.8.5)')
 
     pdf.section_title('Service Descriptions')
     pdf.bold_bullet('React Frontend (port 8080)', ' - Invention intake, real-time streaming, report viewer, claim editor, compliance results, application section navigator. React 18, TypeScript, Vite, Tailwind CSS.')
@@ -219,7 +219,7 @@ def generate():
     pdf.add_page()
     pdf.chapter_title('4. The 6-Stage Feasibility Pipeline')
     pdf.body_text(
-        'PatentForge runs a sequential 6-stage analysis pipeline. Each stage builds on the output '
+        'PatentForgeLocal runs a sequential 6-stage analysis pipeline. Each stage builds on the output '
         'of all previous stages. The pipeline streams tokens in real time so you can watch the AI '
         'write its findings as they are generated.'
     )
@@ -306,7 +306,7 @@ def generate():
     pdf.add_page()
     pdf.chapter_title('8. Data Flow')
     pdf.body_text(
-        'The diagram below shows how data flows through the PatentForge pipeline, from inventor '
+        'The diagram below shows how data flows through the PatentForgeLocal pipeline, from inventor '
         'input through the 6 analysis stages to the final exported report.'
     )
     pdf.add_diagram('data-flow.png', 'Figure 2: Cross-Stage Data Flow')
@@ -322,7 +322,7 @@ def generate():
     pdf.add_page()
     pdf.chapter_title('9. Database Schema')
     pdf.body_text(
-        'PatentForge uses Prisma ORM with SQLite for local development and PostgreSQL for Docker '
+        'PatentForgeLocal uses Prisma ORM with SQLite for local development and PostgreSQL for Docker '
         'deployment. The schema tracks projects, invention disclosures, feasibility runs with '
         'per-stage outputs, prior art searches, and application settings.'
     )
@@ -332,7 +332,7 @@ def generate():
     pdf.add_page()
     pdf.chapter_title('10. Docker Deployment')
     pdf.body_text(
-        'PatentForge provides a Docker Compose configuration for single-command deployment. '
+        'PatentForgeLocal provides a Docker Compose configuration for single-command deployment. '
         'The compose file starts seven containers: frontend, backend, feasibility service, '
         'claim drafter, compliance checker, application generator, and PostgreSQL. '
         'A persistent volume stores database data across restarts.'
@@ -366,7 +366,7 @@ def generate():
     # ── 13. LEGAL GUARDRAILS ──
     pdf.chapter_title('13. Legal Guardrails')
     pdf.body_text(
-        'PatentForge includes multiple layers of legal guardrails to reduce unauthorized practice '
+        'PatentForgeLocal includes multiple layers of legal guardrails to reduce unauthorized practice '
         'of law (UPL) exposure:'
     )
     guardrails = [
@@ -383,7 +383,7 @@ def generate():
 
     # ── 14. LICENSE ──
     pdf.chapter_title('14. License')
-    pdf.body_text('PatentForge uses a dual license structure:')
+    pdf.body_text('PatentForgeLocal uses a dual license structure:')
     pdf.bold_bullet('Code', ' (backend, frontend, services infrastructure): MIT License')
     pdf.bold_bullet('Prompt content', ' (services/feasibility/src/prompts/): Creative Commons Attribution-ShareAlike 4.0 International (CC BY-SA 4.0)')
     pdf.ln(3)

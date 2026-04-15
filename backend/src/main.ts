@@ -64,7 +64,7 @@ function validateEnvironment(): void {
 
   // Fatal errors — stop the process
   if (errors.length > 0) {
-    console.error('\n✖ PatentForge backend failed to start due to missing configuration:\n');
+    console.error('\n✖ PatentForgeLocal backend failed to start due to missing configuration:\n');
     for (const e of errors) {
       console.error(`  • ${e}\n`);
     }
@@ -95,7 +95,7 @@ async function bootstrap() {
   if (process.env.NODE_ENV !== 'production') {
     app.getHttpAdapter().get('/', (_req, res) => {
       res.json({
-        service: 'PatentForge API',
+        service: 'PatentForgeLocal API',
         version: require('../package.json').version,
         status: 'running',
         docs: 'All endpoints are prefixed with /api/. See /api/health for a health check.',
@@ -153,7 +153,7 @@ async function bootstrap() {
 
   const port = parseInt(process.env.PORT || '3000', 10);
   await app.listen(port);
-  console.log(`PatentForge backend running on http://localhost:${port}`);
+  console.log(`PatentForgeLocal backend running on http://localhost:${port}`);
 }
 
 bootstrap();

@@ -12,6 +12,11 @@ function renderAt(path: string) {
 }
 
 describe('Layout navbar', () => {
+  it('renders PatentForgeLocal brand name in header', () => {
+    renderAt('/');
+    expect(screen.getByText('PatentForgeLocal')).toBeDefined();
+  });
+
   it('renders Projects and Settings nav links', () => {
     renderAt('/');
     expect(screen.getByText('Projects')).toBeDefined();

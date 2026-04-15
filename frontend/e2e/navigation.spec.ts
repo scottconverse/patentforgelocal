@@ -9,7 +9,7 @@ test.describe('Navigation', () => {
 
   test('home page loads with clean console', async ({ page, consoleErrors }) => {
     await page.goto('/');
-    await expect(page).toHaveTitle(/PatentForge/i);
+    await expect(page).toHaveTitle(/PatentForgeLocal/i);
     await expect(page.locator('h1')).toContainText('Projects');
     await screenshot(page, 'home-page-loaded');
   });
@@ -23,7 +23,7 @@ test.describe('Navigation', () => {
 
   test('logo navigates back to home from settings', async ({ page, consoleErrors }) => {
     await page.goto('/settings');
-    await page.click('a:has-text("PatentForge")');
+    await page.click('a:has-text("PatentForgeLocal")');
     await expect(page).toHaveURL('/');
   });
 
@@ -32,7 +32,7 @@ test.describe('Navigation', () => {
     await expect(page.locator('h1')).toContainText('Projects');
     await checkViewport(page, 'home-mobile', 375, 812);
     // Nav bar should still be visible
-    await expect(page.locator('a:has-text("PatentForge")')).toBeVisible();
+    await expect(page.locator('a:has-text("PatentForgeLocal")')).toBeVisible();
     await expect(page.locator('a[href="/settings"]')).toBeVisible();
   });
 

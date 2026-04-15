@@ -5,6 +5,14 @@ All notable changes to PatentForgeLocal will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html). 
 
+## [0.1.4] - 2026-04-15
+
+### Fixed
+
+- **Feasibility analysis crash on startup** — `No such built-in module: better_sqlite3.node` error on every analysis run. The ncc bundler baked the CI build machine's absolute path to `better_sqlite3.node` into the SEA binary. Added a post-bundle patch step to both `build-feasibility-sea.sh` and `build-backend-sea.sh` that replaces the hardcoded CI path with a `process.execPath`-relative path at build time, and copies `better_sqlite3.node` to `patentforgelocal-feasibility-native/` and `patentforgelocal-backend-prisma/` respectively. Both directories are now bundled by the Inno Setup installer. The tray app also sets `BETTER_SQLITE3_BINDING` for both services as a belt-and-suspenders fallback.
+- **Header showed "PatentForge" instead of "PatentForgeLocal"** — `Layout.tsx`, `frontend/index.html` (browser tab title), and all user-facing disclaimer text across backend services, Python services, and export documents updated to `PatentForgeLocal`. E2E navigation tests and the Layout unit test updated to match.
+- **Existing database kept `gemma4:26b`** — users who installed v0.1.0–v0.1.2 before the default model change would still have the old model in their local database. Added `migrateSettings()` to `PrismaService.onModuleInit()` to update `ollamaModel` and `defaultModel` from `gemma4:26b` to `gemma4:e4b` on startup.
+
 ## [0.1.3] - 2026-04-14
 
 ### Changed

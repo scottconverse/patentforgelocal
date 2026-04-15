@@ -6,6 +6,7 @@ export class PrismaService extends PrismaClient implements OnModuleInit, OnModul
   async onModuleInit() {
     await this.$connect();
     await this.ensureSchema();
+    await this.migrateSettings();
   }
 
   async onModuleDestroy() {
@@ -52,6 +53,25 @@ export class PrismaService extends PrismaClient implements OnModuleInit, OnModul
     }
 
     console.log('[Prisma] Database schema initialized successfully.');
+  }
+
+  /**
+   * Migrate settings values that changed between versions.
+   * Runs on every startup — updates are idempotent.
+   */
+  private async migrateSettings(): Promise<void> {
+    try {
+      // v0.1.3: default model switched from gemma4:26b to gemma4:e4b
+      await this.$executeRawUnsafe(
+        `UPDATE "AppSettings"
+         SET "ollamaModel" = 'gemma4:e4b', "defaultModel" = 'gemma4:e4b'
+         WHERE "id" = 'singleton'
+           AND ("ollamaModel" = 'gemma4:26b' OR "defaultModel" = 'gemma4:26b')`,
+      );
+    } catch (err) {
+      const msg = err instanceof Error ? err.message : String(err);
+      console.warn(`[Prisma] Settings migration warning: ${msg}`);
+    }
   }
 }
 

@@ -3,7 +3,7 @@
 ; https://jrsoftware.org/ishelp/
 
 #define MyAppName "PatentForgeLocal"
-#define MyAppVersion "0.1.3"
+#define MyAppVersion "0.1.4"
 #define MyAppPublisher "Scott Converse"
 #define MyAppURL "https://scottconverse.github.io/patentforgelocal/"
 #define MyAppExeName "patentforgelocal-tray.exe"
@@ -48,6 +48,9 @@ Source: "..\..\patentforgelocal-backend-prisma\*"; DestDir: "{app}\patentforgelo
 
 ; Feasibility prompts
 Source: "..\..\patentforgelocal-feasibility-prompts\*"; DestDir: "{app}\patentforgelocal-feasibility-prompts"; Flags: ignoreversion recursesubdirs createallsubdirs
+
+; Feasibility native bindings (better-sqlite3 for context-mode FTS5)
+Source: "..\..\patentforgelocal-feasibility-native\*"; DestDir: "{app}\patentforgelocal-feasibility-native"; Flags: ignoreversion recursesubdirs createallsubdirs skipifsourcedoesntexist
 
 ; Portable Python 3.12
 Source: "..\..\runtime\python\*"; DestDir: "{app}\runtime\python"; Flags: ignoreversion recursesubdirs createallsubdirs

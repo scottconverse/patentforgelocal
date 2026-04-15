@@ -1,11 +1,11 @@
 #!/bin/bash
-# Build the PatentForge Windows installer using Inno Setup
+# Build the PatentForgeLocal Windows installer using Inno Setup
 set -e
 
 SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
 REPO_ROOT="$(cd "$SCRIPT_DIR/../.." && pwd)"
 
-echo "=== Building PatentForge Windows Installer ==="
+echo "=== Building PatentForgeLocal Windows Installer ==="
 echo "Repo root: $REPO_ROOT"
 
 # --- Locate Inno Setup compiler ---
@@ -76,7 +76,7 @@ echo "Compiling installer..."
 
 # Read version from the .iss file to find the output filename
 ISS_VERSION=$(grep '#define MyAppVersion' "$REPO_ROOT/installer/windows/patentforgelocal.iss" | sed 's/.*"\(.*\)"/\1/')
-OUTPUT="$REPO_ROOT/build/PatentForgeLocal-${ISS_VERSION}-Setup.exe"
+OUTPUT="$REPO_ROOT/build/PatentForgeLocalLocal-${ISS_VERSION}-Setup.exe"
 if [ -f "$OUTPUT" ]; then
     SIZE=$(du -h "$OUTPUT" | cut -f1)
     echo ""
