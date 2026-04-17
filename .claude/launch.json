@@ -4,8 +4,8 @@
     {
       "name": "patentforgelocal",
       "runtimeExecutable": "node",
-      "runtimeArgs": ["-e", "setTimeout(()=>{},999999999)"],
-      "port": 3000
+      "runtimeArgs": ["C:/Users/8745HX/Desktop/Claude/PatentForgeLocal/.claude/proxy.js"],
+      "port": 3007
     }
   ]
 }
