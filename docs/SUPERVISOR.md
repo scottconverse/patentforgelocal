@@ -1,3 +1,4 @@
+<!-- supervisor-card: generated (safe to overwrite; delete this line if you hand-edit) -->
 # Supervisor Operating Card — PatentForgeLocal
 
 One-page card for Scott (the human supervisor). Not for an AI agent. PatentForgeLocal is a local-first patent research tool (Ollama + Gemma 4, BYOK for any cloud LLM). It is a **research tool, not legal service**. Project is currently at **v0.1.4** (backend/package.json, frontend/package.json, and `installer/windows/patentforgelocal.iss` all agree).
