@@ -34,7 +34,7 @@ services:
       COMPLIANCE_CHECKER_URL: http://compliance-checker:3004
       APPLICATION_GENERATOR_URL: http://application-generator:3003
       # Set before first run: export INTERNAL_SERVICE_SECRET=$(openssl rand -hex 32)
-      INTERNAL_SERVICE_SECRET: ${INTERNAL_SERVICE_SECRET:?Set INTERNAL_SERVICE_SECRET — run: export INTERNAL_SERVICE_SECRET=$$(openssl rand -hex 32)}
+      INTERNAL_SERVICE_SECRET: "${INTERNAL_SERVICE_SECRET:?Set INTERNAL_SERVICE_SECRET — run: export INTERNAL_SERVICE_SECRET=$$(openssl rand -hex 32)}"
       ALLOWED_ORIGINS: ${ALLOWED_ORIGINS:-http://localhost:8080}
       NODE_ENV: production
     restart: unless-stopped
@@ -57,7 +57,7 @@ services:
       PORT: 3001
       NODE_ENV: production
       # Set before first run: export INTERNAL_SERVICE_SECRET=$(openssl rand -hex 32)
-      INTERNAL_SERVICE_SECRET: ${INTERNAL_SERVICE_SECRET:?Set INTERNAL_SERVICE_SECRET — run: export INTERNAL_SERVICE_SECRET=$$(openssl rand -hex 32)}
+      INTERNAL_SERVICE_SECRET: "${INTERNAL_SERVICE_SECRET:?Set INTERNAL_SERVICE_SECRET — run: export INTERNAL_SERVICE_SECRET=$$(openssl rand -hex 32)}"
       OLLAMA_HOST: ${OLLAMA_HOST:-http://host.docker.internal:11434}
     restart: unless-stopped
     healthcheck:
@@ -79,7 +79,7 @@ services:
       PORT: 3002
       HOST: "0.0.0.0"
       # Set before first run: export INTERNAL_SERVICE_SECRET=$(openssl rand -hex 32)
-      INTERNAL_SERVICE_SECRET: ${INTERNAL_SERVICE_SECRET:?Set INTERNAL_SERVICE_SECRET — run: export INTERNAL_SERVICE_SECRET=$$(openssl rand -hex 32)}
+      INTERNAL_SERVICE_SECRET: "${INTERNAL_SERVICE_SECRET:?Set INTERNAL_SERVICE_SECRET — run: export INTERNAL_SERVICE_SECRET=$$(openssl rand -hex 32)}"
       OLLAMA_HOST: ${OLLAMA_HOST:-http://host.docker.internal:11434}
     restart: unless-stopped
     healthcheck:
@@ -101,7 +101,7 @@ services:
       PORT: 3004
       HOST: "0.0.0.0"
       # Set before first run: export INTERNAL_SERVICE_SECRET=$(openssl rand -hex 32)
-      INTERNAL_SERVICE_SECRET: ${INTERNAL_SERVICE_SECRET:?Set INTERNAL_SERVICE_SECRET — run: export INTERNAL_SERVICE_SECRET=$$(openssl rand -hex 32)}
+      INTERNAL_SERVICE_SECRET: "${INTERNAL_SERVICE_SECRET:?Set INTERNAL_SERVICE_SECRET — run: export INTERNAL_SERVICE_SECRET=$$(openssl rand -hex 32)}"
       OLLAMA_HOST: ${OLLAMA_HOST:-http://host.docker.internal:11434}
     restart: unless-stopped
     healthcheck:
@@ -123,7 +123,7 @@ services:
       PORT: 3003
       HOST: "0.0.0.0"
       # Set before first run: export INTERNAL_SERVICE_SECRET=$(openssl rand -hex 32)
-      INTERNAL_SERVICE_SECRET: ${INTERNAL_SERVICE_SECRET:?Set INTERNAL_SERVICE_SECRET — run: export INTERNAL_SERVICE_SECRET=$$(openssl rand -hex 32)}
+      INTERNAL_SERVICE_SECRET: "${INTERNAL_SERVICE_SECRET:?Set INTERNAL_SERVICE_SECRET — run: export INTERNAL_SERVICE_SECRET=$$(openssl rand -hex 32)}"
       OLLAMA_HOST: ${OLLAMA_HOST:-http://host.docker.internal:11434}
     restart: unless-stopped
     healthcheck:

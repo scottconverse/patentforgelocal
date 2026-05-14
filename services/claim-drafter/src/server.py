@@ -3,7 +3,9 @@ PatentForgeLocal Claim Drafter — FastAPI server.
 
 Endpoints:
   GET  /health          — Service health check with prompt hashes
+  GET  /healthz         — Kubernetes-style alias of /health (identical payload)
   POST /draft           — Run the claim drafting pipeline (SSE stream)
+  POST /draft/sync      — Run the claim drafting pipeline synchronously
 """
 
 from __future__ import annotations
@@ -82,6 +84,13 @@ async def health():
         "service": "patentforge-claim-drafter",
         "promptHashes": _compute_prompt_hashes(),
     }
+
+
+# Alias for callers that expect the Kubernetes-style /healthz path. Same payload
+# as /health so docker-compose healthcheck and any backend probe behave identically.
+@app.get("/healthz")
+async def healthz():
+    return await health()
 
 
 # ── Claim drafting endpoint ──────────────────────────────────────────────────
