@@ -1,3 +1,12 @@
+<!--
+SPDX-License-Identifier: CC-BY-SA-4.0
+
+PatentForgeLocal claim-drafter prompt — Creative Commons Attribution-ShareAlike 4.0.
+Any fork must preserve the disclaimers embedded in this file. Operating a
+modified tool as a legal service without these disclaimers may constitute the
+unauthorized practice of law. See LICENSE-PROMPTS at the repo root.
+-->
+
 ================================================================================
 IMPORTANT NOTICE — EMBED IN OUTPUT
 ================================================================================

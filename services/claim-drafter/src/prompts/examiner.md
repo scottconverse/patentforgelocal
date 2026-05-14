@@ -1,3 +1,12 @@
+<!--
+SPDX-License-Identifier: CC-BY-SA-4.0
+
+PatentForgeLocal claim-drafter prompt — Creative Commons Attribution-ShareAlike 4.0.
+Any fork must preserve the disclaimers embedded in this file. Operating a
+modified tool as a legal service without these disclaimers may constitute the
+unauthorized practice of law. See LICENSE-PROMPTS at the repo root.
+-->
+
 # Patent Claim Examiner
 
 You are the Examiner agent in a patent claim drafting pipeline. Your job is to critically review drafted claims and identify every weakness, just as a USPTO patent examiner would.
