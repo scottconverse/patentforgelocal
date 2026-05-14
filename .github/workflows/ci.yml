@@ -13,7 +13,7 @@ on:
 jobs:
   backend-tests:
     name: Backend Tests (Jest)
-    runs-on: ubuntu-latest
+    runs-on: [self-hosted, linux, x64]
     steps:
       - uses: actions/checkout@v5
       - uses: actions/setup-node@v5
@@ -39,7 +39,7 @@ jobs:
 
   frontend-tests:
     name: Frontend Tests (Vitest)
-    runs-on: ubuntu-latest
+    runs-on: [self-hosted, linux, x64]
     steps:
       - uses: actions/checkout@v5
       - uses: actions/setup-node@v5
@@ -59,7 +59,7 @@ jobs:
 
   claim-drafter-tests:
     name: Claim Drafter Tests (pytest)
-    runs-on: ubuntu-latest
+    runs-on: [self-hosted, linux, x64]
     steps:
       - uses: actions/checkout@v5
       - uses: actions/setup-python@v5
@@ -74,7 +74,7 @@ jobs:
 
   compliance-checker-tests:
     name: Compliance Checker Tests (pytest)
-    runs-on: ubuntu-latest
+    runs-on: [self-hosted, linux, x64]
     steps:
       - uses: actions/checkout@v5
       - uses: actions/setup-python@v5
@@ -89,7 +89,7 @@ jobs:
 
   application-generator-tests:
     name: Application Generator Tests (pytest)
-    runs-on: ubuntu-latest
+    runs-on: [self-hosted, linux, x64]
     steps:
       - uses: actions/checkout@v5
       - uses: actions/setup-python@v5
@@ -104,7 +104,7 @@ jobs:
 
   build:
     name: Build Check
-    runs-on: ubuntu-latest
+    runs-on: [self-hosted, linux, x64]
     needs: [backend-tests, frontend-tests, claim-drafter-tests, compliance-checker-tests, application-generator-tests]
     steps:
       - uses: actions/checkout@v5
@@ -135,7 +135,7 @@ jobs:
 
   e2e-tests:
     name: Browser E2E Tests (Playwright)
-    runs-on: ubuntu-latest
+    runs-on: [self-hosted, linux, x64]
     needs: [build]
     steps:
       - uses: actions/checkout@v5
