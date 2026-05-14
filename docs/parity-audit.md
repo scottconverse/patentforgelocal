@@ -226,6 +226,51 @@ Identical structural counts: 19 frontend, 24 backend, 31 python — same files e
 
 ---
 
+## Section H — Real content-drift survey (added in iter 4)
+
+After the structural inventory (Sections A-G), iteration 4 ran content-level `diff --strip-trailing-cr` (cloud has CRLF, local has LF; not real drift) across every common file. The picture sharpens dramatically — **most files are byte-identical content; merge surface is concentrated in 18 frontend files + 1 prompt + AppSettings schema.**
+
+### Prompts: 17 of 18 content-identical
+
+After stripping line-endings, the only prompt that differs in content:
+
+- **`services/feasibility/src/prompts/stage-2.md`** — 3-line cosmetic diff: cloud says "PatentsView" (the USPTO API that shut down March 2026); local says "USPTO" (current API source). **Merge: local's wording wins. The PatentsView label is outdated even for cloud users.**
+
+**Decision 4 from the Top-20 is settled by this finding: NO provider-specific prompt variants needed.** Single canonical prompt across both providers. If model-specific drift emerges in production (e.g., Gemma needs more directive instructions than Sonnet), that's a future-decision; for the merge, one prompt per agent.
+
+### Frontend: 46 of 64 content-identical
+
+**18 frontend files have real content drift** (the rest are byte-identical):
+
+| File | Nature of drift | Merge approach |
+|---|---|---|
+| `api.ts` | Cloud has cost endpoints; local has `/system/*` + `/model-pull/*` | **Union both surfaces; gate cloud-only / local-only calls by provider** |
+| `App.tsx` | Different first-run logic (API-key entry vs system-check) | **Branch on `provider` from settings; show appropriate first-run flow** |
+| `components/DisclaimerModal.tsx` | UI copy: "PatentForge" vs "PatentForgeLocal"; "Anthropic API" vs "Ollama" | **Rewrite copy as provider-neutral: "PatentForge — your AI on your terms"; show provider-specific addendum** |
+| `components/FirstRunWizard.tsx` | Cloud: enter API key + verify. Local: system check + model download | **Branch on chosen provider; reuse SystemCheck + ModelDownload + new ApiKeyEntry components** |
+| `components/Layout.tsx` + `Layout.test.tsx` | Branding string only | **Use "PatentForge" everywhere** |
+| `components/PriorArtPanel.tsx` + `PriorArtPanel.test.tsx` | Labels "PatentsView" → "USPTO" | **Local wording wins (PatentsView is dead)** |
+| `hooks/useFeasibilityRun.ts` + `useFeasibilityRun.test.ts` | Cost-aware lifecycle (cloud) vs no-cost (local) | **Provider-aware cost calculation; show $$ in cloud-mode, "Free" in local-mode** |
+| `hooks/useViewInit.test.ts` | Test mirror of init differences | **Both code paths exercised under different provider mocks** |
+| `pages/ProjectDetail.tsx` | Different tab states / first-stage gating | **Merge: cost confirmation shown in cloud-mode only** |
+| `pages/Settings.tsx` | Cloud: API key + cost cap; Local: ollama URL + model + readiness | **New Provider section at top; conditional reveal of sub-fields** |
+| `types.ts` | AppSettings type field union (different fields) | **Union all fields; `provider` typed as discriminator** |
+| `utils/disclaimer.ts` | Branding strings | **Update to PatentForge** |
+| `utils/markdown.ts` | Minor (likely a copy edit) | **Pick whichever is cleaner; spot-check** |
+| `utils/modelPricing.ts` + `modelPricing.test.ts` | Anthropic table vs LOCAL_MODELS table | **Export both; helper takes `provider` and returns appropriate table** |
+
+**Implication:** Run 5 (frontend) is bounded to ~18 file-merges. That's tractable in a single 5-iter run.
+
+### Backend modules: surface confirmed
+
+Beyond the structural Section B findings, no additional content drift surveyed at this layer (recommend Run 4 sub-task: file-by-file CR-stripped diff of `backend/src/` to confirm the surface is similarly bounded).
+
+### Updated Decision 4 (prompt strategy) — RESOLVED
+
+Decision 4 from the original Top-20 list is now resolved by iter 4 findings: **single canonical prompt per agent, no provider variants.** Removing it from the operator-sign-off list. Top-20 becomes Top-19.
+
+---
+
 ## Section H — Cloud-only features at risk of loss-in-merge
 
 If we're not careful, the merge could drop cloud's value. Catalog of cloud-only features to preserve:
@@ -253,7 +298,11 @@ Less risk here since we're keeping local as the base, but worth flagging:
 
 ---
 
-## Top-20 priority decisions (operator sign-off needed before Run 2)
+## Top-19 priority decisions (operator sign-off needed before Run 2)
+
+_Decision 4 (prompt strategy) was resolved by iter 4 — single canonical prompts. The numbering below skips 4 to preserve the original mapping._
+
+
 
 These are the choices that change the whole rest of the plan. Each needs an explicit answer before Run 2 starts:
 
