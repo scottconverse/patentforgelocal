@@ -84,6 +84,13 @@ async def health():
     }
 
 
+# Alias for callers that expect the Kubernetes-style /healthz path. Same payload
+# as /health so docker-compose healthcheck and any backend probe behave identically.
+@app.get("/healthz")
+async def healthz():
+    return await health()
+
+
 # ── Claim drafting endpoint ──────────────────────────────────────────────────
 
 @app.post("/draft", dependencies=[Depends(verify_internal_secret)])
