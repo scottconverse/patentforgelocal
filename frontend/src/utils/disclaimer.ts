@@ -3,6 +3,35 @@
  * All components should import from here rather than duplicating the text.
  */
 
+const PROJECT_CLAIM_ACK_PREFIX = 'patentforge_ack_';
+
+export function hasAcknowledgedClaims(projectId: string): boolean {
+  if (!projectId) return false;
+  try {
+    return localStorage.getItem(`${PROJECT_CLAIM_ACK_PREFIX}${projectId}`) !== null;
+  } catch {
+    return false;
+  }
+}
+
+export function acknowledgeClaims(projectId: string): void {
+  if (!projectId) return;
+  try {
+    localStorage.setItem(`${PROJECT_CLAIM_ACK_PREFIX}${projectId}`, new Date().toISOString());
+  } catch {
+    // localStorage unavailable (private mode, disabled, etc.) — silently degrade
+  }
+}
+
+export function clearAcknowledgedClaims(projectId: string): void {
+  if (!projectId) return;
+  try {
+    localStorage.removeItem(`${PROJECT_CLAIM_ACK_PREFIX}${projectId}`);
+  } catch {
+    // ignore
+  }
+}
+
 export const DISCLAIMER_SHORT =
   'Research tool — not legal advice. This AI-generated output is for informational and educational purposes only. ' +
   'It does not constitute legal advice or create an attorney-client relationship. ' +

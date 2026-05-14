@@ -6,6 +6,7 @@ import { markdownToHtml } from '../utils/markdown';
 import { startSSEStream } from '../utils/sseStream';
 import StepProgress, { CLAIMS_STEPS, StepState } from './StepProgress';
 import { useElapsedTimer } from '../hooks/useElapsedTimer';
+import { hasAcknowledgedClaims, acknowledgeClaims } from '../utils/disclaimer';
 
 interface ClaimsTabProps {
   projectId: string;
@@ -42,7 +43,10 @@ export default function ClaimsTab({ projectId, hasFeasibility, priorArtTitles }:
   const [generating, setGenerating] = useState(false);
   const [regenerating, setRegenerating] = useState<number | null>(null);
   const [error, setError] = useState<string | null>(null);
-  const [acknowledged, setAcknowledged] = useState(false);
+  // Per-project acknowledgment: persist as patentforge_ack_<projectId> in localStorage.
+  // Lazy initializer reads once on mount so re-entering the tab on a project where the
+  // user already acknowledged does not re-prompt them.
+  const [acknowledged, setAcknowledged] = useState(() => hasAcknowledgedClaims(projectId));
   const [showModal, setShowModal] = useState(false);
   const [editingClaim, setEditingClaim] = useState<string | null>(null);
   const [editText, setEditText] = useState('');
@@ -67,6 +71,10 @@ export default function ClaimsTab({ projectId, hasFeasibility, priorArtTitles }:
 
   useEffect(() => {
     loadDraft();
+    // Re-read per-project acknowledgment on projectId change. Lazy init only
+    // runs once on mount; this keeps state coherent if the component is reused
+    // across projects (e.g. sidebar navigation).
+    setAcknowledged(hasAcknowledgedClaims(projectId));
   }, [projectId]);
 
   // Poll while generating
@@ -799,7 +807,12 @@ export default function ClaimsTab({ projectId, hasFeasibility, priorArtTitles }:
             <button
               onClick={() => {
                 setShowModal(false);
-                if (acknowledged) handleGenerate();
+                if (acknowledged) {
+                  // Persist per-project acknowledgment so re-entering the tab
+                  // does not re-prompt for this project.
+                  acknowledgeClaims(projectId);
+                  handleGenerate();
+                }
               }}
               disabled={!acknowledged}
               className="flex-1 py-2.5 bg-blue-600 hover:bg-blue-700 disabled:opacity-50 text-white font-semibold rounded-lg text-sm transition-colors"
