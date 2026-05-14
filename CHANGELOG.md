@@ -5,6 +5,45 @@ All notable changes to PatentForgeLocal will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html). 
 
+## [0.4.0] - 2026-05-14
+
+This release finalizes the v0.4 claim-drafting feature spec (`v0.4-SCOPE.md`) by closing every UPL-guardrail gap, paying off three Phase-1 tech-debt items deferred from the original Phase-1 scaffold, and validating all three test suites + cleanroom Docker build from a clean state. The Phase 5 backend adapter and Phase 6 frontend Claims tab were already implemented at production quality in earlier sprints; this release is gap-fill + hardening + release docs.
+
+### Added
+
+- **`/healthz` alias** on the claim-drafter FastAPI service — Kubernetes-style health endpoint that returns the same payload as `/health`. Both paths are now documented in the module docstring (`services/claim-drafter/src/server.py`).
+- **Per-project UPL acknowledgment persistence** — the Claims-tab acknowledgment modal now stores acceptance under `patentforge_ack_<projectId>` in `localStorage`, so the user is prompted once per project rather than once per visit. Helpers (`hasAcknowledgedClaims`, `acknowledgeClaims`, `clearAcknowledgedClaims`) live in `frontend/src/utils/disclaimer.ts`; they degrade silently when `localStorage` is unavailable (private mode, disabled).
+- **Per-claim DRAFT watermark in the Claims tab** — every independent claim header and every dependent claim row carries an amber `Draft` badge with tooltip "DRAFT — NOT FOR FILING. AI-generated research concept that has not been reviewed by a patent attorney."
+- **Inline per-claim examiner notes** — each independent and dependent claim now renders its `examinerNotes` content (markdown) below the claim body, followed by the mandatory disclaimer "This draft claim has not been reviewed by a patent attorney." This satisfies v0.4-SCOPE.md L171 + L185.
+- **CC BY-SA 4.0 license headers** on all four claim-drafter prompt files (`common-rules.md`, `planner.md`, `writer.md`, `examiner.md`) so UPL guardrails survive forks per v0.4-SCOPE.md L189.
+- **Prescriptive invention-class → statutory-type mapping** in the Planner prompt: software/AI → method+system+CRM; hardware/IoT → method+system+apparatus; process/chemical → method+apparatus+composition. Replaces the prior generic "choose what makes sense" instruction.
+- **Planner "Framing" section** that explicitly labels Planner output as "claim research directions" (v0.4-SCOPE.md L186), not "patent claims," reinforcing the research-tool framing throughout the pipeline.
+- **Unit tests for the per-project UPL ack helpers** — 9 Vitest tests in `frontend/src/utils/disclaimer.test.ts` covering persistence, isolation, clear, empty-projectId no-op, and private-mode graceful degradation.
+- **Health-route tests** — 4 pytest tests in `services/claim-drafter/tests/test_health.py` covering `/health`, `/healthz`, identical payloads, and FastAPI boot without env vars.
+
+### Changed
+
+- **DOCX export watermarks now match v0.4-SCOPE.md L188 exactly.** The in-body banner and the repeating page-header both read `DRAFT CLAIM CONCEPTS — NOT REVIEWED BY AN ATTORNEY — NOT FOR FILING` (was previously `DRAFT — NOT FOR FILING. These are AI-generated research concepts…` and `DRAFT — NOT LEGAL ADVICE — AI-GENERATED RESEARCH ONLY`).
+- **Claim-drafter `tests/test_auth.py` mocks the pipeline at the module boundary.** The four `/draft/sync` tests now `@patch("src.server.run_claim_pipeline")` to return a stub `ClaimDraftResult(status="ERROR", …)`, so the full pytest suite runs in ~1.5s with zero hangs even when Ollama is not running. Auth path is still exercised normally.
+
+### Fixed
+
+- **`docker-compose.yml` invalid YAML** — every service section's `INTERNAL_SERVICE_SECRET: ${INTERNAL_SERVICE_SECRET:?Set INTERNAL_SERVICE_SECRET — run: export …}` was unquoted, and the unquoted colon inside the default-message tripped the YAML parser ("mapping values are not allowed in this context"). Each line is now double-quoted so the entire `${VAR:?msg}` is treated as a scalar. `docker compose config` now exits 0; `docker compose build` succeeds for all 5 services.
+- **`services/claim-drafter/src/server.py` module docstring** stale — listed only `/health` and `/draft` even though `/draft/sync` had existed since v0.1.0. Docstring now lists all four endpoints (`/health`, `/healthz`, `/draft`, `/draft/sync`).
+
+### Security / UPL hardening
+
+- Every claim now carries a DRAFT badge in the UI plus an inline attorney-review disclaimer, removing the prior single-banner pattern where a scrolled-away user might forget the claim wasn't filing-ready.
+- The DOCX export now uses the exact spec wording for both the in-body warning and the repeating page header, so every printed page shows the same UPL message regardless of where the user is in the document.
+
+### Verification
+
+- `cd services/claim-drafter && python -m pytest -q` → **91 passed in 1.45s** (full suite, no `--ignore`).
+- `cd backend && npm test` → **286 passed across 24 suites in 26.1s**.
+- `cd frontend && npm run test -- --run` → **210 passed across 20 files in 5.86s**.
+- `docker compose config --quiet` → exit 0.
+- `docker compose build` → all 5 service images built successfully.
+
 ## [0.1.4] - 2026-04-15
 
 ### Fixed
