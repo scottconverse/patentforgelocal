@@ -486,6 +486,12 @@ export default function ClaimsTab({ projectId, hasFeasibility, priorArtTitles }:
                 <span className="text-xs px-2 py-0.5 bg-blue-900 text-blue-300 rounded font-semibold">
                   Claim {indep.claimNumber}
                 </span>
+                <span
+                  className="text-[10px] px-1.5 py-0.5 bg-amber-900/40 text-amber-300 rounded font-semibold uppercase tracking-wider"
+                  title="DRAFT — NOT FOR FILING. AI-generated research concept that has not been reviewed by a patent attorney."
+                >
+                  Draft
+                </span>
                 <span className="text-xs px-2 py-0.5 bg-gray-800 text-gray-400 rounded">
                   {indep.scopeLevel ?? 'INDEPENDENT'}
                 </span>
@@ -600,6 +606,21 @@ export default function ClaimsTab({ projectId, hasFeasibility, priorArtTitles }:
                         </div>
                       ) : null;
                     })()}
+                    {/* Examiner notes — per-claim, with mandatory attorney-review disclaimer */}
+                    {indep.examinerNotes && (
+                      <div className="mt-3 border-l-2 border-amber-800/60 pl-3 py-1">
+                        <p className="text-[11px] text-amber-300/80 font-semibold uppercase tracking-wider mb-1">
+                          Examiner notes
+                        </p>
+                        <div
+                          className="markdown-content text-xs text-gray-400 leading-relaxed"
+                          dangerouslySetInnerHTML={{ __html: markdownToHtml(indep.examinerNotes) }}
+                        />
+                        <p className="mt-2 text-[10px] text-gray-500 italic">
+                          This draft claim has not been reviewed by a patent attorney.
+                        </p>
+                      </div>
+                    )}
                   </div>
                 )}
               </div>
@@ -611,6 +632,12 @@ export default function ClaimsTab({ projectId, hasFeasibility, priorArtTitles }:
                   <div key={dep.id} className="border-t border-gray-800/50 px-4 py-3 pl-8">
                     <div className="flex items-center gap-2 mb-1">
                       <span className="text-xs text-gray-500 font-mono">Claim {dep.claimNumber}</span>
+                      <span
+                        className="text-[10px] px-1.5 py-0.5 bg-amber-900/40 text-amber-300 rounded font-semibold uppercase tracking-wider"
+                        title="DRAFT — NOT FOR FILING. AI-generated research concept that has not been reviewed by a patent attorney."
+                      >
+                        Draft
+                      </span>
                       <span className="text-xs text-gray-600">depends on {dep.parentClaimNumber}</span>
                     </div>
                     {loadingClaims.has(dep.id) ? (
@@ -707,6 +734,21 @@ export default function ClaimsTab({ projectId, hasFeasibility, priorArtTitles }:
                             </div>
                           ) : null;
                         })()}
+                        {/* Examiner notes — per-dependent-claim, with mandatory attorney-review disclaimer */}
+                        {dep.examinerNotes && (
+                          <div className="mt-2 border-l-2 border-amber-800/60 pl-2 py-1">
+                            <p className="text-[10px] text-amber-300/80 font-semibold uppercase tracking-wider mb-1">
+                              Examiner notes
+                            </p>
+                            <div
+                              className="markdown-content text-xs text-gray-500 leading-relaxed"
+                              dangerouslySetInnerHTML={{ __html: markdownToHtml(dep.examinerNotes) }}
+                            />
+                            <p className="mt-1 text-[10px] text-gray-600 italic">
+                              This draft claim has not been reviewed by a patent attorney.
+                            </p>
+                          </div>
+                        )}
                       </div>
                     )}
                   </div>
