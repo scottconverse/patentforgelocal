@@ -56,3 +56,5 @@ htmlcov/
 # Temporary
 tmp/
 *.tmp
+.claude/handoff_current.md
+.pipeline-cw/
