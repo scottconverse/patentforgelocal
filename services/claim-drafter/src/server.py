@@ -23,7 +23,7 @@ from sse_starlette.sse import EventSourceResponse
 from .models import ClaimDraftRequest, ClaimDraftResult
 from .graph import run_claim_pipeline, stream_claim_pipeline
 
-app = FastAPI(title="PatentForgeLocal Claim Drafter", version="0.5.0")
+app = FastAPI(title="PatentForgeLocal Claim Drafter", version="0.4.0")
 
 # Internal service auth — only the NestJS backend should call this service.
 # Set INTERNAL_SERVICE_SECRET env var to enable. When not set, auth is disabled (dev mode).

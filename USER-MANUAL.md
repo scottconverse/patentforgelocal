@@ -1,4 +1,4 @@
-# PatentForgeLocal User Manual — v0.1.3
+# PatentForgeLocal User Manual — v0.4.0
 
 A step-by-step guide for using PatentForgeLocal to research and prepare for a patent consultation.
 
