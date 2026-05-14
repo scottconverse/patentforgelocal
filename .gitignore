@@ -56,3 +56,4 @@ htmlcov/
 # Temporary
 tmp/
 *.tmp
+.pipeline-cw/
