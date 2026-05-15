@@ -23,6 +23,17 @@ const (
 	// EditionMarkerFile is the relative path within ConfigDir that holds the
 	// edition string written by the installer.
 	EditionMarkerFile = "edition.txt"
+
+	// ProviderMarkerFile is the relative path within ConfigDir that mirrors
+	// the active AppSettings.provider value. The backend writes it on every
+	// Settings save so the tray (Go, no DB driver) can read the active
+	// provider at startup without querying the backend.
+	ProviderMarkerFile = "provider.txt"
+
+	// DefaultProvider matches the backend's default for fresh installs +
+	// existing v0.4 upgrades. The tray uses it whenever the marker is
+	// missing or unreadable.
+	DefaultProvider = "LOCAL"
 )
 
 // ReadEdition reads <baseDir>/config/edition.txt and returns the parsed edition.
@@ -42,6 +53,27 @@ func ReadEdition(baseDir string) Edition {
 		return EditionFull
 	default:
 		return EditionFull
+	}
+}
+
+// ReadProviderMarker reads <baseDir>/config/provider.txt and returns the
+// active provider string (uppercased, "LOCAL" or "CLOUD"). The backend
+// writes this file on every Settings save so the tray can decide whether to
+// manage Ollama without a DB driver. Missing/unreadable/invalid contents
+// return DefaultProvider ("LOCAL") — preserving pre-merge behavior.
+func ReadProviderMarker(baseDir string) string {
+	path := filepath.Join(baseDir, "config", ProviderMarkerFile)
+	data, err := os.ReadFile(path)
+	if err != nil {
+		return DefaultProvider
+	}
+
+	v := strings.ToUpper(strings.TrimSpace(string(data)))
+	switch v {
+	case "LOCAL", "CLOUD":
+		return v
+	default:
+		return DefaultProvider
 	}
 }
 

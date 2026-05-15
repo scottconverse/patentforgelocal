@@ -95,33 +95,41 @@ func onReady() {
 			return
 		}
 
-		// Check if the default model is available; pull if not
-		ollamaMgr = services.NewOllamaManager(cfg.OllamaURL(), cfg.OllamaModel)
-		available, err := ollamaMgr.IsModelAvailable()
-		if err != nil {
-			logger.Printf("Warning: could not check model availability: %v", err)
-		} else if !available {
-			logger.Printf("Model %s not found — starting pull...", cfg.OllamaModel)
-			mStatus.SetTitle("Status: Downloading model...")
-			systray.SetTooltip("PatentForgeLocal — Downloading model...")
-			if err := ollamaMgr.PullModel(); err != nil {
-				logger.Printf("Failed to start model pull: %v", err)
-			}
-			for {
-				time.Sleep(2 * time.Second)
-				prog := ollamaMgr.GetProgress()
-				if prog.Status == "complete" {
-					logger.Printf("Model %s downloaded successfully", cfg.OllamaModel)
-					break
+		// Check if the default model is available; pull if not.
+		// Skipped when Ollama isn't being managed (Lean edition, or CLOUD-mode
+		// on a Full install) — pulling a model into a non-running Ollama is
+		// both pointless and noisy in the logs.
+		if mgr.OllamaEnabled() {
+			ollamaMgr = services.NewOllamaManager(cfg.OllamaURL(), cfg.OllamaModel)
+			available, err := ollamaMgr.IsModelAvailable()
+			if err != nil {
+				logger.Printf("Warning: could not check model availability: %v", err)
+			} else if !available {
+				logger.Printf("Model %s not found — starting pull...", cfg.OllamaModel)
+				mStatus.SetTitle("Status: Downloading model...")
+				systray.SetTooltip("PatentForgeLocal — Downloading model...")
+				if err := ollamaMgr.PullModel(); err != nil {
+					logger.Printf("Failed to start model pull: %v", err)
 				}
-				if prog.Status == "error" {
-					logger.Printf("Model pull failed: %s", prog.Error)
-					break
+				for {
+					time.Sleep(2 * time.Second)
+					prog := ollamaMgr.GetProgress()
+					if prog.Status == "complete" {
+						logger.Printf("Model %s downloaded successfully", cfg.OllamaModel)
+						break
+					}
+					if prog.Status == "error" {
+						logger.Printf("Model pull failed: %s", prog.Error)
+						break
+					}
+					logger.Printf("Model pull: %.1f%% (%d/%d bytes)", prog.Percent, prog.Completed, prog.Total)
 				}
-				logger.Printf("Model pull: %.1f%% (%d/%d bytes)", prog.Percent, prog.Completed, prog.Total)
+			} else {
+				logger.Printf("Model %s is available", cfg.OllamaModel)
 			}
 		} else {
-			logger.Printf("Model %s is available", cfg.OllamaModel)
+			logger.Printf("Ollama disabled (edition=%s, provider=%s); skipping model availability check",
+				mgr.Edition(), mgr.Provider())
 		}
 
 		updateStatus()

@@ -8,13 +8,23 @@ import (
 
 func writeEditionMarker(t *testing.T, baseDir, content string) {
 	t.Helper()
+	writeMarker(t, baseDir, EditionMarkerFile, content)
+}
+
+func writeProviderMarker(t *testing.T, baseDir, content string) {
+	t.Helper()
+	writeMarker(t, baseDir, ProviderMarkerFile, content)
+}
+
+func writeMarker(t *testing.T, baseDir, name, content string) {
+	t.Helper()
 	configDir := filepath.Join(baseDir, "config")
 	if err := os.MkdirAll(configDir, 0755); err != nil {
 		t.Fatalf("failed to create config dir: %v", err)
 	}
-	path := filepath.Join(configDir, EditionMarkerFile)
+	path := filepath.Join(configDir, name)
 	if err := os.WriteFile(path, []byte(content), 0644); err != nil {
-		t.Fatalf("failed to write marker: %v", err)
+		t.Fatalf("failed to write marker %s: %v", name, err)
 	}
 }
 
@@ -74,6 +84,65 @@ func TestReadEdition_EmptyFile_DefaultsFull(t *testing.T) {
 	got := ReadEdition(base)
 	if got != EditionFull {
 		t.Errorf("ReadEdition(empty) = %q, want %q (default)", got, EditionFull)
+	}
+}
+
+func TestReadProviderMarker_FileMissing_DefaultsLocal(t *testing.T) {
+	base := t.TempDir()
+
+	got := ReadProviderMarker(base)
+	if got != DefaultProvider {
+		t.Errorf("ReadProviderMarker(no file) = %q, want %q", got, DefaultProvider)
+	}
+}
+
+func TestReadProviderMarker_LocalContent(t *testing.T) {
+	base := t.TempDir()
+	writeProviderMarker(t, base, "LOCAL")
+
+	got := ReadProviderMarker(base)
+	if got != "LOCAL" {
+		t.Errorf("ReadProviderMarker(LOCAL) = %q, want %q", got, "LOCAL")
+	}
+}
+
+func TestReadProviderMarker_CloudContent(t *testing.T) {
+	base := t.TempDir()
+	writeProviderMarker(t, base, "CLOUD")
+
+	got := ReadProviderMarker(base)
+	if got != "CLOUD" {
+		t.Errorf("ReadProviderMarker(CLOUD) = %q, want %q", got, "CLOUD")
+	}
+}
+
+func TestReadProviderMarker_TrimsWhitespaceAndCase(t *testing.T) {
+	base := t.TempDir()
+	writeProviderMarker(t, base, "  cloud\n")
+
+	got := ReadProviderMarker(base)
+	if got != "CLOUD" {
+		t.Errorf("ReadProviderMarker(\"  cloud\\n\") = %q, want %q", got, "CLOUD")
+	}
+}
+
+func TestReadProviderMarker_InvalidContent_DefaultsLocal(t *testing.T) {
+	base := t.TempDir()
+	writeProviderMarker(t, base, "OFFGRID")
+
+	got := ReadProviderMarker(base)
+	if got != DefaultProvider {
+		t.Errorf("ReadProviderMarker(invalid) = %q, want %q (default)", got, DefaultProvider)
+	}
+}
+
+func TestReadProviderMarker_EmptyFile_DefaultsLocal(t *testing.T) {
+	base := t.TempDir()
+	writeProviderMarker(t, base, "")
+
+	got := ReadProviderMarker(base)
+	if got != DefaultProvider {
+		t.Errorf("ReadProviderMarker(empty) = %q, want %q (default)", got, DefaultProvider)
 	}
 }
 
