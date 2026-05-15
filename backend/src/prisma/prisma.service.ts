@@ -266,7 +266,10 @@ CREATE TABLE "OdpApiUsage" (
 );
 CREATE TABLE "AppSettings" (
     "id" TEXT NOT NULL PRIMARY KEY DEFAULT 'singleton',
-    "ollamaApiKey" TEXT NOT NULL DEFAULT '',
+    "provider" TEXT NOT NULL DEFAULT 'LOCAL' CHECK ("provider" IN ('LOCAL', 'CLOUD')),
+    "cloudApiKey" TEXT NOT NULL DEFAULT '',
+    "cloudDefaultModel" TEXT NOT NULL DEFAULT 'claude-haiku-4-5-20251001',
+    "localDefaultModel" TEXT NOT NULL DEFAULT 'gemma4:e4b',
     "ollamaModel" TEXT NOT NULL DEFAULT 'gemma4:e4b',
     "ollamaUrl" TEXT NOT NULL DEFAULT 'http://localhost:11434',
     "modelReady" BOOLEAN NOT NULL DEFAULT false,
