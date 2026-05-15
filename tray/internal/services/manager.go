@@ -9,7 +9,7 @@ import (
 	"strings"
 	"time"
 
-	"github.com/scottconverse/patentforgelocal/tray/internal/config"
+	"github.com/scottconverse/patentforge/tray/internal/config"
 )
 
 // Manager owns and orchestrates the lifecycle of all PatentForge services.

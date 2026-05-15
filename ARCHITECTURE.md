@@ -443,7 +443,7 @@ These are tracked in `memory/project_patentforge_merge_decisions.md` and the pip
 2. **`ollamaWebSearchApiKey` column restore** — Run 4 dropped `ollamaApiKey` on a misreading of the field's purpose. The frontend retains the input field; the backend column needs to be restored under a clearer name.
 3. **5 pre-existing tsc errors** — `ClaimsTab.tsx:428` ClaimData/ClaimNode mismatch + 4 useViewInit.test.ts InventionInput fixture rows missing projectId. Baseline carried since pre-merge; clean up when touching those files.
 4. **FirstRunWizard chooser as `<button>` rather than `<input type="radio">`** — slight a11y anti-pattern; surfaced in Run 6 audit Lens 2. Polish pass.
-5. **DB rename + repo rename** — `patentforgelocal.db → patentforge.db` (silent backend startup hook); GitHub repo rename `scottconverse/patentforgelocal → scottconverse/patentforge` (operator-driven; archive the original `scottconverse/patentforge` cloud repo).
+5. **DB rename + repo rename** — DONE in v0.5.0. The silent backend startup hook renames `patentforgelocal.db → patentforge.db` on first boot post-upgrade. The GitHub repo was renamed `scottconverse/patentforgelocal → scottconverse/patentforge` and the original cloud-only `scottconverse/patentforge` was renamed to `scottconverse/patentforge-cloud-legacy` and archived. Old repo URLs continue to work via GitHub's automatic redirect.
 
 Items 1–4 ship as focused follow-up issues. Item 5 ships as part of Run 8 cutover.
 

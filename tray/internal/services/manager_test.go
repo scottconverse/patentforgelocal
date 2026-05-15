@@ -5,7 +5,7 @@ import (
 	"path/filepath"
 	"testing"
 
-	"github.com/scottconverse/patentforgelocal/tray/internal/config"
+	"github.com/scottconverse/patentforge/tray/internal/config"
 )
 
 func writeMarker(t *testing.T, baseDir, name, content string) {

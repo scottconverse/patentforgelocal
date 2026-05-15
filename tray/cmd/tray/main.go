@@ -10,11 +10,11 @@ import (
 	"time"
 
 	"fyne.io/systray"
-	"github.com/scottconverse/patentforgelocal/tray/internal/assets"
-	"github.com/scottconverse/patentforgelocal/tray/internal/config"
-	"github.com/scottconverse/patentforgelocal/tray/internal/instance"
-	"github.com/scottconverse/patentforgelocal/tray/internal/logging"
-	"github.com/scottconverse/patentforgelocal/tray/internal/services"
+	"github.com/scottconverse/patentforge/tray/internal/assets"
+	"github.com/scottconverse/patentforge/tray/internal/config"
+	"github.com/scottconverse/patentforge/tray/internal/instance"
+	"github.com/scottconverse/patentforge/tray/internal/logging"
+	"github.com/scottconverse/patentforge/tray/internal/services"
 )
 
 var (
@@ -178,7 +178,7 @@ func onReady() {
 					healthMon.Start()
 				}()
 			case <-mAbout.ClickedCh:
-				if err := openBrowser("https://github.com/scottconverse/patentforgelocal/releases"); err != nil {
+				if err := openBrowser("https://github.com/scottconverse/patentforge/releases"); err != nil {
 					logger.Printf("Failed to open browser: %v", err)
 				}
 			case <-mQuit.ClickedCh:

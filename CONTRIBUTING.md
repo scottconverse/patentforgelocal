@@ -36,7 +36,7 @@ PatentForgeLocal uses Ollama for local AI inference. No API keys required.
 
 1. **Clone the repo**
    ```bash
-   git clone https://github.com/scottconverse/patentforgelocal.git
+   git clone https://github.com/scottconverse/patentforge.git
    cd patentforgelocal
    ```
 
@@ -334,7 +334,7 @@ When adding a new service:
 
 ## Reporting Issues
 
-Use [GitHub Issues](https://github.com/scottconverse/patentforgelocal/issues) for bug reports and feature requests. Include:
+Use [GitHub Issues](https://github.com/scottconverse/patentforge/issues) for bug reports and feature requests. Include:
 - What you expected to happen
 - What actually happened
 - Steps to reproduce
