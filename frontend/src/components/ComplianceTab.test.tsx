@@ -198,7 +198,25 @@ describe('ComplianceTab', () => {
     });
     render(<ComplianceTab projectId="test-123" hasClaims={true} />);
     await waitFor(() => {
-      expect(screen.getByText('$0.42')).toBeTruthy();
+      // Run 6 fold-in: formatCost uses 3-decimal canonical format (formerly inline toFixed(2))
+      expect(screen.getByText('$0.420')).toBeTruthy();
     });
+  });
+
+  it('shows "Free" instead of dollars when provider=LOCAL', async () => {
+    const { api } = await import('../api');
+    (api.compliance.getLatest as any).mockResolvedValue({
+      status: 'COMPLETE',
+      overallPass: true,
+      estimatedCostUsd: 0.42,
+      results: [{ rule: '112a_written_description', status: 'PASS', claimNumber: 1, detail: 'OK', citation: '' }],
+    });
+    render(<ComplianceTab projectId="test-123" hasClaims={true} provider="LOCAL" />);
+    await waitFor(() => {
+      expect(screen.getByText('Free')).toBeTruthy();
+    });
+    // Dollar amount must not render in LOCAL mode
+    expect(screen.queryByText('$0.42')).toBeNull();
+    expect(screen.queryByText('$0.420')).toBeNull();
   });
 });

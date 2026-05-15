@@ -1,6 +1,8 @@
 import { useState, useEffect, useRef } from 'react';
 import { api } from '../api';
+import type { Provider } from '../types';
 import Alert from './Alert';
+import { formatCost } from '../utils/format';
 import { startSSEStream } from '../utils/sseStream';
 import StepProgress, { COMPLIANCE_STEPS, StepState } from './StepProgress';
 import { useElapsedTimer } from '../hooks/useElapsedTimer';
@@ -8,6 +10,8 @@ import { useElapsedTimer } from '../hooks/useElapsedTimer';
 interface ComplianceTabProps {
   projectId: string;
   hasClaims: boolean;
+  /** Active provider for cost rendering — LOCAL displays "Free" instead of dollars. */
+  provider?: Provider;
 }
 
 interface ComplianceResult {
@@ -36,7 +40,7 @@ const RULE_LABELS: Record<string, string> = {
 
 const RULE_ORDER = ['112a_written_description', '112b_definiteness', 'mpep_608_formalities', '101_eligibility'];
 
-export default function ComplianceTab({ projectId, hasClaims }: ComplianceTabProps) {
+export default function ComplianceTab({ projectId, hasClaims, provider }: ComplianceTabProps) {
   const [check, setCheck] = useState<ComplianceCheck | null>(null);
   const [loading, setLoading] = useState(true);
   const [running, setRunning] = useState(false);
@@ -417,11 +421,18 @@ export default function ComplianceTab({ projectId, hasClaims }: ComplianceTabPro
           >
             Re-check Claims
           </button>
-          {check.estimatedCostUsd != null && check.estimatedCostUsd > 0 && (
+          {provider === 'LOCAL' ? (
             <span className="text-xs text-gray-500">
-              Estimated cost: <span className="text-amber-400 font-mono">${check.estimatedCostUsd.toFixed(2)}</span>
+              Estimated cost: <span className="text-amber-400 font-mono">Free</span>
             </span>
-          )}
+          ) : check.estimatedCostUsd != null && check.estimatedCostUsd > 0 ? (
+            <span className="text-xs text-gray-500">
+              Estimated cost:{' '}
+              <span className="text-amber-400 font-mono">
+                {formatCost(check.estimatedCostUsd, provider)}
+              </span>
+            </span>
+          ) : null}
         </div>
 
         {error && <p className="text-red-400 text-sm">{error}</p>}

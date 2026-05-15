@@ -1,4 +1,4 @@
-import { FeasibilityStage } from '../types';
+import type { FeasibilityStage, Provider } from '../types';
 import { formatCost } from '../utils/format';
 
 /**
@@ -9,10 +9,13 @@ export default function StageOutputViewer({
   stage,
   projectTitle,
   onBack,
+  provider,
 }: {
   stage: FeasibilityStage;
   projectTitle: string;
   onBack: () => void;
+  /** Active provider for cost rendering — LOCAL displays "Free" instead of dollars. */
+  provider?: Provider;
 }) {
   const handleDownload = () => {
     const slug = projectTitle
@@ -47,9 +50,11 @@ export default function StageOutputViewer({
                 {stage.inputTokens.toLocaleString()} in / {stage.outputTokens?.toLocaleString()} out tokens
               </span>
             )}
-            {stage.estimatedCostUsd != null && stage.estimatedCostUsd > 0 && (
-              <span className="text-amber-500">{formatCost(stage.estimatedCostUsd)}</span>
-            )}
+            {provider === 'LOCAL' ? (
+              <span className="text-amber-500">Free</span>
+            ) : stage.estimatedCostUsd != null && stage.estimatedCostUsd > 0 ? (
+              <span className="text-amber-500">{formatCost(stage.estimatedCostUsd, provider)}</span>
+            ) : null}
           </div>
         </div>
         <div className="flex gap-2">

@@ -1,7 +1,9 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { useParams, useNavigate, Link } from 'react-router-dom';
 import { api } from '../api';
-import { FeasibilityStage } from '../types';
+import type { FeasibilityStage, InventionInput, Provider } from '../types';
+import { isProvider } from '../types';
+import CostConfirmModal from '../components/CostConfirmModal';
 import { useProjectDetail, ViewMode } from '../hooks/useProjectDetail';
 import { useRunHistory } from '../hooks/useRunHistory';
 import { useFeasibilityRun } from '../hooks/useFeasibilityRun';
@@ -114,6 +116,91 @@ export default function ProjectDetail() {
     };
   }, [abortRef]);
 
+  // Active provider — read once when this page mounts so child components can
+  // render LOCAL ("Free") vs CLOUD ($N.NN) cost displays per decision #12.
+  // null until settings load; child components default to CLOUD-like formatting
+  // when no provider is passed.
+  const [currentProvider, setCurrentProvider] = useState<Provider | null>(null);
+  useEffect(() => {
+    let cancelled = false;
+    api.settings
+      .get()
+      .then((s: any) => {
+        if (!cancelled && isProvider(s.provider)) setCurrentProvider(s.provider);
+      })
+      .catch(() => {
+        /* non-fatal — components fall back to default dollar formatting */
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, []);
+
+  // ── Cost confirm modal — gates CLOUD-mode feasibility runs ──
+  // LOCAL mode bypasses the modal (no per-token cost). CLOUD mode shows the
+  // estimated USD cost before kicking off the run. Wraps both fresh-run
+  // (handleRunFeasibility) and resume (handleResume) actions; both incur cost.
+  const [costModal, setCostModal] = useState<{
+    open: boolean;
+    estimatedCostUsd: number;
+    action: (() => Promise<void>) | null;
+  }>({ open: false, estimatedCostUsd: 0, action: null });
+
+  const runWithCostCheck = useCallback(
+    async (action: () => Promise<void>) => {
+      try {
+        const appSettings = await api.settings.get();
+        if (appSettings.provider !== 'CLOUD') {
+          // LOCAL mode — free, no confirmation needed.
+          await action();
+          return;
+        }
+        // CLOUD mode — fetch a per-stage cost estimate (if history exists)
+        // and open the modal. Without history, fall back to a typical 6-stage
+        // Haiku run estimate (~$0.50) — the modal text already calls out that
+        // the figure is approximate.
+        let estimatedCostUsd = 0.5;
+        if (id) {
+          try {
+            const est = await api.feasibility.costEstimate(id);
+            if (est.hasHistory && est.avgCostPerStage > 0) {
+              estimatedCostUsd = est.avgCostPerStage * 6;
+            }
+          } catch {
+            /* non-fatal — fall through with the default estimate */
+          }
+        }
+        setCostModal({ open: true, estimatedCostUsd, action });
+      } catch (e: any) {
+        setToast({
+          message: 'Could not load settings',
+          detail: e?.message ?? String(e),
+          type: 'error',
+        });
+      }
+    },
+    [id],
+  );
+
+  const handleCostApprove = useCallback(async () => {
+    const action = costModal.action;
+    setCostModal({ open: false, estimatedCostUsd: 0, action: null });
+    if (action) await action();
+  }, [costModal.action]);
+
+  const handleCostCancel = useCallback(() => {
+    setCostModal({ open: false, estimatedCostUsd: 0, action: null });
+  }, []);
+
+  const runFeasibilityWithCheck = useCallback(
+    (invention?: InventionInput) => runWithCostCheck(() => handleRunFeasibility(invention)),
+    [runWithCostCheck, handleRunFeasibility],
+  );
+  const resumeWithCheck = useCallback(
+    () => runWithCostCheck(() => handleResume()),
+    [runWithCostCheck, handleResume],
+  );
+
   // View mode initialization (runs once per project load)
   useViewInit({ project, loading, getLatestRun, setStages, setRunError, setViewMode, runIdRef });
 
@@ -193,9 +280,10 @@ export default function ProjectDetail() {
           complianceStatus={complianceStatus}
           applicationStatus={applicationStatus}
           descriptionError={descriptionError}
+          provider={currentProvider ?? undefined}
           onViewModeChange={setViewMode}
-          onRunFeasibility={() => handleRunFeasibility()}
-          onResume={() => handleResume()}
+          onRunFeasibility={() => runFeasibilityWithCheck()}
+          onResume={() => resumeWithCheck()}
           onCancel={handleCancel}
           onShowHistory={handleShowHistory}
           onStageClick={(stage) => {
@@ -235,7 +323,7 @@ export default function ProjectDetail() {
                 }}
                 onRunFeasibility={(inv) => {
                   setProject((prev) => (prev ? { ...prev, invention: inv } : prev));
-                  handleRunFeasibility(inv);
+                  void runFeasibilityWithCheck(inv);
                 }}
               />
             </ContentPanel>
@@ -247,7 +335,7 @@ export default function ProjectDetail() {
               latestRun={latestRun}
               descriptionError={descriptionError}
               onEditInvention={() => setViewMode('invention-form')}
-              onRunFeasibility={() => handleRunFeasibility()}
+              onRunFeasibility={() => runFeasibilityWithCheck()}
               onViewReport={() => setViewMode('report')}
             />
           )}
@@ -285,8 +373,9 @@ export default function ProjectDetail() {
             <RunHistoryView
               runHistory={runHistory}
               onLoadHistoricalRun={handleLoadHistoricalRun}
-              onRunFeasibility={() => handleRunFeasibility()}
+              onRunFeasibility={() => runFeasibilityWithCheck()}
               onBack={() => setViewMode('overview')}
+              provider={currentProvider ?? undefined}
             />
           )}
 
@@ -321,6 +410,7 @@ export default function ProjectDetail() {
                   Array.isArray(claimDraftStatus.claims) &&
                   claimDraftStatus.claims.length > 0
                 }
+                provider={currentProvider ?? undefined}
               />
             </ContentPanel>
           )}
@@ -335,6 +425,7 @@ export default function ProjectDetail() {
                   Array.isArray(claimDraftStatus.claims) &&
                   claimDraftStatus.claims.length > 0
                 }
+                provider={currentProvider ?? undefined}
               />
             </ContentPanel>
           )}
@@ -344,6 +435,7 @@ export default function ProjectDetail() {
               stage={selectedStage}
               projectTitle={project.title}
               onBack={() => setViewMode('report')}
+              provider={currentProvider ?? undefined}
             />
           )}
         </main>
@@ -356,6 +448,15 @@ export default function ProjectDetail() {
 
       {/* Patent Detail Drawer */}
       <PatentDetailDrawer patentNumber={drawerPatent} onClose={() => setDrawerPatent(null)} />
+
+      {/* CLOUD-mode cost confirmation — LOCAL runs bypass this modal entirely */}
+      <CostConfirmModal
+        open={costModal.open}
+        estimatedCostUsd={costModal.estimatedCostUsd}
+        provider="CLOUD"
+        onApprove={handleCostApprove}
+        onCancel={handleCostCancel}
+      />
     </div>
   );
 }

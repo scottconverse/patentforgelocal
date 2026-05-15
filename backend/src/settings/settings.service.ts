@@ -2,6 +2,16 @@ import { Injectable, Logger, OnModuleInit } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
 import { UpdateSettingsDto } from './dto/update-settings.dto';
 import { encrypt, decrypt, generateSalt, DecryptionError } from './encryption';
+import {
+  resolveConfigDir,
+  readEditionMarker,
+  writeProviderMarker,
+} from './config-marker';
+import {
+  DEFAULT_INSTALL_EDITION,
+  isInstallEdition,
+  type InstallEdition,
+} from './edition.types';
 import { DEFAULT_PROVIDER, isProvider, type Provider } from './provider.types';
 
 const SINGLETON_ID = 'singleton';
@@ -63,6 +73,40 @@ export class SettingsService implements OnModuleInit {
         this.logger.error('ENCRYPTION SELF-TEST FAILED — unexpected error: ' + String(err));
       }
     }
+
+    // Run 6: mirror installer's edition marker into AppSettings.installEdition
+    // so the frontend can read it via the existing settings endpoint without
+    // touching disk. Marker is source-of-truth; DB is the cache.
+    await this.syncInstallEdition();
+  }
+
+  /**
+   * Read `<configDir>/edition.txt` and reconcile AppSettings.installEdition
+   * with it. Called from onModuleInit. Fail-soft: any error logs and leaves
+   * the existing DB value untouched — the marker is informational, not
+   * load-bearing.
+   */
+  private async syncInstallEdition(): Promise<void> {
+    try {
+      const configDir = resolveConfigDir();
+      const fromMarker: InstallEdition = await readEditionMarker(configDir);
+
+      const row = await this.prisma.appSettings.findUnique({ where: { id: SINGLETON_ID } });
+      const current = row && isInstallEdition(row.installEdition) ? row.installEdition : DEFAULT_INSTALL_EDITION;
+
+      if (current !== fromMarker) {
+        await this.prisma.appSettings.update({
+          where: { id: SINGLETON_ID },
+          data: { installEdition: fromMarker },
+        });
+        this.logger.log(
+          `Mirrored install edition from marker file: ${current} → ${fromMarker} (configDir=${configDir ?? '<unresolved>'})`,
+        );
+      }
+    } catch (err) {
+      const msg = err instanceof Error ? err.message : String(err);
+      this.logger.warn(`syncInstallEdition: could not reconcile edition marker — ${msg}`);
+    }
   }
 
   /**
@@ -97,10 +141,14 @@ export class SettingsService implements OnModuleInit {
     // the CHECK constraint and the migration backfill, but if a hand-edited
     // row sneaks through, fall back to the default rather than expose garbage.
     const provider: Provider = isProvider(raw.provider) ? raw.provider : DEFAULT_PROVIDER;
+    const installEdition: InstallEdition = isInstallEdition(raw.installEdition)
+      ? raw.installEdition
+      : DEFAULT_INSTALL_EDITION;
 
     return {
       ...raw,
       provider,
+      installEdition,
       cloudApiKey,
       usptoApiKey,
       encryptionHealthy: this.encryptionHealthy,
@@ -157,6 +205,22 @@ export class SettingsService implements OnModuleInit {
     // After a successful update, encryption should be healthy (new keys just encrypted)
     this.encryptionHealthy = true;
 
+    // Run 6: if the operator changed `provider`, mirror it to the cross-process
+    // marker file so the tray (Go) sees the new value on next restart and
+    // decides whether to manage Ollama accordingly. Fail-soft — the DB write
+    // is authoritative; the marker file is informational.
+    if (dto.provider !== undefined && isProvider(dto.provider)) {
+      const configDir = resolveConfigDir();
+      const written = await writeProviderMarker(dto.provider, configDir);
+      if (written) {
+        this.logger.log(`Mirrored provider=${dto.provider} to marker file: ${written}`);
+      } else if (configDir) {
+        this.logger.warn(
+          `Could not write provider marker file in ${configDir}; tray will see stale value until next manual write.`,
+        );
+      }
+    }
+
     let cloudApiKey = '';
     let usptoApiKey = '';
     try {
@@ -171,10 +235,14 @@ export class SettingsService implements OnModuleInit {
     }
 
     const provider: Provider = isProvider(raw.provider) ? raw.provider : DEFAULT_PROVIDER;
+    const installEdition: InstallEdition = isInstallEdition(raw.installEdition)
+      ? raw.installEdition
+      : DEFAULT_INSTALL_EDITION;
 
     return {
       ...raw,
       provider,
+      installEdition,
       cloudApiKey,
       usptoApiKey,
       encryptionHealthy: this.encryptionHealthy,

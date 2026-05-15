@@ -236,6 +236,14 @@ model AppSettings {
   cloudDefaultModel      String  @default("claude-haiku-4-5-20251001")
   localDefaultModel      String  @default("gemma4:e4b")
 
+  // Install edition (added in Run 6).
+  // String column with CHECK ("installEdition" IN ('Lean','Full')) enforced in
+  // SCHEMA_SQL. Lean = no Ollama bundle (cloud-only installer); Full = Ollama
+  // + Gemma 4 bundled. Default 'Full' covers fresh installs without a marker
+  // AND in-place v0.4 upgrades. Backend mirrors the installer-written
+  // <baseDir>/config/edition.txt into this column on startup.
+  installEdition         String  @default("Full")
+
   // Existing fields (untouched except ollamaApiKey removed in Run 4).
   ollamaModel            String  @default("gemma4:e4b")
   ollamaUrl              String  @default("http://localhost:11434")

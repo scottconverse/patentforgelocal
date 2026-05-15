@@ -7,15 +7,23 @@ import ProjectList from './pages/ProjectList';
 import ProjectDetail from './pages/ProjectDetail';
 import Settings from './pages/Settings';
 import { api } from './api';
+import type { InstallEdition } from './types';
+import { isInstallEdition } from './types';
 
 export default function App() {
   // null = still checking, true = show wizard, false = skip wizard
   const [showWizard, setShowWizard] = useState<boolean | null>(null);
+  // Defaults to 'Full' until settings load, matching backend's default for
+  // pre-Run-6 in-place upgrades.
+  const [installEdition, setInstallEdition] = useState<InstallEdition>('Full');
 
   useEffect(() => {
     api.settings
       .get()
       .then((s: any) => {
+        if (isInstallEdition(s.installEdition)) {
+          setInstallEdition(s.installEdition);
+        }
         setShowWizard(!s.modelReady);
       })
       .catch(() => {
@@ -35,7 +43,7 @@ export default function App() {
     <>
       <DisclaimerModal />
       {showWizard ? (
-        <FirstRunWizard onComplete={handleWizardComplete} />
+        <FirstRunWizard onComplete={handleWizardComplete} installEdition={installEdition} />
       ) : (
         <Routes>
           <Route path="/" element={<Layout />}>

@@ -1,6 +1,8 @@
 import { useState, useEffect, useRef } from 'react';
 import { api } from '../api';
+import type { Provider } from '../types';
 import { slugify } from '../utils/slugify';
+import { formatCost } from '../utils/format';
 import { useElapsedTimer } from '../hooks/useElapsedTimer';
 import Alert from './Alert';
 import { startSSEStream } from '../utils/sseStream';
@@ -9,6 +11,8 @@ import StepProgress, { APPLICATION_STEPS, StepState } from './StepProgress';
 interface ApplicationTabProps {
   projectId: string;
   hasClaims: boolean;
+  /** Active provider for cost rendering — LOCAL displays "Free" instead of dollars. */
+  provider?: Provider;
 }
 
 const SECTION_KEYS = [
@@ -35,7 +39,7 @@ const SECTION_LABELS: Record<string, string> = {
   idsTable: 'Information Disclosure Statement',
 };
 
-export default function ApplicationTab({ projectId, hasClaims }: ApplicationTabProps) {
+export default function ApplicationTab({ projectId, hasClaims, provider }: ApplicationTabProps) {
   const [application, setApplication] = useState<any>(null);
   const [loading, setLoading] = useState(true);
   const [generating, setGenerating] = useState(false);
@@ -511,14 +515,22 @@ export default function ApplicationTab({ projectId, hasClaims }: ApplicationTabP
         </div>
 
         {/* Cost */}
-        {application.estimatedCostUsd != null && application.estimatedCostUsd > 0 && (
+        {provider === 'LOCAL' ? (
+          <div className="pt-4 border-t border-gray-800 text-right">
+            <span className="text-xs text-gray-500">
+              Estimated cost: <span className="text-amber-400 font-mono">Free</span>
+            </span>
+          </div>
+        ) : application.estimatedCostUsd != null && application.estimatedCostUsd > 0 ? (
           <div className="pt-4 border-t border-gray-800 text-right">
             <span className="text-xs text-gray-500">
               Estimated cost:{' '}
-              <span className="text-amber-400 font-mono">${application.estimatedCostUsd.toFixed(2)}</span>
+              <span className="text-amber-400 font-mono">
+                {formatCost(application.estimatedCostUsd, provider)}
+              </span>
             </span>
           </div>
-        )}
+        ) : null}
 
         {error && <p className="text-red-400 text-sm">{error}</p>}
         {renderModal()}

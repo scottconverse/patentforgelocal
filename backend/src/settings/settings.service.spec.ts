@@ -5,11 +5,16 @@
  * service logic is exercised without needing a real SQLite database.
  */
 
+import { promises as fs } from 'fs';
+import * as os from 'os';
+import * as path from 'path';
+
 import { Test, TestingModule } from '@nestjs/testing';
 import { SettingsService } from './settings.service';
 import { PrismaService } from '../prisma/prisma.service';
 import { encrypt, decrypt } from './encryption';
 import { DEFAULT_PROVIDER } from './provider.types';
+import { EDITION_MARKER_FILE, PROVIDER_MARKER_FILE } from './config-marker';
 
 // Fixed test salt — deterministic encryption round-trips across tests.
 const TEST_SALT = 'a1b2c3d4e5f6a1b2c3d4e5f6a1b2c3d4e5f6a1b2c3d4e5f6a1b2c3d4e5f6a1b2';
@@ -21,6 +26,7 @@ function buildAppSettingsRow(overrides: Record<string, unknown> = {}) {
     cloudApiKey: '',
     cloudDefaultModel: 'claude-haiku-4-5-20251001',
     localDefaultModel: 'gemma4:e4b',
+    installEdition: 'Full',
     ollamaModel: 'gemma4:e4b',
     ollamaUrl: 'http://localhost:11434',
     modelReady: false,
@@ -42,18 +48,25 @@ describe('SettingsService — Run 4 provider routing', () => {
     appSettings: {
       upsert: jest.Mock;
       update: jest.Mock;
+      findUnique: jest.Mock;
     };
     odpApiUsage: { findMany: jest.Mock };
   };
+  const originalConfigDir = process.env.PATENTFORGE_CONFIG_DIR;
 
   beforeEach(async () => {
     prismaMock = {
       appSettings: {
         upsert: jest.fn(),
         update: jest.fn(),
+        findUnique: jest.fn(),
       },
       odpApiUsage: { findMany: jest.fn().mockResolvedValue([]) },
     };
+
+    // Default: no PATENTFORGE_CONFIG_DIR. Tests that need marker writes set it.
+    delete process.env.PATENTFORGE_CONFIG_DIR;
+    delete process.env.DATABASE_URL;
 
     const module: TestingModule = await Test.createTestingModule({
       providers: [
@@ -66,6 +79,14 @@ describe('SettingsService — Run 4 provider routing', () => {
 
     // Stub the salt so encryption works without invoking onModuleInit's DB calls.
     (service as unknown as { salt: string }).salt = TEST_SALT;
+  });
+
+  afterEach(() => {
+    if (originalConfigDir === undefined) {
+      delete process.env.PATENTFORGE_CONFIG_DIR;
+    } else {
+      process.env.PATENTFORGE_CONFIG_DIR = originalConfigDir;
+    }
   });
 
   // ── getSettings ───────────────────────────────────────────────────────────
@@ -227,6 +248,147 @@ describe('SettingsService — Run 4 provider routing', () => {
 
       expect(capturedData!.usptoApiKey).not.toBe(plaintext);
       expect(decrypt(capturedData!.usptoApiKey as string, TEST_SALT)).toBe(plaintext);
+    });
+  });
+
+  // ── Run 6: installEdition + cross-process marker file mirroring ────────────
+
+  describe('installEdition exposure (Run 6)', () => {
+    it('returns installEdition=Full by default from getSettings', async () => {
+      prismaMock.appSettings.upsert.mockResolvedValue(buildAppSettingsRow());
+
+      const result = await service.getSettings();
+
+      expect(result.installEdition).toBe('Full');
+    });
+
+    it('returns installEdition=Lean when the DB row says Lean', async () => {
+      prismaMock.appSettings.upsert.mockResolvedValue(buildAppSettingsRow({ installEdition: 'Lean' }));
+
+      const result = await service.getSettings();
+
+      expect(result.installEdition).toBe('Lean');
+    });
+
+    it('defends against garbage installEdition values from a hand-edited DB row', async () => {
+      prismaMock.appSettings.upsert.mockResolvedValue(
+        buildAppSettingsRow({ installEdition: 'Maximal' }),
+      );
+
+      const result = await service.getSettings();
+
+      expect(result.installEdition).toBe('Full');
+    });
+  });
+
+  describe('updateSettings writes provider marker file (Run 6)', () => {
+    let tmpConfig: string;
+
+    beforeEach(async () => {
+      tmpConfig = await fs.mkdtemp(path.join(os.tmpdir(), 'pf-settings-svc-'));
+      process.env.PATENTFORGE_CONFIG_DIR = tmpConfig;
+    });
+
+    afterEach(async () => {
+      await fs.rm(tmpConfig, { recursive: true, force: true });
+    });
+
+    it('writes provider.txt = CLOUD when dto.provider=CLOUD', async () => {
+      prismaMock.appSettings.upsert.mockResolvedValue(
+        buildAppSettingsRow({ provider: 'CLOUD' }),
+      );
+
+      await service.updateSettings({ provider: 'CLOUD' });
+
+      const written = await fs.readFile(path.join(tmpConfig, PROVIDER_MARKER_FILE), 'utf-8');
+      expect(written).toBe('CLOUD');
+    });
+
+    it('writes provider.txt = LOCAL when dto.provider=LOCAL', async () => {
+      prismaMock.appSettings.upsert.mockResolvedValue(buildAppSettingsRow());
+
+      await service.updateSettings({ provider: 'LOCAL' });
+
+      const written = await fs.readFile(path.join(tmpConfig, PROVIDER_MARKER_FILE), 'utf-8');
+      expect(written).toBe('LOCAL');
+    });
+
+    it('does NOT write marker when provider is not in the DTO', async () => {
+      prismaMock.appSettings.upsert.mockResolvedValue(buildAppSettingsRow());
+
+      await service.updateSettings({ maxTokens: 12000 });
+
+      await expect(fs.access(path.join(tmpConfig, PROVIDER_MARKER_FILE))).rejects.toThrow();
+    });
+  });
+
+  describe('syncInstallEdition (Run 6)', () => {
+    let tmpConfig: string;
+
+    beforeEach(async () => {
+      tmpConfig = await fs.mkdtemp(path.join(os.tmpdir(), 'pf-sync-edition-'));
+      process.env.PATENTFORGE_CONFIG_DIR = tmpConfig;
+    });
+
+    afterEach(async () => {
+      await fs.rm(tmpConfig, { recursive: true, force: true });
+    });
+
+    async function callSync() {
+      const fn = (service as unknown as { syncInstallEdition: () => Promise<void> }).syncInstallEdition.bind(service);
+      await fn();
+    }
+
+    it('updates AppSettings.installEdition when marker disagrees with DB', async () => {
+      await fs.writeFile(path.join(tmpConfig, EDITION_MARKER_FILE), 'Lean', 'utf-8');
+      prismaMock.appSettings.findUnique.mockResolvedValue(
+        buildAppSettingsRow({ installEdition: 'Full' }),
+      );
+
+      await callSync();
+
+      expect(prismaMock.appSettings.update).toHaveBeenCalledWith({
+        where: { id: 'singleton' },
+        data: { installEdition: 'Lean' },
+      });
+    });
+
+    it('does NOT update when marker matches DB (idempotent)', async () => {
+      await fs.writeFile(path.join(tmpConfig, EDITION_MARKER_FILE), 'Full', 'utf-8');
+      prismaMock.appSettings.findUnique.mockResolvedValue(
+        buildAppSettingsRow({ installEdition: 'Full' }),
+      );
+
+      await callSync();
+
+      expect(prismaMock.appSettings.update).not.toHaveBeenCalled();
+    });
+
+    it('defaults to Full when marker is missing AND updates only if DB disagrees', async () => {
+      // No edition.txt written
+      prismaMock.appSettings.findUnique.mockResolvedValue(
+        buildAppSettingsRow({ installEdition: 'Lean' }),
+      );
+
+      await callSync();
+
+      // Marker says default Full; DB says Lean → DB updated to Full
+      expect(prismaMock.appSettings.update).toHaveBeenCalledWith({
+        where: { id: 'singleton' },
+        data: { installEdition: 'Full' },
+      });
+    });
+
+    it('treats hand-edited garbage installEdition as the default', async () => {
+      await fs.writeFile(path.join(tmpConfig, EDITION_MARKER_FILE), 'Full', 'utf-8');
+      prismaMock.appSettings.findUnique.mockResolvedValue(
+        buildAppSettingsRow({ installEdition: 'Maximal' }),
+      );
+
+      await callSync();
+
+      // DB had garbage → treated as Full → marker also Full → no update needed
+      expect(prismaMock.appSettings.update).not.toHaveBeenCalled();
     });
   });
 });

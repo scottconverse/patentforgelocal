@@ -1,6 +1,19 @@
 #!/bin/bash
+# Build the PatentForgeLocal macOS .dmg.
+#
+# Run 6: emits one .dmg per edition. Default `EDITION=Full` matches the
+# pre-merge behavior (Ollama auto-install wrapper); `EDITION=Lean` bakes a
+# trivial wrapper that does no Ollama bootstrap (cloud-only). Pass
+# `EDITION=Lean` env or `$1=Lean` to override.
 set -e
-echo "=== Building Mac .dmg ==="
+
+EDITION="${EDITION:-${1:-Full}}"
+case "$EDITION" in
+  Full|Lean) ;;
+  *) echo "ERROR: EDITION must be Full or Lean (got '$EDITION')"; exit 1 ;;
+esac
+
+echo "=== Building Mac .dmg (edition=$EDITION) ==="
 
 SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
 ROOT_DIR="$(cd "$SCRIPT_DIR/../.." && pwd)"
@@ -8,19 +21,35 @@ cd "$ROOT_DIR"
 
 VERSION=$(node -e "console.log(require('./backend/package.json').version)")
 APP_NAME="PatentForgeLocal"
-APP_DIR="build/${APP_NAME}.app"
+APP_DIR="build/${APP_NAME}-${EDITION}.app"
 
 # Create .app bundle structure
 mkdir -p "${APP_DIR}/Contents/MacOS"
+mkdir -p "${APP_DIR}/Contents/MacOS/config"
 mkdir -p "${APP_DIR}/Contents/Resources"
 
 # Copy tray binary (renamed so the wrapper script can call it)
 cp patentforgelocal-tray "${APP_DIR}/Contents/MacOS/patentforgelocal-tray-bin"
 
-# Create Ollama pre-flight wrapper script as CFBundleExecutable
-cat > "${APP_DIR}/Contents/MacOS/patentforgelocal-tray" << 'WRAPPER_EOF'
+# Edition marker — read by tray + backend at startup (see installer/marker/README.md)
+cp "$SCRIPT_DIR/../marker/edition-${EDITION}.txt" "${APP_DIR}/Contents/MacOS/config/edition.txt"
+
+if [ "$EDITION" = "Lean" ]; then
+  # Lean wrapper: cloud-only edition; skip the Ollama pre-flight entirely.
+  # The tray reads config/edition.txt = Lean and doesn't spawn an Ollama
+  # service-0 child, so this wrapper just hands off to the binary.
+  cat > "${APP_DIR}/Contents/MacOS/patentforgelocal-tray" << 'LEAN_WRAPPER_EOF'
 #!/bin/bash
-# PatentForgeLocal Mac launcher — ensures Ollama is available before starting.
+# PatentForgeLocal Mac launcher — Lean edition (cloud-only). No Ollama bootstrap.
+DIR="$(cd "$(dirname "$0")" && pwd)"
+exec "${DIR}/patentforgelocal-tray-bin" "$@"
+LEAN_WRAPPER_EOF
+else
+  # Full wrapper: existing Ollama pre-flight (running → bundled → system → download).
+  cat > "${APP_DIR}/Contents/MacOS/patentforgelocal-tray" << 'FULL_WRAPPER_EOF'
+#!/bin/bash
+# PatentForgeLocal Mac launcher — Full edition. Ensures Ollama is available
+# before starting the tray.
 DIR="$(cd "$(dirname "$0")" && pwd)"
 RESOURCES="${DIR}/../Resources"
 
@@ -93,7 +122,8 @@ if [ "$OLLAMA_OK" = false ]; then
 fi
 
 exec "${DIR}/patentforgelocal-tray-bin" "$@"
-WRAPPER_EOF
+FULL_WRAPPER_EOF
+fi
 chmod +x "${APP_DIR}/Contents/MacOS/patentforgelocal-tray"
 
 # Copy resources
@@ -159,6 +189,6 @@ sudo mdutil -i off "$(dirname "${APP_DIR}")" 2>/dev/null || true
 
 # Create .dmg
 mkdir -p build
-hdiutil create -volname "${APP_NAME}" -srcfolder "${APP_DIR}" -ov -format UDZO "build/${APP_NAME}-${VERSION}.dmg"
+hdiutil create -volname "${APP_NAME}-${EDITION}" -srcfolder "${APP_DIR}" -ov -format UDZO "build/${APP_NAME}-${EDITION}-${VERSION}.dmg"
 
-echo "=== Mac .dmg built: build/${APP_NAME}-${VERSION}.dmg ==="
+echo "=== Mac .dmg built: build/${APP_NAME}-${EDITION}-${VERSION}.dmg ==="

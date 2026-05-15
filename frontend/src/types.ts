@@ -75,12 +75,33 @@ export function isProvider(value: unknown): value is Provider {
   return typeof value === 'string' && (PROVIDERS as readonly string[]).includes(value);
 }
 
+/**
+ * Installer edition — mirrors backend `edition.types.ts`. Lean ships without
+ * an Ollama runtime bundle; Full bundles Ollama + Gemma 4. The wizard reads
+ * this on first launch to decide whether to show the Local/Cloud chooser.
+ *
+ * Introduced in PatentForge merge plan Run 6.
+ */
+export type InstallEdition = 'Lean' | 'Full';
+
+export const INSTALL_EDITIONS: readonly InstallEdition[] = ['Lean', 'Full'] as const;
+
+export function isInstallEdition(value: unknown): value is InstallEdition {
+  return typeof value === 'string' && (INSTALL_EDITIONS as readonly string[]).includes(value);
+}
+
 export interface AppSettings {
   // Provider routing (added in merge plan Run 4 backend, Run 5 frontend)
   provider: Provider;
   cloudApiKey: string;
   cloudDefaultModel: string;
   localDefaultModel: string;
+
+  // Install edition metadata (Run 6) — read-only mirror of <baseDir>/config/edition.txt
+  // written by the installer. UI uses it to decide whether FirstRunWizard
+  // shows the Local/Cloud chooser (Full) or skips straight to Cloud (Lean).
+  // Defaults to 'Full' for in-place upgrades from a pre-Run-6 install.
+  installEdition: InstallEdition;
 
   // Legacy / general
   // `ollamaApiKey` was repurposed pre-Run-4 as the Ollama-Cloud Web Search

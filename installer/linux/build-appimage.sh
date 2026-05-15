@@ -1,6 +1,19 @@
 #!/bin/bash
+# Build the PatentForgeLocal Linux AppImage.
+#
+# Run 6: emits one AppImage per edition. `EDITION=Full` (default) keeps the
+# Ollama auto-install AppRun; `EDITION=Lean` bakes a trivial AppRun that
+# does no Ollama bootstrap (cloud-only). Pass `EDITION=Lean` env or
+# `$1=Lean` to override.
 set -e
-echo "=== Building Linux AppImage ==="
+
+EDITION="${EDITION:-${1:-Full}}"
+case "$EDITION" in
+  Full|Lean) ;;
+  *) echo "ERROR: EDITION must be Full or Lean (got '$EDITION')"; exit 1 ;;
+esac
+
+echo "=== Building Linux AppImage (edition=$EDITION) ==="
 
 SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
 ROOT_DIR="$(cd "$SCRIPT_DIR/../.." && pwd)"
@@ -8,12 +21,16 @@ cd "$ROOT_DIR"
 
 VERSION=$(node -e "console.log(require('./backend/package.json').version)")
 APP_NAME="PatentForgeLocal"
-APP_DIR="build/${APP_NAME}.AppDir"
+APP_DIR="build/${APP_NAME}-${EDITION}.AppDir"
 
 # Create AppDir structure
 mkdir -p "${APP_DIR}/usr/bin"
+mkdir -p "${APP_DIR}/usr/bin/config"
 mkdir -p "${APP_DIR}/usr/share/applications"
 mkdir -p "${APP_DIR}/usr/share/icons/hicolor/256x256/apps"
+
+# Edition marker — read by tray + backend at startup (see installer/marker/README.md)
+cp "$SCRIPT_DIR/../marker/edition-${EDITION}.txt" "${APP_DIR}/usr/bin/config/edition.txt"
 
 # Copy binaries and resources
 cp patentforgelocal-tray "${APP_DIR}/usr/bin/"
@@ -52,10 +69,21 @@ Comment=Patent analysis and preparation tool
 EOF
 cp "${APP_DIR}/patentforgelocal.desktop" "${APP_DIR}/usr/share/applications/"
 
-# Create AppRun with Ollama pre-flight check
-cat > "${APP_DIR}/AppRun" << 'APPRUN_EOF'
+# AppRun — Ollama pre-flight (Full) or pass-through (Lean).
+if [ "$EDITION" = "Lean" ]; then
+  cat > "${APP_DIR}/AppRun" << 'LEAN_APPRUN_EOF'
 #!/bin/bash
-# PatentForgeLocal AppRun — ensures Ollama is available before launching the tray app.
+# PatentForgeLocal AppRun — Lean edition (cloud-only). No Ollama bootstrap.
+SELF=$(readlink -f "$0")
+HERE=${SELF%/*}
+export PATH="${HERE}/usr/bin:${PATH}"
+exec "${HERE}/usr/bin/patentforgelocal-tray" "$@"
+LEAN_APPRUN_EOF
+else
+  cat > "${APP_DIR}/AppRun" << 'FULL_APPRUN_EOF'
+#!/bin/bash
+# PatentForgeLocal AppRun — Full edition. Ensures Ollama is available
+# before launching the tray app.
 SELF=$(readlink -f "$0")
 HERE=${SELF%/*}
 export PATH="${HERE}/usr/bin:${PATH}"
@@ -120,7 +148,8 @@ if [ "$OLLAMA_OK" = false ]; then
 fi
 
 exec "${HERE}/usr/bin/patentforgelocal-tray" "$@"
-APPRUN_EOF
+FULL_APPRUN_EOF
+fi
 chmod +x "${APP_DIR}/AppRun"
 
 # Download appimagetool if not present
@@ -131,6 +160,6 @@ fi
 
 # Build AppImage
 mkdir -p build
-ARCH=x86_64 ./appimagetool "${APP_DIR}" "build/${APP_NAME}-${VERSION}.AppImage"
+ARCH=x86_64 ./appimagetool "${APP_DIR}" "build/${APP_NAME}-${EDITION}-${VERSION}.AppImage"
 
-echo "=== AppImage built: build/${APP_NAME}-${VERSION}.AppImage ==="
+echo "=== AppImage built: build/${APP_NAME}-${EDITION}-${VERSION}.AppImage ==="

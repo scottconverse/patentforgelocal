@@ -1,4 +1,4 @@
-import { FeasibilityStage, RunStatus } from '../types';
+import type { FeasibilityStage, Provider, RunStatus } from '../types';
 import { formatCost, formatDuration } from '../utils/format';
 
 interface StageProgressProps {
@@ -7,6 +7,11 @@ interface StageProgressProps {
   onStageClick?: (stage: FeasibilityStage) => void;
   onRerunFromStage?: (stageNumber: number) => void;
   pipelineIdle?: boolean; // true when no pipeline is currently running
+  /**
+   * Active provider for cost-rendering decisions (LOCAL → "Free", CLOUD → $N).
+   * Optional for backwards compatibility; defaults to CLOUD-like dollar formatting.
+   */
+  provider?: Provider;
 }
 
 function StatusIcon({ status }: { status: RunStatus }) {
@@ -53,6 +58,7 @@ export default function StageProgress({
   onStageClick,
   onRerunFromStage,
   pipelineIdle,
+  provider,
 }: StageProgressProps) {
   if (!stages || stages.length === 0) {
     return <div className="text-gray-500 text-sm italic">No stages yet.</div>;
@@ -64,7 +70,7 @@ export default function StageProgress({
         const isActive = activeStage === stage.stageNumber;
         const isClickable = stage.status === 'COMPLETE' && !!stage.outputText && !!onStageClick;
         const duration = formatDuration(stage.startedAt, stage.completedAt);
-        const cost = formatCost(stage.estimatedCostUsd);
+        const cost = formatCost(stage.estimatedCostUsd, provider);
 
         return (
           <div

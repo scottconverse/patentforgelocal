@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Project, FeasibilityStage, FeasibilityRun, PriorArtSearch } from '../types';
+import type { Project, FeasibilityStage, FeasibilityRun, PriorArtSearch, Provider } from '../types';
 import { ViewMode } from '../hooks/useProjectDetail';
 import StageProgress from './StageProgress';
 import { formatCost } from '../utils/format';
@@ -63,6 +63,8 @@ interface ProjectSidebarProps {
   onShowHistory: () => void;
   onStageClick: (stage: FeasibilityStage) => void;
   onRerunFromStage: (fromStage: number) => void;
+  /** Active provider for cost rendering — LOCAL displays "Free" per decision #12. */
+  provider?: Provider;
 }
 
 export default function ProjectSidebar({
@@ -86,6 +88,7 @@ export default function ProjectSidebar({
   onShowHistory,
   onStageClick,
   onRerunFromStage,
+  provider,
 }: ProjectSidebarProps) {
   // Mobile accordion state
   const [pipelineOpen, setPipelineOpen] = useState(false);
@@ -169,13 +172,19 @@ export default function ProjectSidebar({
               pipelineIdle={viewMode !== 'running'}
               onStageClick={onStageClick}
               onRerunFromStage={onRerunFromStage}
+              provider={provider}
             />
-            {totalRunCost > 0 && (
+            {provider === 'LOCAL' ? (
+              <div className="flex justify-between text-xs text-gray-500 pt-2 px-1 border-t border-gray-800 mt-1">
+                <span>Total cost</span>
+                <span className="text-amber-400 font-mono">Free</span>
+              </div>
+            ) : totalRunCost > 0 ? (
               <div className="flex justify-between text-xs text-gray-500 pt-2 px-1 border-t border-gray-800 mt-1">
                 <span>Total API cost</span>
-                <span className="text-amber-400 font-mono">{formatCost(totalRunCost)}</span>
+                <span className="text-amber-400 font-mono">{formatCost(totalRunCost, provider)}</span>
               </div>
-            )}
+            ) : null}
           </div>
         </div>
       </div>

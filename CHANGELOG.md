@@ -7,6 +7,88 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added (merge plan Run 6 — Installer split + first-run wizard branching + Run 5.5 fold-ins)
+
+- **Two installer editions, single source tree** — `EDITION=Lean|Full` parameter on each platform builder. Lean is the cloud-only artifact (no Ollama runtime bundle); Full is the bundled-everything artifact (pre-merge default behavior preserved). Outputs:
+  - **Windows** (`installer/windows/build-installer.sh`, `installer/windows/patentforgelocal.iss`): emits `PatentForgeLocal-Full-<ver>-Setup.exe` and `PatentForgeLocal-Lean-<ver>-Setup.exe`. ISCC parameterized via `#define Edition` with `#if Edition == "Full" ... #endif` wrapping the `runtime\ollama\*` source line.
+  - **macOS** (`installer/mac/build-dmg.sh`): emits `PatentForgeLocal-Full-<ver>.dmg` and `PatentForgeLocal-Lean-<ver>.dmg`. Lean bakes a trivial CFBundleExecutable wrapper that hands off straight to the tray binary; Full keeps the existing Ollama auto-install pre-flight.
+  - **Linux** (`installer/linux/build-appimage.sh`): emits `PatentForgeLocal-Full-<ver>.AppImage` and `PatentForgeLocal-Lean-<ver>.AppImage`. Same wrapper split via two AppRun variants.
+
+- **Edition marker files** (`installer/marker/edition-{Full,Lean}.txt`) — each installer copies the appropriate marker into `<baseDir>/config/edition.txt`. The tray + backend read this same file to decide which UX surfaces apply.
+
+- **Tray edition-aware service management** (`tray/internal/config/edition.go`, `tray/internal/services/manager.go`):
+  - `ReadEdition(baseDir)` parses `edition.txt`; defaults to `Full` when missing (back-compat for v0.4 upgrades).
+  - `ReadProviderMarker(baseDir)` parses `provider.txt` (written by the backend on every Settings save); defaults to `LOCAL`.
+  - `ShouldStartOllama(edition, provider)` returns true iff `edition == Full && provider == LOCAL`. Manager omits Ollama from the services slice otherwise — Lean installs and Full+CLOUD installs both run with a 5-service list rather than 6, so `StartAll`, `StopAll`, `OverallStatus`, and `HealthMonitor` all transparently ignore Ollama.
+  - `cmd/tray/main.go`'s model-pull goroutine is gated on the same predicate.
+
+- **Cross-process provider mirror** (`backend/src/settings/config-marker.ts`): the backend writes `<configDir>/provider.txt` on every Settings save so the tray sees the current provider on its next launch. `resolveConfigDir()` prefers `PATENTFORGE_CONFIG_DIR` env (set by the tray) and falls back to deriving from `DATABASE_URL`. Fail-soft — the DB write is authoritative; the marker is informational.
+
+- **`AppSettings.installEdition` column** (`backend/prisma/schema.prisma`, `backend/src/prisma/prisma.service.ts`): mirrors `edition.txt` into the DB so the frontend can read the install edition through the existing settings endpoint. Idempotent ALTER chain in `migrateSettings()` (CHECK constraint enforces `('Lean','Full')`). `SettingsService.onModuleInit()` calls `syncInstallEdition()` to reconcile the column with the marker on every startup.
+
+- **FirstRunWizard provider-aware branching** (`frontend/src/components/FirstRunWizard.tsx`):
+  - Lean installs skip the chooser, go straight to a new `cloud-api-key` step (Anthropic + USPTO inputs), then disclaimer + ready. Finish saves `provider='CLOUD'` + `cloudApiKey` + `modelReady=true`.
+  - Full installs open with a Local/Cloud chooser, then branch:
+    - **Cloud** picked → same `cloud-api-key` step → disclaimer → ready. Saves `provider='CLOUD'`.
+    - **Local** picked → existing system-check → model-download → ollama-account → disclaimer → ready. Saves `provider='LOCAL'`.
+  - Step-indicator dots reflect the dynamic flow.
+  - Welcome / ready copy adapts per edition + chosen provider.
+
+- **`CostConfirmModal` wired into `ProjectDetail.tsx`** (Run 5.5 #1 fold-in): all 4 `handleRunFeasibility` / `handleResume` call sites now go through `runFeasibilityWithCheck` / `resumeWithCheck`. CLOUD mode opens the modal with an estimated cost (from `api.feasibility.costEstimate(projectId)`, with a $0.50 fallback baseline); LOCAL bypasses the modal entirely.
+
+- **Provider-aware cost rendering** (Run 5.5 #2 fold-in): `frontend/src/utils/format.ts` `formatCost(usd, provider?)` returns `'Free'` for LOCAL (Decision #12). Migrated `StageProgress`, `StageOutputViewer`, `RunHistoryView`, `ApplicationTab`, `ComplianceTab`, and `ProjectSidebar` to forward the new prop; provider plumbed from `ProjectDetail`'s `api.settings.get()` call on mount. Inline `${value.toFixed(2)}` replaced with `formatCost(value, provider)` in the two tabs.
+
+- **`FirstRunWizard.test.tsx`** (new, 9 tests) — covers Lean flow, Full+CLOUD flow, Full+LOCAL flow, no chooser in Lean, ready-copy variants by chosen provider, graceful save-failure.
+
+- **`config-marker.spec.ts`** (new, 14 tests) — covers `resolveConfigDir` env-vs-DATABASE_URL fallback, `readEditionMarker` file-missing / Lean / Full / invalid cases, `writeProviderMarker` round-trip.
+
+- **`settings.service.spec.ts`** gains 11 new tests covering `installEdition` exposure, provider marker write on save, and `syncInstallEdition` reconciliation.
+
+- **`config/edition_test.go`** + **`services/manager_test.go`** (new tray tests) — 13 cases proving the edition × provider matrix maps correctly to Manager's services list (Ollama present iff Full+LOCAL).
+
+### Changed (Run 6)
+
+- `FirstRunWizard`'s welcome copy moved from "Welcome to PatentForgeLocal" to "Welcome to PatentForge" — the wizard's content is necessarily edition-neutral now that it ships from both Lean and Full installers. Broader branding rewrite is in Run 7's scope.
+
+- `installer/windows/build-installer.sh` output filename fixed: was `PatentForgeLocalLocal-<ver>-Setup.exe` (pre-existing typo); now correctly `PatentForgeLocal-${EDITION}-${ISS_VERSION}-Setup.exe`.
+
+- Tray `Manager` constructor (`NewManager(cfg)`) signature unchanged; reads edition + provider markers internally via `cfg.BaseDir`. Public surface preserved.
+
+- Tray service env extends `backend` with `PATENTFORGE_CONFIG_DIR=cfg.ConfigDir` so the backend doesn't need to parse `DATABASE_URL` to find the marker dir.
+
+### Migration notes (Run 6)
+
+Fully backward-compatible. Existing v0.4 installs upgrade silently:
+
+- No `edition.txt` on disk → tray defaults to `Full` (their Ollama bundle is already present).
+- No `provider.txt` on disk → tray defaults to `LOCAL` (matches their existing single-provider behavior).
+- `AppSettings.installEdition` added via idempotent ALTER TABLE with default `'Full'`; the `migrateSettings()` step is a no-op on subsequent boots (duplicate-column errors are caught and ignored).
+- The Settings page does NOT render `installEdition` — it's read-only metadata.
+
+The `Welcome to PatentForge` rebrand in the wizard is the only user-visible copy change in Run 6; the rest of the codebase still says "PatentForgeLocal" until Run 7's docs rewrite lands.
+
+### Verification (Run 6)
+
+- backend Jest: **329/329** in 24.9s (+26 from Run 5's 303)
+- frontend Vitest: **231/231** in 7.9s (+6 net from Run 5's 225: +9 wizard + +2 LOCAL/Free − 5 superseded)
+- backend `tsc --noEmit`: clean
+- frontend `tsc --noEmit`: 5 pre-existing baseline errors (handoff Discovered finding #2), zero new
+- tray `go test ./...`: green (`ok config`, `ok services`); +13 new tests in `config/edition_test.go` and `services/manager_test.go`
+- tray `go vet ./...`: clean
+- tray `go build ./...`: clean
+- claim-drafter pytest: **89/89** in 6.9s (regression)
+- application-generator pytest: **92/92** in 5.4s (regression)
+- compliance-checker pytest: **71/71** in 4.9s (regression)
+- feasibility npm test: **29/29** in 23.4s (regression)
+- `INTERNAL_SERVICE_SECRET=test docker compose config --quiet`: exit 0
+- `bash -n` clean on all 3 installer build scripts (Windows / Mac / Linux)
+
+Total: **841 automated tests green** across 6 services + 2 web tiers (up from 809 at Run 5 close).
+
+Actual installer compilation (ISCC, hdiutil, appimagetool) remains out of the autonomous-run environment and ships via the Run 8 release pipeline.
+
+---
+
 ### Added (merge plan Run 5 — Frontend provider UI)
 
 - **Settings page provider chooser** (`frontend/src/pages/Settings.tsx`) — new "Provider" section as the first section, with a Local/Cloud radio fieldset and conditional reveal panels:

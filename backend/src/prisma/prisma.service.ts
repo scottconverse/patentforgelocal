@@ -74,6 +74,8 @@ export class PrismaService extends PrismaClient implements OnModuleInit, OnModul
     }
 
     // PatentForge merge plan Run 4: provider routing.
+    // Run 6 adds `installEdition` to mirror the installer's edition.txt marker
+    // file so frontend can render edition-aware copy without reading disk.
     // Each ALTER TABLE is wrapped individually — "duplicate column" errors are
     // expected on every boot after the first and are NOT actual failures.
     const addColumnSteps: Array<[string, string]> = [
@@ -81,6 +83,7 @@ export class PrismaService extends PrismaClient implements OnModuleInit, OnModul
       ['cloudApiKey', `ADD COLUMN "cloudApiKey" TEXT NOT NULL DEFAULT ''`],
       ['cloudDefaultModel', `ADD COLUMN "cloudDefaultModel" TEXT NOT NULL DEFAULT 'claude-haiku-4-5-20251001'`],
       ['localDefaultModel', `ADD COLUMN "localDefaultModel" TEXT NOT NULL DEFAULT 'gemma4:e4b'`],
+      ['installEdition', `ADD COLUMN "installEdition" TEXT NOT NULL DEFAULT 'Full' CHECK ("installEdition" IN ('Lean', 'Full'))`],
     ];
 
     for (const [col, sql] of addColumnSteps) {
@@ -322,6 +325,7 @@ CREATE TABLE "AppSettings" (
     "cloudApiKey" TEXT NOT NULL DEFAULT '',
     "cloudDefaultModel" TEXT NOT NULL DEFAULT 'claude-haiku-4-5-20251001',
     "localDefaultModel" TEXT NOT NULL DEFAULT 'gemma4:e4b',
+    "installEdition" TEXT NOT NULL DEFAULT 'Full' CHECK ("installEdition" IN ('Lean', 'Full')),
     "ollamaModel" TEXT NOT NULL DEFAULT 'gemma4:e4b',
     "ollamaUrl" TEXT NOT NULL DEFAULT 'http://localhost:11434',
     "modelReady" BOOLEAN NOT NULL DEFAULT false,
