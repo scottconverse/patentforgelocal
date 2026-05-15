@@ -72,6 +72,58 @@ export class PrismaService extends PrismaClient implements OnModuleInit, OnModul
       const msg = err instanceof Error ? err.message : String(err);
       console.warn(`[Prisma] Settings migration warning: ${msg}`);
     }
+
+    // PatentForge merge plan Run 4: provider routing.
+    // Each ALTER TABLE is wrapped individually — "duplicate column" errors are
+    // expected on every boot after the first and are NOT actual failures.
+    const addColumnSteps: Array<[string, string]> = [
+      ['provider', `ADD COLUMN "provider" TEXT NOT NULL DEFAULT 'LOCAL' CHECK ("provider" IN ('LOCAL', 'CLOUD'))`],
+      ['cloudApiKey', `ADD COLUMN "cloudApiKey" TEXT NOT NULL DEFAULT ''`],
+      ['cloudDefaultModel', `ADD COLUMN "cloudDefaultModel" TEXT NOT NULL DEFAULT 'claude-haiku-4-5-20251001'`],
+      ['localDefaultModel', `ADD COLUMN "localDefaultModel" TEXT NOT NULL DEFAULT 'gemma4:e4b'`],
+    ];
+
+    for (const [col, sql] of addColumnSteps) {
+      try {
+        await this.$executeRawUnsafe(`ALTER TABLE "AppSettings" ${sql}`);
+        console.log(`[Prisma] migrate: added AppSettings.${col}`);
+      } catch (err) {
+        const msg = err instanceof Error ? err.message : String(err);
+        // Idempotent: duplicate-column errors are expected on every boot after the first.
+        if (!msg.toLowerCase().includes('duplicate column')) {
+          console.warn(`[Prisma] migrate: could not add AppSettings.${col} — ${msg}`);
+        }
+      }
+    }
+
+    // Defensive backfill — set provider='LOCAL' on any pre-Run-4 row that
+    // somehow ended up with an empty value (e.g. ADD COLUMN ran but the
+    // default didn't backfill on an exotic SQLite version).
+    try {
+      await this.$executeRawUnsafe(
+        `UPDATE "AppSettings"
+         SET "provider" = 'LOCAL'
+         WHERE "id" = 'singleton' AND ("provider" IS NULL OR "provider" = '')`,
+      );
+    } catch (err) {
+      const msg = err instanceof Error ? err.message : String(err);
+      console.warn(`[Prisma] migrate: provider backfill warning: ${msg}`);
+    }
+
+    // Drop the vestigial ollamaApiKey column. Ollama doesn't authenticate;
+    // this field was a local-fork artifact. SQLite ≥3.35 supports DROP COLUMN.
+    // Wrapped in try/catch so it's a no-op on installs where the column
+    // was already dropped or never existed.
+    try {
+      await this.$executeRawUnsafe(`ALTER TABLE "AppSettings" DROP COLUMN "ollamaApiKey"`);
+      console.log('[Prisma] migrate: dropped AppSettings.ollamaApiKey');
+    } catch (err) {
+      const msg = err instanceof Error ? err.message : String(err);
+      // "no such column" is expected once the migration has already run.
+      if (!msg.toLowerCase().includes('no such column')) {
+        console.warn(`[Prisma] migrate: could not drop AppSettings.ollamaApiKey — ${msg}`);
+      }
+    }
   }
 }
 
