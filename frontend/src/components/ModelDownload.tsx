@@ -72,7 +72,7 @@ export default function ModelDownload({ modelName, onComplete, onSkip }: Props) 
     <div>
       <h2 className="text-xl font-semibold text-white mb-2">Download AI Model</h2>
       <p className="text-sm text-gray-400 mb-6">
-        PatentForgeLocal uses <span className="text-gray-200 font-medium">{modelName}</span> for patent analysis.
+        PatentForge uses <span className="text-gray-200 font-medium">{modelName}</span> for Local-mode patent analysis.
         This is a one-time download ({'>'}18 GB). Future launches take about 30 seconds.
       </p>
 

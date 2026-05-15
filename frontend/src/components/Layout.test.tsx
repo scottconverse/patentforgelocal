@@ -12,9 +12,9 @@ function renderAt(path: string) {
 }
 
 describe('Layout navbar', () => {
-  it('renders PatentForgeLocal brand name in header', () => {
+  it('renders PatentForge brand name in header', () => {
     renderAt('/');
-    expect(screen.getByText('PatentForgeLocal')).toBeDefined();
+    expect(screen.getByText('PatentForge')).toBeDefined();
   });
 
   it('renders Projects and Settings nav links', () => {
