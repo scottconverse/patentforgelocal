@@ -95,12 +95,19 @@ for EDITION in $EDITIONS; do
 
     echo ""
     echo "Compiling $EDITION installer..."
-    # MSYS_NO_PATHCONV=1 prevents Git Bash on Windows (GitHub Actions
-    # windows-latest uses Git Bash by default) from auto-converting the
-    # `/dEdition=Full` argument into `D:\Edition=Full`, which ISCC would
-    # then interpret as a second script filename and fail with "You may
-    # not specify more than one script filename". No-op outside MSYS.
-    MSYS_NO_PATHCONV=1 "$ISCC" "/dEdition=$EDITION" "$REPO_ROOT/installer/windows/patentforgelocal.iss"
+    # Git Bash on Windows (GitHub Actions windows-latest default) auto-
+    # converts Unix-style paths to Windows form when invoking native exes.
+    # That converts `/dEdition=Full` into `D:\Edition=Full` (wrong — ISCC
+    # then sees two script filenames) AND would otherwise correctly convert
+    # the .iss path. Solution: disable global path conversion, then
+    # manually translate just the script-file arg with `cygpath -w`.
+    # No-op outside MSYS (cygpath fallback echoes the input unchanged).
+    if command -v cygpath >/dev/null 2>&1; then
+        ISS_PATH=$(cygpath -w "$REPO_ROOT/installer/windows/patentforgelocal.iss")
+    else
+        ISS_PATH="$REPO_ROOT/installer/windows/patentforgelocal.iss"
+    fi
+    MSYS_NO_PATHCONV=1 "$ISCC" "/dEdition=$EDITION" "$ISS_PATH"
 
     OUTPUT="$REPO_ROOT/build/PatentForge-${EDITION}-${ISS_VERSION}-Setup.exe"
     if [ -f "$OUTPUT" ]; then
