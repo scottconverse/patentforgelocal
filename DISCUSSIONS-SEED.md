@@ -136,6 +136,38 @@ Full changelog: [CHANGELOG.md](CHANGELOG.md)
 
 ---
 
+### Title: v0.4.0 Release — Claim Drafting Hardened (UPL Guardrails + Test/Docker/Doc Pass)
+
+**Body:**
+
+v0.4.0 finalizes the AI claim-drafting feature by closing every UPL-guardrail gap from `v0.4-SCOPE.md`, paying off Phase-1 tech-debt deferred from the original scaffold, and validating all three test suites + cleanroom Docker build from a clean state. The Phase 5 backend adapter and Phase 6 frontend Claims tab were already in place at production quality; this release is the gap-fill + hardening + release docs.
+
+**Highlights:**
+
+- **Per-project UPL acknowledgment** — the Claims-tab modal now persists acceptance per project in `localStorage`, so users are prompted once per project rather than per visit. Helpers degrade silently in private mode.
+- **Per-claim DRAFT badges** — every independent and dependent claim header carries an amber `Draft` badge with a full warning tooltip.
+- **Inline per-claim examiner notes** — examiner critique now renders below each claim with the mandatory "This draft claim has not been reviewed by a patent attorney" disclaimer.
+- **DOCX export watermarks match the spec exactly** — both the in-body banner and the repeating page header now read `DRAFT CLAIM CONCEPTS — NOT REVIEWED BY AN ATTORNEY — NOT FOR FILING`.
+- **CC BY-SA 4.0 license headers** on all four claim-drafter prompt files so UPL guardrails survive forks.
+- **Prescriptive invention-class → statutory-type mapping** in the Planner prompt (software/AI → method+system+CRM, hardware/IoT → method+system+apparatus, process/chemical → method+apparatus+composition).
+- **`/healthz` alias** on the claim-drafter FastAPI service (Kubernetes-style probe target).
+- **`docker-compose.yml` is valid YAML again** — every `${INTERNAL_SERVICE_SECRET:?…}` default is now quoted; `docker compose config` exits 0 and `docker compose build` succeeds for all 5 services.
+- **`test_auth.py` no longer hangs without Ollama** — pipeline mocked at the module boundary, full pytest runs in ~1.5s.
+
+**Verification:**
+
+- claim-drafter pytest: 91/91 in 1.45s
+- backend Jest: 286/286 in 26.1s
+- frontend Vitest: 210/210 in 5.86s
+- `docker compose config --quiet`: exit 0
+- `docker compose build`: all 5 service images built
+
+Total: 587 automated tests green across backend, frontend, and Python services.
+
+Full changelog: [CHANGELOG.md](CHANGELOG.md)
+
+---
+
 ## Category: Q&A
 
 ### Post 1
