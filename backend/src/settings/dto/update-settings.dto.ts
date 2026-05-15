@@ -1,7 +1,34 @@
-import { IsOptional, IsString, IsInt, IsNumber, IsBoolean, Min } from 'class-validator';
+import { IsOptional, IsString, IsInt, IsNumber, IsBoolean, IsIn, Min } from 'class-validator';
 import { Type } from 'class-transformer';
+import { PROVIDERS } from '../provider.types';
 
 export class UpdateSettingsDto {
+  // ── Provider routing (Run 4) ──────────────────────────────────────────────
+
+  @IsOptional()
+  @IsString()
+  @IsIn(PROVIDERS)
+  provider?: 'LOCAL' | 'CLOUD';
+
+  @IsOptional()
+  @IsString()
+  cloudApiKey?: string;
+
+  @IsOptional()
+  @IsString()
+  cloudDefaultModel?: string;
+
+  @IsOptional()
+  @IsString()
+  localDefaultModel?: string;
+
+  // ── Legacy / general ──────────────────────────────────────────────────────
+
+  /**
+   * @deprecated Removed in Run 4 — Ollama doesn't authenticate. Field accepted
+   * for one-cycle backward compatibility with older clients; the value is
+   * ignored by the service and a deprecation warning is logged.
+   */
   @IsOptional()
   @IsString()
   ollamaApiKey?: string;

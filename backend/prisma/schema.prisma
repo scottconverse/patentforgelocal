@@ -222,16 +222,30 @@ model OdpApiUsage {
 
 model AppSettings {
   id                     String  @id @default("singleton")
-  ollamaApiKey           String  @default("")
+
+  // Provider routing (added in PatentForge merge plan Run 4).
+  //
+  // `provider` is a String column with a SQLite CHECK constraint enforcing
+  // {LOCAL, CLOUD} (see SCHEMA_SQL in src/prisma/prisma.service.ts).
+  // The TypeScript type union `Provider` (src/settings/provider.types.ts)
+  // gives compile-time typo safety. SQLite doesn't support native enums,
+  // so the safety lives across three layers: TS union (compile), CHECK
+  // constraint (runtime DB), and DTO validator (HTTP boundary).
+  provider               String  @default("LOCAL")
+  cloudApiKey            String  @default("")          // Anthropic key, encrypted at rest
+  cloudDefaultModel      String  @default("claude-haiku-4-5-20251001")
+  localDefaultModel      String  @default("gemma4:e4b")
+
+  // Existing fields (untouched except ollamaApiKey removed in Run 4).
   ollamaModel            String  @default("gemma4:e4b")
   ollamaUrl              String  @default("http://localhost:11434")
   modelReady             Boolean @default(false)
-  defaultModel           String  @default("gemma4:e4b")
+  defaultModel           String  @default("gemma4:e4b")  // Legacy/compat; per-provider defaults live in {local,cloud}DefaultModel
   researchModel          String  @default("")
   maxTokens              Int     @default(32000)
   interStageDelaySeconds Int     @default(5)
   exportPath             String  @default("")
   autoExport             Boolean @default(true)
-  usptoApiKey            String  @default("")
+  usptoApiKey            String  @default("")           // Encrypted at rest
   encryptionSalt         String  @default("")
 }

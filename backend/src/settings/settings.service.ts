@@ -2,6 +2,7 @@ import { Injectable, Logger, OnModuleInit } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
 import { UpdateSettingsDto } from './dto/update-settings.dto';
 import { encrypt, decrypt, generateSalt, DecryptionError } from './encryption';
+import { DEFAULT_PROVIDER, isProvider, type Provider } from './provider.types';
 
 const SINGLETON_ID = 'singleton';
 
@@ -66,6 +67,10 @@ export class SettingsService implements OnModuleInit {
 
   /**
    * Get settings with API keys decrypted for use.
+   *
+   * Returns plaintext API keys (cloudApiKey, usptoApiKey) — same pattern used
+   * pre-Run-4 for usptoApiKey. The frontend Settings page renders them masked
+   * for display; the unmasked value flows back on save to support edit-in-place.
    */
   async getSettings() {
     const raw = await this.prisma.appSettings.upsert({
@@ -74,10 +79,10 @@ export class SettingsService implements OnModuleInit {
       update: {},
     });
 
-    let ollamaApiKey = '';
+    let cloudApiKey = '';
     let usptoApiKey = '';
     try {
-      ollamaApiKey = decrypt(raw.ollamaApiKey, this.salt);
+      cloudApiKey = decrypt(raw.cloudApiKey, this.salt);
       usptoApiKey = decrypt(raw.usptoApiKey, this.salt);
     } catch (err) {
       if (err instanceof DecryptionError) {
@@ -88,9 +93,15 @@ export class SettingsService implements OnModuleInit {
       }
     }
 
+    // Defensive: provider in DB should already be 'LOCAL' or 'CLOUD' thanks to
+    // the CHECK constraint and the migration backfill, but if a hand-edited
+    // row sneaks through, fall back to the default rather than expose garbage.
+    const provider: Provider = isProvider(raw.provider) ? raw.provider : DEFAULT_PROVIDER;
+
     return {
       ...raw,
-      ollamaApiKey,
+      provider,
+      cloudApiKey,
       usptoApiKey,
       encryptionHealthy: this.encryptionHealthy,
     };
@@ -101,7 +112,31 @@ export class SettingsService implements OnModuleInit {
    */
   async updateSettings(dto: UpdateSettingsDto) {
     const data: Record<string, unknown> = {};
-    if (dto.ollamaApiKey !== undefined) data.ollamaApiKey = encrypt(dto.ollamaApiKey, this.salt);
+
+    // ── Provider routing fields ────────────────────────────────────────────
+    if (dto.provider !== undefined) {
+      // The DTO validator (@IsIn(PROVIDERS)) already rejected bad values,
+      // but defense-in-depth — the runtime type guard catches a path that
+      // somehow skipped class-validator (e.g. a direct service call).
+      if (!isProvider(dto.provider)) {
+        throw new Error(`Invalid provider: ${String(dto.provider)}`);
+      }
+      data.provider = dto.provider;
+    }
+    if (dto.cloudApiKey !== undefined) data.cloudApiKey = encrypt(dto.cloudApiKey, this.salt);
+    if (dto.cloudDefaultModel !== undefined) data.cloudDefaultModel = dto.cloudDefaultModel;
+    if (dto.localDefaultModel !== undefined) data.localDefaultModel = dto.localDefaultModel;
+
+    // ── Legacy / general fields ────────────────────────────────────────────
+    if (dto.ollamaApiKey !== undefined) {
+      // Deprecated in Run 4 — Ollama doesn't authenticate; the column was
+      // dropped from AppSettings. Older clients may still send this; log
+      // and ignore. Removing the field entirely from the DTO would break
+      // those clients with a 400 instead of letting them through.
+      this.logger.warn(
+        'updateSettings received deprecated `ollamaApiKey` field — Ollama does not authenticate; value ignored. Update your client to drop this field.',
+      );
+    }
     if (dto.defaultModel !== undefined) data.defaultModel = dto.defaultModel;
     if (dto.researchModel !== undefined) data.researchModel = dto.researchModel;
     if (dto.maxTokens !== undefined) data.maxTokens = dto.maxTokens;
@@ -122,10 +157,10 @@ export class SettingsService implements OnModuleInit {
     // After a successful update, encryption should be healthy (new keys just encrypted)
     this.encryptionHealthy = true;
 
-    let ollamaApiKey = '';
+    let cloudApiKey = '';
     let usptoApiKey = '';
     try {
-      ollamaApiKey = decrypt(raw.ollamaApiKey, this.salt);
+      cloudApiKey = decrypt(raw.cloudApiKey, this.salt);
       usptoApiKey = decrypt(raw.usptoApiKey, this.salt);
     } catch (err) {
       if (err instanceof DecryptionError) {
@@ -135,9 +170,12 @@ export class SettingsService implements OnModuleInit {
       }
     }
 
+    const provider: Provider = isProvider(raw.provider) ? raw.provider : DEFAULT_PROVIDER;
+
     return {
       ...raw,
-      ollamaApiKey,
+      provider,
+      cloudApiKey,
       usptoApiKey,
       encryptionHealthy: this.encryptionHealthy,
     };
