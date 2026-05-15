@@ -18,7 +18,7 @@ import (
 )
 
 var (
-	version    = "0.1.0"
+	version    = "0.5.0"
 	cfg        *config.Config
 	mgr        *services.Manager
 	healthMon  *services.HealthMonitor
@@ -83,7 +83,7 @@ func onReady() {
 	systray.AddSeparator()
 	mLogs := systray.AddMenuItem("View Logs", "Open logs directory")
 	mRestart := systray.AddMenuItem("Restart Services", "Restart all services")
-	mAbout := systray.AddMenuItem(fmt.Sprintf("About PatentForgeLocal v%s", version), "")
+	mAbout := systray.AddMenuItem(fmt.Sprintf("About PatentForge v%s", version), "")
 	systray.AddSeparator()
 	mQuit := systray.AddMenuItem("Quit", "Stop all services and exit")
 

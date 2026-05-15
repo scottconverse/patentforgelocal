@@ -24,7 +24,7 @@ from sse_starlette.sse import EventSourceResponse
 
 from .models import ApplicationGenerateRequest, ApplicationGenerateResult, ExportRequest
 
-app = FastAPI(title="PatentForgeLocal Application Generator", version="0.6.0")
+app = FastAPI(title="PatentForge Application Generator", version="0.5.0")
 
 INTERNAL_SECRET = os.environ.get("INTERNAL_SERVICE_SECRET", "")
 OLLAMA_HOST = os.environ.get("OLLAMA_HOST", "http://127.0.0.1:11434")

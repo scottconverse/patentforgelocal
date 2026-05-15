@@ -1,4 +1,4 @@
-# PatentForge User Manual — v0.1.4
+# PatentForge User Manual — v0.5.0
 
 A step-by-step guide for using PatentForge to research and prepare for a patent consultation. PatentForge runs in two modes — Local (on your hardware) or Cloud (Anthropic) — and this manual covers both.
 

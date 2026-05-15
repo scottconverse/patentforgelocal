@@ -1,8 +1,8 @@
 # PatentForge — Architecture & Design Document
 
-**Version**: 0.1.4 (PatentForge merge plan complete through Run 7)
+**Version**: 0.5.0 (PatentForge merge plan complete)
 **Last Updated**: 2026-05-15
-**Status**: Pre-release (v0.5.0 cutover in Run 8)
+**Status**: Released
 
 ---
 

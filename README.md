@@ -1,4 +1,4 @@
-# PatentForge v0.1.4
+# PatentForge v0.5.0
 
 **Your choice: cloud or local. Private patent analysis on your terms.**
 

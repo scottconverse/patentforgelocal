@@ -21,7 +21,7 @@ from sse_starlette.sse import EventSourceResponse
 from .models import ComplianceRequest, ComplianceResponse
 from .graph import run_compliance_pipeline
 
-app = FastAPI(title="PatentForgeLocal Compliance Checker", version="0.5.0")
+app = FastAPI(title="PatentForge Compliance Checker", version="0.5.0")
 
 INTERNAL_SECRET = os.environ.get("INTERNAL_SERVICE_SECRET", "")
 OLLAMA_HOST = os.environ.get("OLLAMA_HOST", "")
