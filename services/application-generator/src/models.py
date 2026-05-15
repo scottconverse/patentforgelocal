@@ -16,7 +16,22 @@ class PriorArtItem(BaseModel):
 
 
 class GenerateSettings(BaseModel):
+    """User settings forwarded from the backend.
+
+    Provider routing (added in merge-plan Run 2):
+      provider: "LOCAL" routes through Ollama; "CLOUD" routes through Anthropic.
+      api_key:  CLOUD only — Anthropic API key. Ignored for LOCAL.
+      base_url: LOCAL only — Ollama host root. Defaults derived from `ollama_url`.
+    """
+    # Provider routing
+    provider: Literal["LOCAL", "CLOUD"] = "LOCAL"
+    api_key: str = ""
+    base_url: str = ""
+
+    # Legacy / backward-compat
     ollama_url: str = "http://127.0.0.1:11434"
+
+    # Model selection
     default_model: str
     research_model: str = ""
     max_tokens: int = 32000
@@ -77,7 +92,15 @@ class GraphState(BaseModel):
     prior_art_context: str = ""
     claims_text: str = ""
     spec_language: str = ""
+
+    # Provider routing (added in merge-plan Run 2)
+    provider: Literal["LOCAL", "CLOUD"] = "LOCAL"
+    api_key: str = ""
+    base_url: str = ""
+
+    # Legacy / backward-compat
     ollama_url: str = "http://127.0.0.1:11434"
+
     default_model: str = ""
     research_model: str = ""
     max_tokens: int = 32000

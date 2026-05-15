@@ -6,7 +6,7 @@ Flow: written_description -> definiteness -> formalities -> eligibility -> final
 
 from __future__ import annotations
 import json
-from typing import Callable
+from typing import Callable, Literal
 
 from langgraph.graph import StateGraph, END
 
@@ -18,7 +18,10 @@ from .agents.eligibility import run_eligibility
 
 
 async def finalize(state: GraphState) -> GraphState:
-    """Aggregate results from all checkers."""
+    """Aggregate results from all checkers. Scrub connection URLs and credentials."""
+    state.ollama_url = ""
+    state.base_url = ""
+    state.api_key = ""
     state.step = "finalize_complete"
     return state
 
@@ -52,11 +55,18 @@ async def run_compliance_pipeline(
     prior_art_context: str = "",
     max_tokens: int = 16000,
     on_step: Callable[[str, str], None] | None = None,
+    provider: Literal["LOCAL", "CLOUD"] = "LOCAL",
+    api_key: str = "",
+    base_url: str = "",
 ) -> ComplianceResponse:
-    """Run all four compliance checks and return aggregated results."""
+    """Run all four compliance checks and return aggregated results.
+
+    Args:
+        provider: "LOCAL" → Ollama, "CLOUD" → Anthropic (default LOCAL for backward compat).
+        api_key: CLOUD only — Anthropic API key.
+        base_url: LOCAL only — Ollama host root. Falls back to `ollama_url` if empty.
+    """
     # Build and compile per-request so that agent references resolve at call time.
-    # This keeps the pipeline testable (mock patches take effect) and avoids
-    # stale function references across module reloads.
     pipeline = build_graph().compile()
 
     initial_state = GraphState(
@@ -64,6 +74,9 @@ async def run_compliance_pipeline(
         specification_text=specification_text,
         invention_narrative=invention_narrative,
         prior_art_context=prior_art_context,
+        provider=provider,
+        api_key=api_key,
+        base_url=base_url,
         ollama_url=ollama_url,
         default_model=default_model,
         max_tokens=max_tokens,

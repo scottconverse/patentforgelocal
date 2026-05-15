@@ -1,4 +1,7 @@
-"""Tests for written description checker agent."""
+"""Tests for written description checker agent.
+
+Mocks call_llm_with_retry (the LiteLLM boundary).
+"""
 
 import json
 from unittest.mock import AsyncMock, patch, MagicMock
@@ -35,8 +38,8 @@ def _mock_response(text: str, prompt_tokens: int = 100, completion_tokens: int =
 
 
 class TestWrittenDescription:
-    @patch("src.agents.written_description.openai.AsyncOpenAI")
-    async def test_pass_result(self, mock_cls, base_state):
+    @patch("src.agents.written_description.call_llm_with_retry", new_callable=AsyncMock)
+    async def test_pass_result(self, mock_call, base_state):
         result_json = json.dumps([{
             "rule": "112a_written_description",
             "status": "PASS",
@@ -45,9 +48,7 @@ class TestWrittenDescription:
             "citation": "MPEP 2163",
             "suggestion": None,
         }])
-        mock_client = AsyncMock()
-        mock_client.chat.completions.create = AsyncMock(return_value=_mock_response(f"```json\n{result_json}\n```"))
-        mock_cls.return_value = mock_client
+        mock_call.return_value = _mock_response(f"```json\n{result_json}\n```")
 
         state = await run_written_description(base_state)
 
@@ -57,8 +58,8 @@ class TestWrittenDescription:
         assert state.total_input_tokens == 100
         assert state.total_output_tokens == 200
 
-    @patch("src.agents.written_description.openai.AsyncOpenAI")
-    async def test_fail_result(self, mock_cls, base_state):
+    @patch("src.agents.written_description.call_llm_with_retry", new_callable=AsyncMock)
+    async def test_fail_result(self, mock_call, base_state):
         result_json = json.dumps([{
             "rule": "112a_written_description",
             "status": "FAIL",
@@ -67,44 +68,36 @@ class TestWrittenDescription:
             "citation": "MPEP 2163",
             "suggestion": "Fix the issue",
         }])
-        mock_client = AsyncMock()
-        mock_client.chat.completions.create = AsyncMock(return_value=_mock_response(f"```json\n{result_json}\n```"))
-        mock_cls.return_value = mock_client
+        mock_call.return_value = _mock_response(f"```json\n{result_json}\n```")
 
         state = await run_written_description(base_state)
 
         results = json.loads(state.written_description_results)
         assert results[0]["status"] == "FAIL"
 
-    @patch("src.agents.written_description.openai.AsyncOpenAI")
-    async def test_api_error_sets_state_error(self, mock_cls, base_state):
-        mock_client = AsyncMock()
-        mock_client.chat.completions.create = AsyncMock(side_effect=Exception("API timeout"))
-        mock_cls.return_value = mock_client
+    @patch("src.agents.written_description.call_llm_with_retry", new_callable=AsyncMock)
+    async def test_api_error_sets_state_error(self, mock_call, base_state):
+        mock_call.side_effect = Exception("API timeout")
 
         state = await run_written_description(base_state)
 
         assert state.error is not None
         assert "API timeout" in state.error
 
-    @patch("src.agents.written_description.openai.AsyncOpenAI")
-    async def test_malformed_json_handled(self, mock_cls, base_state):
-        mock_client = AsyncMock()
-        mock_client.chat.completions.create = AsyncMock(return_value=_mock_response("Not JSON at all"))
-        mock_cls.return_value = mock_client
+    @patch("src.agents.written_description.call_llm_with_retry", new_callable=AsyncMock)
+    async def test_malformed_json_handled(self, mock_call, base_state):
+        mock_call.return_value = _mock_response("Not JSON at all")
 
         state = await run_written_description(base_state)
 
         assert state.error is not None or state.written_description_results == "[]"
 
-    @patch("src.agents.written_description.openai.AsyncOpenAI")
-    async def test_cost_accumulated(self, mock_cls, base_state):
+    @patch("src.agents.written_description.call_llm_with_retry", new_callable=AsyncMock)
+    async def test_cost_accumulated(self, mock_call, base_state):
         base_state.total_input_tokens = 50
         base_state.total_output_tokens = 100
         result_json = json.dumps([{"rule": "112a_written_description", "status": "PASS", "claim_number": 1, "detail": "OK"}])
-        mock_client = AsyncMock()
-        mock_client.chat.completions.create = AsyncMock(return_value=_mock_response(f"```json\n{result_json}\n```", 200, 300))
-        mock_cls.return_value = mock_client
+        mock_call.return_value = _mock_response(f"```json\n{result_json}\n```", 200, 300)
 
         state = await run_written_description(base_state)
 

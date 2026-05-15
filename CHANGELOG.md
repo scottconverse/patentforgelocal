@@ -5,6 +5,62 @@ All notable changes to PatentForgeLocal will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html). 
 
+## [Unreleased]
+
+### Added
+
+- **LLM provider abstraction** — all four services (three Python + Node `feasibility`) now route LLM calls through an `LLMClient` boundary that dispatches on a new `provider` setting:
+  - **LOCAL** → Ollama via OpenAI-compatible API (existing behavior; backward-compatible default for every existing install).
+  - **CLOUD** → Anthropic via LiteLLM's `anthropic/<model>` integration in all three Python services. The Node `feasibility` service has the CLOUD dispatch branch wired but throws an explicit `LLMClientCloudNotImplementedError` until merge plan Run 4 lands the full Anthropic streaming + tool-call normalization.
+
+- **Python `LLMClient`** — new shared module per Python service (`services/{application-generator,claim-drafter,compliance-checker}/src/llm_client.py`) exposing `async call_llm_with_retry(settings, *, model, max_tokens, system, messages, timeout)` and `compute_cost(model, input_tokens, output_tokens, settings)`. Built on `litellm.acompletion(num_retries=3, ...)` — LiteLLM owns retry behavior; the previous bespoke retry loop is gone.
+
+- **Node `LLMClient`** — new module at `services/feasibility/src/llmClient.ts` exposing `streamLLM(settings, params)` with the same provider-dispatch shape. LOCAL routes through the existing `ollama-client.streamMessage`; CLOUD throws a typed error rather than silently falling back.
+
+- **`AnalysisSettings` / `DraftSettings` / `GenerateSettings` / `ComplianceSettings`** — new fields across all service request schemas: `provider` (default `"LOCAL"`), `api_key` (CLOUD only), `base_url` (LOCAL — falls back to `ollama_url` for backward compat).
+
+- **`docs/parity-audit.md`** — committed on a sibling audit-parity branch as the source-of-truth for the 8-step PatentForge merge plan. Run 2 (this run) implements the LLM abstraction layer the rest of the plan builds on.
+
+- **Per-service `tests/test_llm_client.py`** (Python) and **`tests/llmClient.test.ts`** (Node) — dispatch tests verifying LOCAL → `ollama/<model>` with `api_base`, CLOUD → `anthropic/<model>` with `api_key`, retry-config passthrough, error propagation, and (Node) typed-error for CLOUD-not-yet-impl.
+
+### Changed
+
+- **Agent code no longer imports `openai` directly.** All `src/agents/*.py` modules in the three Python services now import from `..llm_client` instead of `openai`. The `import openai` line, the `openai.AsyncOpenAI(...)` client construction, and the `call_ollama_with_retry(client, ...)` call are replaced by a single `await call_llm_with_retry(_settings_from_state(state), ...)`. Behavior on LOCAL is byte-identical to v0.1.4; LiteLLM returns the same OpenAI-shape response object.
+
+- **`src/cost.py`** in all three Python services is now provider-aware. `compute_cost(model, input_tokens, output_tokens, settings)` returns `0.0` for LOCAL and uses `litellm.completion_cost(...)` for CLOUD (with a defensive fall back to `0.0` if LiteLLM's pricing table doesn't know the model).
+
+- **`src/server.py`** in all three Python services threads the new `provider` / `api_key` / `base_url` fields through to the pipeline graph. The legacy `ollama_url` field is still honored as a backward-compat fallback for LOCAL `base_url`.
+
+- **`src/graph.py`** scrubs `ollama_url`, `base_url`, and `api_key` from final state in the `finalize` node so they don't persist in checkpoints, tracebacks, or LangGraph traces.
+
+- **`docker-compose.yml`** — quoted every `${INTERNAL_SERVICE_SECRET:?msg}` default so the colon-space inside the message doesn't trip the YAML parser. `docker compose config --quiet` exits 0 again.
+
+### Removed
+
+- **`src/retry.py`** in all three Python services — subsumed by `LLMClient`. Retry semantics now owned by LiteLLM's `num_retries=` parameter, not a bespoke loop. Corresponding `tests/test_retry.py` files removed (the retry MECHANICS are LiteLLM's; the wrapper is tested via the new `tests/test_llm_client.py` dispatch tests).
+
+### Verification
+
+- claim-drafter pytest: **89/89** in 5.6s
+- application-generator pytest: **92/92** (full suite, all pipeline-mock paths cleared)
+- compliance-checker pytest: **71/71** in 6.2s
+- feasibility npm test: **29/29** in 23.9s (includes 6 new LLMClient dispatch tests)
+- backend npm test (NestJS): **286/286** in 26.3s (incl `doc-version-audit.spec.ts`)
+- frontend Vitest: **201/201** in 9.7s
+- `docker compose config --quiet`: exit 0 (with `INTERNAL_SERVICE_SECRET` env set)
+- `docker compose build`: all 5 service images built successfully
+
+Total: **768 automated tests green** across 4 services + 2 web tiers.
+
+### Migration notes
+
+This change is fully backward-compatible. Existing installs continue to work without any configuration change because:
+- `provider` defaults to `"LOCAL"` if absent from request bodies.
+- `base_url` defaults to the legacy `ollama_url` value if not explicitly set.
+- The Pydantic / TypeScript settings models accept all the previous fields plus the new ones.
+
+CLOUD users will not be able to use the merged product until merge plan Runs 4–5 land the Prisma `provider` enum, the AppSettings backend reshape, and the Settings page provider section.
+
 ## [0.1.4] - 2026-04-15
 
 ### Fixed

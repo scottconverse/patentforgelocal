@@ -20,11 +20,13 @@ async def finalize(state: GraphState) -> GraphState:
     """
     Parse the final claims text into structured Claim objects.
     Uses revised claims if available, otherwise the original draft.
-    Scrubs the ollama_url from state so it doesn't persist in checkpoints or tracebacks.
+    Scrubs the ollama_url + api_key from state so they don't persist in checkpoints or tracebacks.
     """
     raw = state.revised_claims_raw or state.draft_claims_raw
     state.claims = parse_claims(raw)
     state.ollama_url = ""  # Scrub — no longer needed after all agents have run
+    state.base_url = ""    # Scrub — connection URL
+    state.api_key = ""     # Scrub — credential
     state.step = "finalize_complete"
     return state
 
@@ -72,18 +74,27 @@ async def run_claim_pipeline(
     research_model: str = "",
     max_tokens: int = 16000,
     on_step: 'Callable[[str, str], None] | None' = None,  # (node_name, step_name) — no state dict exposed
+    provider: Literal["LOCAL", "CLOUD"] = "LOCAL",
+    api_key: str = "",
+    base_url: str = "",
 ) -> ClaimDraftResult:
     """
     Run the full claim drafting pipeline and return structured results.
 
     Args:
-        on_step: Optional callback called after each step with (step_name, state).
+        provider: "LOCAL" → Ollama, "CLOUD" → Anthropic (default LOCAL for backward compat).
+        api_key: CLOUD only — Anthropic API key.
+        base_url: LOCAL only — Ollama host root. Falls back to `ollama_url` if empty.
+        on_step: Optional callback called after each step with (node_name, step_name).
     """
     initial_state = GraphState(
         invention_narrative=invention_narrative,
         feasibility_stage_5=feasibility_stage_5,
         feasibility_stage_6=feasibility_stage_6,
         prior_art_context=prior_art_context,
+        provider=provider,
+        api_key=api_key,
+        base_url=base_url,
         ollama_url=ollama_url,
         default_model=default_model,
         research_model=research_model,
@@ -166,6 +177,9 @@ async def stream_claim_pipeline(
     default_model: str = "gemma4:e4b",
     research_model: str = "",
     max_tokens: int = 16000,
+    provider: Literal["LOCAL", "CLOUD"] = "LOCAL",
+    api_key: str = "",
+    base_url: str = "",
 ) -> AsyncGenerator[dict, None]:
     """
     Stream the claim pipeline, yielding SSE-ready dicts as each node completes.
@@ -174,12 +188,20 @@ async def stream_claim_pipeline(
       - {"event": "step", "node": str, "detail": str}  — after each node
       - {"event": "complete", "result": ClaimDraftResult}  — final result
       - {"event": "error", "message": str}  — on pipeline error
+
+    Args:
+        provider: "LOCAL" → Ollama, "CLOUD" → Anthropic (default LOCAL for backward compat).
+        api_key: CLOUD only.
+        base_url: LOCAL only — falls back to `ollama_url` if empty.
     """
     initial_state = GraphState(
         invention_narrative=invention_narrative,
         feasibility_stage_5=feasibility_stage_5,
         feasibility_stage_6=feasibility_stage_6,
         prior_art_context=prior_art_context,
+        provider=provider,
+        api_key=api_key,
+        base_url=base_url,
         ollama_url=ollama_url,
         default_model=default_model,
         research_model=research_model,

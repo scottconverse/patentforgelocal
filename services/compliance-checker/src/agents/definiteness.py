@@ -10,10 +10,8 @@ import json
 import re
 from pathlib import Path
 
-import openai
-
 from ..models import GraphState
-from ..retry import call_ollama_with_retry
+from ..llm_client import LLMSettings, call_llm_with_retry
 
 PROMPTS_DIR = Path(__file__).parent.parent / "prompts"
 
@@ -40,6 +38,14 @@ def _extract_json(text: str) -> list[dict]:
     raise ValueError("No JSON array found in response")
 
 
+def _settings_from_state(state: GraphState) -> LLMSettings:
+    return LLMSettings(
+        provider=state.provider,
+        api_key=state.api_key,
+        base_url=state.base_url or state.ollama_url,
+    )
+
+
 async def run_definiteness(state: GraphState) -> GraphState:
     """Check claims against 35 USC 112(b) definiteness requirement."""
     prompt = _load_prompt()
@@ -59,11 +65,9 @@ async def run_definiteness(state: GraphState) -> GraphState:
 
 Check each claim against 35 USC 112(b) definiteness requirements."""
 
-    client = openai.AsyncOpenAI(base_url=f"{state.ollama_url}/v1", api_key="ollama")
-
     try:
-        response = await call_ollama_with_retry(
-            client,
+        response = await call_llm_with_retry(
+            _settings_from_state(state),
             model=model,
             max_tokens=state.max_tokens,
             system=prompt,

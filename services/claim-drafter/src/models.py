@@ -20,8 +20,27 @@ class PriorArtItem(BaseModel):
 
 
 class DraftSettings(BaseModel):
-    """User settings forwarded from the backend."""
+    """User settings forwarded from the backend.
+
+    Provider routing (added in merge-plan Run 2):
+      provider: "LOCAL" routes through Ollama; "CLOUD" routes through Anthropic.
+      api_key:  CLOUD only — Anthropic API key. Ignored for LOCAL.
+      base_url: LOCAL only — Ollama host root (e.g., http://127.0.0.1:11434).
+                Defaults derived from `ollama_url` for backward compatibility.
+
+    Legacy fields kept for backward compat:
+      ollama_url: pre-Run-2 callers may still set this. If `base_url` is empty,
+                  it is used as the LOCAL base_url.
+    """
+    # Provider routing
+    provider: Literal["LOCAL", "CLOUD"] = "LOCAL"
+    api_key: str = ""
+    base_url: str = ""
+
+    # Legacy / backward-compat
     ollama_url: str = "http://127.0.0.1:11434"
+
+    # Model selection
     default_model: str  # Required — no silent fallback to expensive model
     research_model: str = ""
     max_tokens: int = 16000
@@ -83,7 +102,16 @@ class GraphState(BaseModel):
     feasibility_stage_5: str = ""
     feasibility_stage_6: str = ""
     prior_art_context: str = ""
+
+    # Provider routing (added in merge-plan Run 2)
+    provider: Literal["LOCAL", "CLOUD"] = "LOCAL"
+    api_key: str = ""
+    base_url: str = ""
+
+    # Legacy / backward-compat — agents read base_url first, fall back to ollama_url
     ollama_url: str = "http://127.0.0.1:11434"
+
+    # Model selection
     default_model: str = ""  # Set by run_claim_pipeline from request; empty = error
     research_model: str = ""
     max_tokens: int = 16000

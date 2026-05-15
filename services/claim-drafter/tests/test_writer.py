@@ -1,6 +1,7 @@
 """
 Tests for the Writer agent.
-Mocks OpenAI SDK (Ollama-compatible) to verify state transitions, revision mode, and prompt construction.
+Mocks call_llm_with_retry (the LiteLLM boundary) to verify state transitions,
+revision mode, and prompt construction.
 """
 
 from unittest.mock import AsyncMock, patch, MagicMock
@@ -56,13 +57,8 @@ class TestWriterAgent:
             ollama_url="http://127.0.0.1:11434",
         )
 
-        with patch("src.agents.writer.openai") as mock_openai:
-            mock_client = AsyncMock()
-            mock_client.chat.completions.create = AsyncMock(
-                return_value=_make_mock_response(MOCK_CLAIMS_DRAFT),
-            )
-            mock_openai.AsyncOpenAI.return_value = mock_client
-
+        with patch("src.agents.writer.call_llm_with_retry", new_callable=AsyncMock) as mock_call:
+            mock_call.return_value = _make_mock_response(MOCK_CLAIMS_DRAFT)
             result = await run_writer(state)
 
         assert result.step == "draft_complete"
@@ -81,13 +77,8 @@ class TestWriterAgent:
             ollama_url="http://127.0.0.1:11434",
         )
 
-        with patch("src.agents.writer.openai") as mock_openai:
-            mock_client = AsyncMock()
-            mock_client.chat.completions.create = AsyncMock(
-                return_value=_make_mock_response(MOCK_REVISED_CLAIMS),
-            )
-            mock_openai.AsyncOpenAI.return_value = mock_client
-
+        with patch("src.agents.writer.call_llm_with_retry", new_callable=AsyncMock) as mock_call:
+            mock_call.return_value = _make_mock_response(MOCK_REVISED_CLAIMS)
             result = await run_writer(state)
 
         assert result.step == "revise_complete"
@@ -103,16 +94,11 @@ class TestWriterAgent:
             default_model="gemma4:e4b",
         )
 
-        with patch("src.agents.writer.openai") as mock_openai:
-            mock_client = AsyncMock()
-            mock_client.chat.completions.create = AsyncMock(
-                return_value=_make_mock_response(MOCK_CLAIMS_DRAFT),
-            )
-            mock_openai.AsyncOpenAI.return_value = mock_client
-
+        with patch("src.agents.writer.call_llm_with_retry", new_callable=AsyncMock) as mock_call:
+            mock_call.return_value = _make_mock_response(MOCK_CLAIMS_DRAFT)
             await run_writer(state)
 
-            call_kwargs = mock_client.chat.completions.create.call_args.kwargs
+            call_kwargs = mock_call.call_args.kwargs
             assert call_kwargs["model"] == "gemma4:e4b"
 
     @pytest.mark.asyncio
@@ -126,18 +112,14 @@ class TestWriterAgent:
             ollama_url="http://127.0.0.1:11434",
         )
 
-        with patch("src.agents.writer.openai") as mock_openai:
-            mock_client = AsyncMock()
-            mock_client.chat.completions.create = AsyncMock(
-                return_value=_make_mock_response(MOCK_REVISED_CLAIMS),
-            )
-            mock_openai.AsyncOpenAI.return_value = mock_client
-
+        with patch("src.agents.writer.call_llm_with_retry", new_callable=AsyncMock) as mock_call:
+            mock_call.return_value = _make_mock_response(MOCK_REVISED_CLAIMS)
             await run_writer(state)
 
-            call_kwargs = mock_client.chat.completions.create.call_args.kwargs
-            # Messages: [system, user] — user is at index 1
-            user_msg = call_kwargs["messages"][1]["content"]
+            call_kwargs = mock_call.call_args.kwargs
+            # Messages passed to LLMClient is just the user message ([0]).
+            # System is a separate kwarg, prepended inside LLMClient.
+            user_msg = call_kwargs["messages"][0]["content"]
             assert "Examiner Feedback" in user_msg
             assert "Claim 1 too broad" in user_msg
 
@@ -149,13 +131,8 @@ class TestWriterAgent:
             ollama_url="http://127.0.0.1:11434",
         )
 
-        with patch("src.agents.writer.openai") as mock_openai:
-            mock_client = AsyncMock()
-            mock_client.chat.completions.create = AsyncMock(
-                side_effect=Exception("Connection refused"),
-            )
-            mock_openai.AsyncOpenAI.return_value = mock_client
-
+        with patch("src.agents.writer.call_llm_with_retry", new_callable=AsyncMock) as mock_call:
+            mock_call.side_effect = Exception("Connection refused")
             result = await run_writer(state)
 
         assert result.error is not None

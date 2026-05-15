@@ -1,4 +1,7 @@
-"""Tests for formalities checker agent."""
+"""Tests for formalities checker agent.
+
+Mocks call_llm_with_retry (the LiteLLM boundary).
+"""
 
 import json
 from unittest.mock import AsyncMock, patch, MagicMock
@@ -35,8 +38,8 @@ def _mock_response(text: str, prompt_tokens: int = 100, completion_tokens: int =
 
 
 class TestFormalities:
-    @patch("src.agents.formalities.openai.AsyncOpenAI")
-    async def test_pass_result(self, mock_cls, base_state):
+    @patch("src.agents.formalities.call_llm_with_retry", new_callable=AsyncMock)
+    async def test_pass_result(self, mock_call, base_state):
         result_json = json.dumps([{
             "rule": "mpep_608_formalities",
             "status": "PASS",
@@ -45,9 +48,7 @@ class TestFormalities:
             "citation": "MPEP 608.01(m)",
             "suggestion": None,
         }])
-        mock_client = AsyncMock()
-        mock_client.chat.completions.create = AsyncMock(return_value=_mock_response(f"```json\n{result_json}\n```"))
-        mock_cls.return_value = mock_client
+        mock_call.return_value = _mock_response(f"```json\n{result_json}\n```")
 
         state = await run_formalities(base_state)
 
@@ -57,8 +58,8 @@ class TestFormalities:
         assert state.total_input_tokens == 100
         assert state.total_output_tokens == 200
 
-    @patch("src.agents.formalities.openai.AsyncOpenAI")
-    async def test_fail_result(self, mock_cls, base_state):
+    @patch("src.agents.formalities.call_llm_with_retry", new_callable=AsyncMock)
+    async def test_fail_result(self, mock_call, base_state):
         result_json = json.dumps([{
             "rule": "mpep_608_formalities",
             "status": "FAIL",
@@ -67,44 +68,36 @@ class TestFormalities:
             "citation": "MPEP 608.01(m)",
             "suggestion": "Fix the issue",
         }])
-        mock_client = AsyncMock()
-        mock_client.chat.completions.create = AsyncMock(return_value=_mock_response(f"```json\n{result_json}\n```"))
-        mock_cls.return_value = mock_client
+        mock_call.return_value = _mock_response(f"```json\n{result_json}\n```")
 
         state = await run_formalities(base_state)
 
         results = json.loads(state.formalities_results)
         assert results[0]["status"] == "FAIL"
 
-    @patch("src.agents.formalities.openai.AsyncOpenAI")
-    async def test_api_error_sets_state_error(self, mock_cls, base_state):
-        mock_client = AsyncMock()
-        mock_client.chat.completions.create = AsyncMock(side_effect=Exception("API timeout"))
-        mock_cls.return_value = mock_client
+    @patch("src.agents.formalities.call_llm_with_retry", new_callable=AsyncMock)
+    async def test_api_error_sets_state_error(self, mock_call, base_state):
+        mock_call.side_effect = Exception("API timeout")
 
         state = await run_formalities(base_state)
 
         assert state.error is not None
         assert "API timeout" in state.error
 
-    @patch("src.agents.formalities.openai.AsyncOpenAI")
-    async def test_malformed_json_handled(self, mock_cls, base_state):
-        mock_client = AsyncMock()
-        mock_client.chat.completions.create = AsyncMock(return_value=_mock_response("Not JSON at all"))
-        mock_cls.return_value = mock_client
+    @patch("src.agents.formalities.call_llm_with_retry", new_callable=AsyncMock)
+    async def test_malformed_json_handled(self, mock_call, base_state):
+        mock_call.return_value = _mock_response("Not JSON at all")
 
         state = await run_formalities(base_state)
 
         assert state.error is not None or state.formalities_results == "[]"
 
-    @patch("src.agents.formalities.openai.AsyncOpenAI")
-    async def test_cost_accumulated(self, mock_cls, base_state):
+    @patch("src.agents.formalities.call_llm_with_retry", new_callable=AsyncMock)
+    async def test_cost_accumulated(self, mock_call, base_state):
         base_state.total_input_tokens = 50
         base_state.total_output_tokens = 100
         result_json = json.dumps([{"rule": "mpep_608_formalities", "status": "PASS", "claim_number": 1, "detail": "OK"}])
-        mock_client = AsyncMock()
-        mock_client.chat.completions.create = AsyncMock(return_value=_mock_response(f"```json\n{result_json}\n```", 200, 300))
-        mock_cls.return_value = mock_client
+        mock_call.return_value = _mock_response(f"```json\n{result_json}\n```", 200, 300)
 
         state = await run_formalities(base_state)
 

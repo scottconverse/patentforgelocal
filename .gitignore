@@ -56,3 +56,11 @@ htmlcov/
 # Temporary
 tmp/
 *.tmp
+.pipeline-cw/
+
+# Python build artifacts (created by `pip install -e .` in services/*)
+*.egg-info/
+
+# Claude Code session-local state
+.claude/handoff_current.md
+.claude/settings.local.json

@@ -86,6 +86,19 @@ export interface AnalysisSettings {
   ollamaUrl: string;
   ollamaApiKey?: string;
   priorArtContext?: string;
+
+  /**
+   * Provider routing (added in merge-plan Run 2).
+   *   'LOCAL'  → Ollama via ollamaUrl (default; backward-compat).
+   *   'CLOUD'  → Anthropic — wired but not yet implemented in feasibility (Run 4).
+   */
+  provider?: 'LOCAL' | 'CLOUD';
+
+  /** CLOUD only — Anthropic API key. Ignored for LOCAL. */
+  apiKey?: string;
+
+  /** Reserved for CLOUD — provider base URL override. Anthropic default is used when empty. */
+  baseUrl?: string;
 }
 
 export interface StreamResult {

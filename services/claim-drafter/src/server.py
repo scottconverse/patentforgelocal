@@ -3,7 +3,9 @@ PatentForgeLocal Claim Drafter — FastAPI server.
 
 Endpoints:
   GET  /health          — Service health check with prompt hashes
+  GET  /healthz         — Kubernetes-style health alias (same payload as /health)
   POST /draft           — Run the claim drafting pipeline (SSE stream)
+  POST /draft/sync      — Run the claim drafting pipeline synchronously
 """
 
 from __future__ import annotations
@@ -36,6 +38,15 @@ def resolve_ollama_url(request_url: str) -> str:
     if request_url:
         return request_url
     return f"http://{OLLAMA_HOST}"
+
+
+def resolve_base_url(request_base_url: str, request_ollama_url: str) -> str:
+    """Resolve LOCAL provider base_url: explicit base_url wins, ollama_url is the
+    backward-compat fallback, env var is the final fallback."""
+    if request_base_url:
+        return request_base_url
+    return resolve_ollama_url(request_ollama_url)
+
 
 api_key_header = APIKeyHeader(name="X-Internal-Secret", auto_error=False)
 
@@ -84,6 +95,12 @@ async def health():
     }
 
 
+@app.get("/healthz")
+async def healthz():
+    # Kubernetes-style alias for /health; identical payload.
+    return await health()
+
+
 # ── Claim drafting endpoint ──────────────────────────────────────────────────
 
 @app.post("/draft", dependencies=[Depends(verify_internal_secret)])
@@ -120,6 +137,9 @@ async def draft_claims(request: ClaimDraftRequest):
                 feasibility_stage_5=request.feasibility_stage_5,
                 feasibility_stage_6=request.feasibility_stage_6,
                 prior_art_context=prior_art_context,
+                provider=request.settings.provider,
+                api_key=request.settings.api_key,
+                base_url=resolve_base_url(request.settings.base_url, request.settings.ollama_url),
                 ollama_url=resolve_ollama_url(request.settings.ollama_url),
                 default_model=request.settings.default_model,
                 research_model=request.settings.research_model,
@@ -201,6 +221,9 @@ async def draft_claims_sync(request: ClaimDraftRequest):
         feasibility_stage_5=request.feasibility_stage_5,
         feasibility_stage_6=request.feasibility_stage_6,
         prior_art_context=prior_art_context,
+        provider=request.settings.provider,
+        api_key=request.settings.api_key,
+        base_url=resolve_base_url(request.settings.base_url, request.settings.ollama_url),
         ollama_url=resolve_ollama_url(request.settings.ollama_url),
         default_model=request.settings.default_model,
         research_model=request.settings.research_model,
