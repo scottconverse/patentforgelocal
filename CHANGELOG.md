@@ -7,6 +7,52 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added (merge plan Run 5 — Frontend provider UI)
+
+- **Settings page provider chooser** (`frontend/src/pages/Settings.tsx`) — new "Provider" section as the first section, with a Local/Cloud radio fieldset and conditional reveal panels:
+  - **Local mode** panel: Ollama URL input, local model dropdown (`gemma4:e4b`, `gemma4:26b`, `gemma3:27b`, `llama4:scout`).
+  - **Cloud mode** panel: Anthropic API key input with show/hide masked toggle (same UX pattern as the existing `usptoApiKey` field), cloud model dropdown (`claude-haiku-4-5-20251001`, `claude-sonnet-4-6`, `claude-opus-4-7`, `claude-opus-4-7-1m`).
+  - Radio inputs carry `aria-label`s for screen readers; panels carry `data-testid` attributes for component tests; both `localDefaultModel` and `cloudDefaultModel` are persisted so switching providers preserves each side's choice (Decision #3).
+
+- **`frontend/src/utils/modelPricing.ts`** — merged module exposing both `CLOUD_MODELS` (with `inputPer1M` / `outputPer1M` USD-per-million-token pricing) and `LOCAL_MODELS` tables. New helpers:
+  - `getModelPricing(provider, model)` → returns `{ inputPer1M, outputPer1M } | null`; null for LOCAL or unknown CLOUD models (defensive fall-back).
+  - `getModelsForProvider(provider)` → dropdown-friendly `[{ id, label }]`.
+  - `estimateCostUsd(provider, model, inputTokens, outputTokens)` → total USD cost; 0 for LOCAL.
+  - `formatCostDisplay(provider, costUsd)` → `"Free"` for LOCAL, `"< $0.01"` for sub-cent CLOUD, `"$N.NN"` otherwise. Implements Decision #12.
+
+- **`frontend/src/components/CostConfirmModal.tsx`** *(new component)* — accessible cloud-mode cost-approval modal. `role="dialog"` + `aria-modal="true"` + `aria-labelledby` / `aria-describedby`. Escape, backdrop click, and Cancel button all fire `onCancel`. Auto-focuses Approve button on open. Renders cost via `formatCostDisplay()`. **Component is built and tested (10 tests) but not yet wired into `ProjectDetail.tsx`** — the call-site integration is a focused follow-up because it touches ProjectDetail's settings-state shape across 3 call sites.
+
+- **`Provider` type union** in `frontend/src/types.ts` — `'LOCAL' | 'CLOUD'` plus `PROVIDERS` const and `isProvider()` guard. `AppSettings` interface extended with `provider`, `cloudApiKey`, `cloudDefaultModel`, `localDefaultModel`. The `ollamaApiKey` field is kept on the type — see Migration notes below.
+
+- **24 new frontend Vitest tests** (`frontend/src/utils/modelPricing.test.ts` +14, `frontend/src/components/CostConfirmModal.test.tsx` +10). Total frontend test count: **225** (was 201). All accessibility + interaction paths covered.
+
+### Changed
+
+- `Settings.tsx` initial state seeds `provider: 'LOCAL'`, `cloudDefaultModel: 'claude-haiku-4-5-20251001'`, `localDefaultModel: 'gemma4:e4b'`, `ollamaUrl: 'http://localhost:11434'` so first-paint never shows undefined-controlled inputs.
+
+### Discovered finding (Run 4 follow-up)
+
+The `ollamaApiKey` field was dropped from the backend schema in Run 4 on the assumption that "Ollama doesn't authenticate." That's accurate for the local Ollama server, but the field was actually being used as the Ollama-Cloud Web Search token — a distinct paid product that does authenticate. The frontend type field is kept in place so existing read paths (the Ollama API Key input in the API Keys section) don't crash. A focused follow-up issue restores the backend column with a clearer name (`ollamaWebSearchApiKey` or similar) — not blocking Run 5's provider-chooser scope.
+
+### Migration notes (Run 5)
+
+Fully backward-compatible. New `AppSettings` fields default to safe values; existing rows from Run 4 already have `provider='LOCAL'` populated. The Settings UI degrades gracefully when fields are missing (defaults kick in).
+
+### Verification (Run 5)
+
+- frontend Vitest: **225/225** in 8.2s (+24 from Run 4's 201)
+- backend Jest: **303/303** in 23.3s (regression)
+- claim-drafter pytest: **89/89** in 7.7s (regression)
+- application-generator pytest: **92/92** in 6.8s (regression)
+- compliance-checker pytest: **71/71** in 6.2s (regression)
+- feasibility npm test: **29/29** in 23.8s (regression)
+- `docker compose config --quiet`: exit 0
+- `docker compose build`: all 5 service images built
+
+Total: **809 automated tests green** across 4 services + 2 web tiers.
+
+---
+
 ### Added (merge plan Run 4 — Prisma provider routing)
 
 - **`AppSettings` schema extended with provider routing fields** in `backend/prisma/schema.prisma`:
