@@ -1,8 +1,8 @@
 #!/bin/bash
-# Build the PatentForgeLocal Windows installer using Inno Setup
+# Build the PatentForge Windows installer using Inno Setup
 #
-# Run 6: emits two artifacts per build — PatentForgeLocal-Full-<ver>-Setup.exe
-# (Ollama + Gemma 4 bundled) and PatentForgeLocal-Lean-<ver>-Setup.exe
+# Run 6: emits two artifacts per build — PatentForge-Full-<ver>-Setup.exe
+# (Ollama + Gemma 4 bundled) and PatentForge-Lean-<ver>-Setup.exe
 # (cloud-only, no Ollama runtime). Pass EDITIONS="Full" or "Lean" to limit;
 # default builds both.
 set -e
@@ -11,7 +11,7 @@ SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
 REPO_ROOT="$(cd "$SCRIPT_DIR/../.." && pwd)"
 EDITIONS="${EDITIONS:-Full Lean}"
 
-echo "=== Building PatentForgeLocal Windows Installer ==="
+echo "=== Building PatentForge Windows Installer ==="
 echo "Repo root: $REPO_ROOT"
 echo "Editions:  $EDITIONS"
 
@@ -95,9 +95,14 @@ for EDITION in $EDITIONS; do
 
     echo ""
     echo "Compiling $EDITION installer..."
-    "$ISCC" "/dEdition=$EDITION" "$REPO_ROOT/installer/windows/patentforgelocal.iss"
+    # MSYS_NO_PATHCONV=1 prevents Git Bash on Windows (GitHub Actions
+    # windows-latest uses Git Bash by default) from auto-converting the
+    # `/dEdition=Full` argument into `D:\Edition=Full`, which ISCC would
+    # then interpret as a second script filename and fail with "You may
+    # not specify more than one script filename". No-op outside MSYS.
+    MSYS_NO_PATHCONV=1 "$ISCC" "/dEdition=$EDITION" "$REPO_ROOT/installer/windows/patentforgelocal.iss"
 
-    OUTPUT="$REPO_ROOT/build/PatentForgeLocal-${EDITION}-${ISS_VERSION}-Setup.exe"
+    OUTPUT="$REPO_ROOT/build/PatentForge-${EDITION}-${ISS_VERSION}-Setup.exe"
     if [ -f "$OUTPUT" ]; then
         SIZE=$(du -h "$OUTPUT" | cut -f1)
         echo "=== $EDITION installer built ==="

@@ -1,5 +1,5 @@
 #!/bin/bash
-# Build the PatentForgeLocal macOS .dmg.
+# Build the PatentForge macOS .dmg.
 #
 # Run 6: emits one .dmg per edition. Default `EDITION=Full` matches the
 # pre-merge behavior (Ollama auto-install wrapper); `EDITION=Lean` bakes a
@@ -20,7 +20,7 @@ ROOT_DIR="$(cd "$SCRIPT_DIR/../.." && pwd)"
 cd "$ROOT_DIR"
 
 VERSION=$(node -e "console.log(require('./backend/package.json').version)")
-APP_NAME="PatentForgeLocal"
+APP_NAME="PatentForge"
 APP_DIR="build/${APP_NAME}-${EDITION}.app"
 
 # Create .app bundle structure
@@ -40,7 +40,7 @@ if [ "$EDITION" = "Lean" ]; then
   # service-0 child, so this wrapper just hands off to the binary.
   cat > "${APP_DIR}/Contents/MacOS/patentforgelocal-tray" << 'LEAN_WRAPPER_EOF'
 #!/bin/bash
-# PatentForgeLocal Mac launcher — Lean edition (cloud-only). No Ollama bootstrap.
+# PatentForge Mac launcher — Lean edition (cloud-only). No Ollama bootstrap.
 DIR="$(cd "$(dirname "$0")" && pwd)"
 exec "${DIR}/patentforgelocal-tray-bin" "$@"
 LEAN_WRAPPER_EOF
@@ -48,7 +48,7 @@ else
   # Full wrapper: existing Ollama pre-flight (running → bundled → system → download).
   cat > "${APP_DIR}/Contents/MacOS/patentforgelocal-tray" << 'FULL_WRAPPER_EOF'
 #!/bin/bash
-# PatentForgeLocal Mac launcher — Full edition. Ensures Ollama is available
+# PatentForge Mac launcher — Full edition. Ensures Ollama is available
 # before starting the tray.
 DIR="$(cd "$(dirname "$0")" && pwd)"
 RESOURCES="${DIR}/../Resources"
@@ -114,7 +114,7 @@ fi
 
 if [ "$OLLAMA_OK" = false ]; then
   # Show a macOS dialog since we're a GUI app — no terminal visible
-  osascript -e 'display dialog "Ollama is required but could not be installed automatically.\n\nPlease install it from https://ollama.com and relaunch PatentForgeLocal." buttons {"Open Download Page", "Quit"} default button "Open Download Page" with icon caution with title "PatentForgeLocal"' \
+  osascript -e 'display dialog "Ollama is required but could not be installed automatically.\n\nPlease install it from https://ollama.com and relaunch PatentForge." buttons {"Open Download Page", "Quit"} default button "Open Download Page" with icon caution with title "PatentForge"' \
     -e 'if button returned of result is "Open Download Page" then' \
     -e '  open location "https://ollama.com/download/mac"' \
     -e 'end if'
@@ -178,7 +178,7 @@ EOF
 # Code signing (requires Apple Developer account + certificate)
 # To sign: codesign --deep --force --sign "Developer ID Application: Your Name" "${APP_DIR}"
 # To notarize: xcrun notarytool submit "build/${APP_NAME}-${VERSION}.dmg" --apple-id ... --team-id ...
-# Without signing, users must right-click → Open or run: xattr -cr /Applications/PatentForgeLocal.app
+# Without signing, users must right-click → Open or run: xattr -cr /Applications/PatentForge.app
 echo "  NOTE: DMG is unsigned. Users will see Gatekeeper warning on first launch."
 
 # Disable Spotlight indexing on the .app directory — prevents "Resource busy"

@@ -84,7 +84,7 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: windows-installer
-          path: build/PatentForgeLocal-*-Setup.exe
+          path: build/PatentForge-*-Setup.exe
 
   build-mac:
     runs-on: macos-latest
@@ -141,13 +141,16 @@ jobs:
         env:
           GH_TOKEN: ${{ github.token }}
 
-      - name: Create .app bundle and .dmg
-        run: bash installer/mac/build-dmg.sh
-
-      - name: Smoke-test DMG structure (structural only — not runtime)
+      - name: Create .app bundles and .dmgs (Full + Lean)
         run: |
           set -e
-          DMG_FILE=$(ls build/PatentForgeLocal-*.dmg | head -1)
+          EDITION=Full bash installer/mac/build-dmg.sh
+          EDITION=Lean bash installer/mac/build-dmg.sh
+
+      - name: Smoke-test Full DMG structure (structural only — not runtime)
+        run: |
+          set -e
+          DMG_FILE=$(ls build/PatentForge-Full-*.dmg | head -1)
           echo "Found DMG: $DMG_FILE"
           MOUNT_DIR=$(mktemp -d)
           hdiutil attach "$DMG_FILE" -mountpoint "$MOUNT_DIR" -nobrowse -quiet
@@ -162,13 +165,13 @@ jobs:
           test -f "$REAL_BIN"  && echo "OK: real binary exists" || (echo "FAIL: real binary missing" && exit 1)
           bash -n "$WRAPPER"   && echo "OK: wrapper syntax valid" || (echo "FAIL: wrapper syntax invalid" && exit 1)
           hdiutil detach "$MOUNT_DIR" -quiet
-          echo "Mac DMG structural smoke test passed"
+          echo "Mac DMG structural smoke test passed (Full edition)"
 
-      - name: Upload Mac installer
+      - name: Upload Mac installers
         uses: actions/upload-artifact@v4
         with:
           name: mac-dmg
-          path: build/PatentForgeLocal-*.dmg
+          path: build/PatentForge-*.dmg
 
   build-linux:
     runs-on: [self-hosted, linux, x64]
@@ -228,14 +231,17 @@ jobs:
         env:
           GH_TOKEN: ${{ github.token }}
 
-      - name: Create AppImage
-        run: bash installer/linux/build-appimage.sh
+      - name: Create AppImages (Full + Lean)
+        run: |
+          set -e
+          EDITION=Full bash installer/linux/build-appimage.sh
+          EDITION=Lean bash installer/linux/build-appimage.sh
 
-      - name: Upload Linux installer
+      - name: Upload Linux installers
         uses: actions/upload-artifact@v4
         with:
           name: linux-appimage
-          path: build/PatentForgeLocal-*.AppImage
+          path: build/PatentForge-*.AppImage
 
   create-release:
     needs: [build-windows, build-mac, build-linux]
@@ -247,27 +253,34 @@ jobs:
         with:
           path: artifacts/
 
-      - name: Create draft release
-        run: gh release create "${{ github.ref_name }}" --draft --generate-notes --title "PatentForgeLocal ${{ github.ref_name }}"
+      - name: Ensure release exists (create if missing)
+        run: |
+          set -e
+          if gh release view "${{ github.ref_name }}" --repo "${{ github.repository }}" >/dev/null 2>&1; then
+            echo "Release ${{ github.ref_name }} already exists; will upload artifacts to it."
+          else
+            echo "Creating release ${{ github.ref_name }}..."
+            gh release create "${{ github.ref_name }}" --generate-notes --title "PatentForge ${{ github.ref_name }}"
+          fi
         env:
           GH_TOKEN: ${{ github.token }}
 
-      - name: Upload Windows installer
+      - name: Upload Windows installers
         run: gh release upload "${{ github.ref_name }}" artifacts/windows-installer/* --clobber
         env:
           GH_TOKEN: ${{ github.token }}
 
-      - name: Upload Mac DMG
+      - name: Upload Mac DMGs
         run: gh release upload "${{ github.ref_name }}" artifacts/mac-dmg/* --clobber
         env:
           GH_TOKEN: ${{ github.token }}
 
-      - name: Upload Linux AppImage
+      - name: Upload Linux AppImages
         run: gh release upload "${{ github.ref_name }}" artifacts/linux-appimage/* --clobber
         env:
           GH_TOKEN: ${{ github.token }}
 
-      - name: Publish release
-        run: gh release edit "${{ github.ref_name }}" --draft=false
+      - name: Mark release Latest (idempotent)
+        run: gh release edit "${{ github.ref_name }}" --draft=false --latest
         env:
           GH_TOKEN: ${{ github.token }}

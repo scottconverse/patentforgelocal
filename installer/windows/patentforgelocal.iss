@@ -1,4 +1,4 @@
-; PatentForgeLocal Windows Installer
+; PatentForge Windows Installer
 ; Built with Inno Setup 6.x
 ; https://jrsoftware.org/ishelp/
 ;
@@ -29,7 +29,7 @@ AppUpdatesURL={#MyAppURL}
 DefaultDirName={autopf}\{#MyAppName}
 DefaultGroupName={#MyAppName}
 OutputDir=..\..\build
-OutputBaseFilename=PatentForgeLocal-{#Edition}-{#MyAppVersion}-Setup
+OutputBaseFilename=PatentForge-{#Edition}-{#MyAppVersion}-Setup
 Compression=lzma2/max
 SolidCompression=yes
 WizardStyle=modern
@@ -99,7 +99,7 @@ Name: "{group}\Uninstall {#MyAppName}"; Filename: "{uninstallexe}"
 Name: "{autodesktop}\{#MyAppName}"; Filename: "{app}\{#MyAppExeName}"; Tasks: desktopicon
 
 [Run]
-Filename: "{app}\{#MyAppExeName}"; Description: "Launch PatentForgeLocal"; Flags: nowait postinstall skipifsilent
+Filename: "{app}\{#MyAppExeName}"; Description: "Launch PatentForge"; Flags: nowait postinstall skipifsilent
 
 [UninstallDelete]
 ; Application files are removed automatically by the uninstaller.
@@ -110,7 +110,7 @@ procedure CurUninstallStepChanged(CurUninstallStep: TUninstallStep);
 begin
   if CurUninstallStep = usUninstall then
   begin
-    if MsgBox('Do you want to remove your PatentForgeLocal data (projects, settings, database)?' + #13#10 +
+    if MsgBox('Do you want to remove your PatentForge data (projects, settings, database)?' + #13#10 +
               'This cannot be undone.',
               mbConfirmation, MB_YESNO) = IDYES then
     begin

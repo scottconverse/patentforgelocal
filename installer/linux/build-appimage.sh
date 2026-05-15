@@ -1,5 +1,5 @@
 #!/bin/bash
-# Build the PatentForgeLocal Linux AppImage.
+# Build the PatentForge Linux AppImage.
 #
 # Run 6: emits one AppImage per edition. `EDITION=Full` (default) keeps the
 # Ollama auto-install AppRun; `EDITION=Lean` bakes a trivial AppRun that
@@ -20,7 +20,7 @@ ROOT_DIR="$(cd "$SCRIPT_DIR/../.." && pwd)"
 cd "$ROOT_DIR"
 
 VERSION=$(node -e "console.log(require('./backend/package.json').version)")
-APP_NAME="PatentForgeLocal"
+APP_NAME="PatentForge"
 APP_DIR="build/${APP_NAME}-${EDITION}.AppDir"
 
 # Create AppDir structure
@@ -60,7 +60,7 @@ cp tray/internal/assets/icon.png "${APP_DIR}/patentforgelocal.png"
 # Create desktop entry
 cat > "${APP_DIR}/patentforgelocal.desktop" << EOF
 [Desktop Entry]
-Name=PatentForgeLocal
+Name=PatentForge
 Exec=patentforgelocal-tray
 Icon=patentforgelocal
 Type=Application
@@ -73,7 +73,7 @@ cp "${APP_DIR}/patentforgelocal.desktop" "${APP_DIR}/usr/share/applications/"
 if [ "$EDITION" = "Lean" ]; then
   cat > "${APP_DIR}/AppRun" << 'LEAN_APPRUN_EOF'
 #!/bin/bash
-# PatentForgeLocal AppRun — Lean edition (cloud-only). No Ollama bootstrap.
+# PatentForge AppRun — Lean edition (cloud-only). No Ollama bootstrap.
 SELF=$(readlink -f "$0")
 HERE=${SELF%/*}
 export PATH="${HERE}/usr/bin:${PATH}"
@@ -82,7 +82,7 @@ LEAN_APPRUN_EOF
 else
   cat > "${APP_DIR}/AppRun" << 'FULL_APPRUN_EOF'
 #!/bin/bash
-# PatentForgeLocal AppRun — Full edition. Ensures Ollama is available
+# PatentForge AppRun — Full edition. Ensures Ollama is available
 # before launching the tray app.
 SELF=$(readlink -f "$0")
 HERE=${SELF%/*}
