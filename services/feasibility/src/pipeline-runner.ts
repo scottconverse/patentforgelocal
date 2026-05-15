@@ -6,7 +6,7 @@ import {
   InventionInput,
   toNarrative,
 } from './models';
-import { streamMessage } from './ollama-client';
+import { streamLLM } from './llmClient';
 import { ContextManager } from './context-manager';
 import { loadSystemPrompt } from './prompts/loader';
 import path from 'path';
@@ -143,15 +143,14 @@ async function* runStage(
   const systemPrompt = loadSystemPrompt(stageDef.number);
   const userMessage = buildUserMessage(stageDef.number, input, previousOutputs, settings);
 
-  // Kick off the stream in the background
-  const streamPromise = streamMessage({
-    ollamaUrl: settings.ollamaUrl,
+  // Kick off the stream in the background — dispatched on settings.provider
+  // (LOCAL → ollama-client, CLOUD wired but not yet implemented; see llmClient.ts).
+  const streamPromise = streamLLM(settings, {
     systemPrompt,
     userMessage,
     model: modelToUse,
     maxTokens: settings.maxTokens,
     useWebSearch: stageDef.usesWebSearch,
-    ollamaApiKey: settings.ollamaApiKey,
     onToken: (text) => {
       enqueue({ type: 'token', text });
     },
