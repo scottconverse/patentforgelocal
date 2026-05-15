@@ -8,10 +8,8 @@ Output: 3 independent claims (broad/medium/narrow) + dependent claims, capped at
 from __future__ import annotations
 from pathlib import Path
 
-import openai
-
 from ..models import GraphState
-from ..retry import call_ollama_with_retry
+from ..llm_client import LLMSettings, call_llm_with_retry
 
 PROMPTS_DIR = Path(__file__).parent.parent / "prompts"
 
@@ -26,6 +24,15 @@ def _load_prompt() -> str:
     if prompt_path.exists():
         return common + prompt_path.read_text(encoding="utf-8")
     return common + "You are a patent claim writer. Draft claims following the strategy provided."
+
+
+def _settings_from_state(state: GraphState) -> LLMSettings:
+    """Build LLMSettings from GraphState, honoring backward-compat for ollama_url."""
+    return LLMSettings(
+        provider=state.provider,
+        api_key=state.api_key,
+        base_url=state.base_url or state.ollama_url,
+    )
 
 
 async def run_writer(state: GraphState) -> GraphState:
@@ -69,11 +76,9 @@ Revise the claims based on the examiner's feedback. Keep the same structure and 
 
 Draft the claims following the planner's strategy. Maximum 20 total claims."""
 
-    client = openai.AsyncOpenAI(base_url=f"{state.ollama_url}/v1", api_key="ollama")
-
     try:
-        response = await call_ollama_with_retry(
-            client,
+        response = await call_llm_with_retry(
+            _settings_from_state(state),
             model=state.default_model,
             max_tokens=state.max_tokens,
             system=prompt,
