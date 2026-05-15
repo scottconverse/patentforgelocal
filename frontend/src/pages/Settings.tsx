@@ -1,13 +1,19 @@
 import { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { api } from '../api';
-import { AppSettings } from '../types';
+import { AppSettings, Provider } from '../types';
+import { getModelsForProvider } from '../utils/modelPricing';
 import Toast from '../components/Toast';
 
 export default function Settings() {
   const [settings, setSettings] = useState<Partial<AppSettings>>({
+    provider: 'LOCAL',
+    cloudApiKey: '',
+    cloudDefaultModel: 'claude-haiku-4-5-20251001',
+    localDefaultModel: 'gemma4:e4b',
     ollamaApiKey: '',
     ollamaModel: '',
+    ollamaUrl: 'http://localhost:11434',
     modelReady: false,
     maxTokens: 32000,
     interStageDelaySeconds: 5,
@@ -20,6 +26,7 @@ export default function Settings() {
   const [toast, setToast] = useState<{ message: string; type: 'success' | 'error' } | null>(null);
   const [showOllamaKey, setShowOllamaKey] = useState(false);
   const [showUsptoKey, setShowUsptoKey] = useState(false);
+  const [showCloudKey, setShowCloudKey] = useState(false);
   const [odpUsage, setOdpUsage] = useState<{
     thisWeek: {
       totalQueries: number;
@@ -111,6 +118,169 @@ export default function Settings() {
       <form onSubmit={handleSave} autoComplete="off" className="space-y-6">
         {/* Hidden dummy input to prevent Chrome autofill */}
         <input type="text" name="prevent-autofill" style={{ display: 'none' }} autoComplete="username" />
+
+        {/* Provider — selects LLM routing (added in merge plan Run 5) */}
+        <div className="bg-gray-900 border border-gray-800 rounded-lg p-5 space-y-4">
+          <h2 className="text-sm font-semibold text-gray-300 uppercase tracking-wider">Provider</h2>
+          <p className="text-sm text-gray-400">
+            Choose where AI inference runs. You can switch at any time; your settings for the unused mode are preserved.
+          </p>
+
+          <fieldset className="space-y-2" aria-label="LLM provider">
+            <legend className="sr-only">Choose AI provider</legend>
+            <label className="flex items-start gap-3 p-3 bg-gray-800/50 border border-gray-700 rounded-lg cursor-pointer hover:bg-gray-800 transition-colors">
+              <input
+                type="radio"
+                name="provider"
+                value="LOCAL"
+                checked={(settings.provider ?? 'LOCAL') === 'LOCAL'}
+                onChange={() => update('provider', 'LOCAL' as Provider)}
+                className="mt-1 w-4 h-4 text-blue-600 bg-gray-800 border-gray-600 focus:ring-blue-500"
+                aria-label="Local mode (Ollama)"
+              />
+              <span>
+                <span className="text-gray-100 font-medium">Local mode (Ollama)</span>
+                <span className="block text-xs text-gray-400 mt-0.5">
+                  Runs on your machine. Free. No data leaves your computer.
+                </span>
+              </span>
+            </label>
+
+            <label className="flex items-start gap-3 p-3 bg-gray-800/50 border border-gray-700 rounded-lg cursor-pointer hover:bg-gray-800 transition-colors">
+              <input
+                type="radio"
+                name="provider"
+                value="CLOUD"
+                checked={settings.provider === 'CLOUD'}
+                onChange={() => update('provider', 'CLOUD' as Provider)}
+                className="mt-1 w-4 h-4 text-blue-600 bg-gray-800 border-gray-600 focus:ring-blue-500"
+                aria-label="Cloud mode (Anthropic)"
+              />
+              <span>
+                <span className="text-gray-100 font-medium">Cloud mode (Anthropic)</span>
+                <span className="block text-xs text-gray-400 mt-0.5">
+                  Uses Anthropic API. Pay per call. Requires an API key.
+                </span>
+              </span>
+            </label>
+          </fieldset>
+
+          {/* Cloud-specific fields */}
+          {settings.provider === 'CLOUD' && (
+            <div
+              className="space-y-4 pt-4 border-t border-gray-800"
+              data-testid="provider-cloud-panel"
+            >
+              <div>
+                <label className="block text-sm font-medium text-gray-300 mb-1" htmlFor="cloud-api-key">
+                  Anthropic API Key
+                </label>
+                <div className="flex gap-2">
+                  <input
+                    id="cloud-api-key"
+                    type={showCloudKey ? 'text' : 'password'}
+                    value={settings.cloudApiKey || ''}
+                    onChange={(e) => update('cloudApiKey', e.target.value)}
+                    placeholder="sk-ant-..."
+                    autoComplete="new-password"
+                    className="flex-1 bg-gray-800 border border-gray-700 rounded px-3 py-2 text-gray-100 placeholder-gray-500 focus:outline-none focus:border-blue-500 text-sm font-mono"
+                    aria-label="Anthropic API key"
+                  />
+                  <button
+                    type="button"
+                    onClick={() => setShowCloudKey((v) => !v)}
+                    className="px-3 py-2 bg-gray-700 hover:bg-gray-600 text-gray-300 rounded text-sm transition-colors"
+                    aria-label={showCloudKey ? 'Hide API key' : 'Show API key'}
+                  >
+                    {showCloudKey ? 'Hide' : 'Show'}
+                  </button>
+                </div>
+                <p className="text-xs text-gray-500 mt-1">
+                  Get a key at{' '}
+                  <a
+                    href="https://console.anthropic.com/"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="text-blue-400 hover:underline"
+                  >
+                    console.anthropic.com
+                  </a>
+                  . Encrypted at rest using a machine-derived key.
+                </p>
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-300 mb-1" htmlFor="cloud-default-model">
+                  Cloud model
+                </label>
+                <select
+                  id="cloud-default-model"
+                  value={settings.cloudDefaultModel || 'claude-haiku-4-5-20251001'}
+                  onChange={(e) => update('cloudDefaultModel', e.target.value)}
+                  className="w-full bg-gray-800 border border-gray-700 rounded px-3 py-2 text-gray-100 focus:outline-none focus:border-blue-500 text-sm"
+                  aria-label="Cloud default model"
+                >
+                  {getModelsForProvider('CLOUD').map((m) => (
+                    <option key={m.id} value={m.id}>
+                      {m.label}
+                    </option>
+                  ))}
+                </select>
+                <p className="text-xs text-gray-500 mt-1">
+                  Default model for cloud inference. You can override per-run.
+                </p>
+              </div>
+            </div>
+          )}
+
+          {/* Local-specific fields */}
+          {(settings.provider ?? 'LOCAL') === 'LOCAL' && (
+            <div
+              className="space-y-4 pt-4 border-t border-gray-800"
+              data-testid="provider-local-panel"
+            >
+              <div>
+                <label className="block text-sm font-medium text-gray-300 mb-1" htmlFor="ollama-url">
+                  Ollama URL
+                </label>
+                <input
+                  id="ollama-url"
+                  type="text"
+                  value={settings.ollamaUrl || ''}
+                  onChange={(e) => update('ollamaUrl', e.target.value)}
+                  placeholder="http://localhost:11434"
+                  className="w-full bg-gray-800 border border-gray-700 rounded px-3 py-2 text-gray-100 placeholder-gray-500 focus:outline-none focus:border-blue-500 text-sm font-mono"
+                  aria-label="Ollama server URL"
+                />
+                <p className="text-xs text-gray-500 mt-1">
+                  Where your local Ollama instance is reachable. Default works for most installs.
+                </p>
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-300 mb-1" htmlFor="local-default-model">
+                  Local model
+                </label>
+                <select
+                  id="local-default-model"
+                  value={settings.localDefaultModel || 'gemma4:e4b'}
+                  onChange={(e) => update('localDefaultModel', e.target.value)}
+                  className="w-full bg-gray-800 border border-gray-700 rounded px-3 py-2 text-gray-100 focus:outline-none focus:border-blue-500 text-sm"
+                  aria-label="Local default model"
+                >
+                  {getModelsForProvider('LOCAL').map((m) => (
+                    <option key={m.id} value={m.id}>
+                      {m.label}
+                    </option>
+                  ))}
+                </select>
+                <p className="text-xs text-gray-500 mt-1">
+                  Default Ollama model. Smaller models run faster; larger models think harder.
+                </p>
+              </div>
+            </div>
+          )}
+        </div>
 
         {/* AI Model Status */}
         <div className="bg-gray-900 border border-gray-800 rounded-lg p-5 space-y-4">
