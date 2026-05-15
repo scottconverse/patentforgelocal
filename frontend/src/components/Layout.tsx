@@ -9,7 +9,7 @@ export default function Layout() {
     <div className="min-h-screen flex flex-col bg-gray-950 text-gray-100">
       <nav className="bg-gray-900 border-b border-gray-800 px-6 py-3 flex items-center justify-between">
         <Link to="/" className="text-xl font-bold text-blue-400 hover:text-blue-300 transition-colors">
-          PatentForgeLocal
+          PatentForge
         </Link>
         <div className="flex items-center gap-4">
           <Link

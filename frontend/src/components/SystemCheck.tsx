@@ -74,7 +74,7 @@ export default function SystemCheck({ onPass, onFail }: Props) {
       <div className="text-center py-12">
         <div className="text-red-400 mb-4">System check failed: {error}</div>
         <p className="text-sm text-gray-400 mb-6">
-          Make sure PatentForgeLocal services are running and try again.
+          Make sure PatentForge services are running and try again.
         </p>
         <button onClick={() => window.location.reload()} className="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-500">
           Retry
@@ -135,11 +135,9 @@ export default function SystemCheck({ onPass, onFail }: Props) {
         <div className="bg-red-900/50 border border-red-700 rounded-lg p-4 mb-4">
           <p className="text-red-300 font-medium mb-1">System does not meet minimum requirements</p>
           <p className="text-sm text-red-400">
-            PatentForgeLocal requires at least 16 GB RAM and 25 GB free disk space.
-            For a cloud-powered alternative, try{' '}
-            <a href="https://github.com/scottconverse/patentforge" className="underline" target="_blank" rel="noopener">
-              PatentForge
-            </a>.
+            PatentForge in Local mode requires at least 16 GB RAM and 25 GB free disk space.
+            If your hardware doesn't meet the bar, switch to <strong>Cloud mode</strong> in Settings —
+            it runs on your existing machine and uses Anthropic Claude via your own API key.
           </p>
           <button onClick={() => onFail('System requirements not met')} className="mt-3 px-4 py-2 bg-gray-700 text-gray-300 rounded hover:bg-gray-600">
             Close

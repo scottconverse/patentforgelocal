@@ -1,285 +1,179 @@
 # GitHub Discussions — Seed Posts
 
-These are the initial posts to create when GitHub Discussions is enabled on the PatentForgeLocal repo.
+These are the initial posts to (re-)create when GitHub Discussions is updated for the merged PatentForge repo (Run 8 cutover). The previous PatentForgeLocal Discussions remain visible; these update the announcement post and add a migration note for existing users.
 
 ---
 
 ## Category: Announcements (pin this post)
 
-### Title: Welcome to PatentForgeLocal v0.1.0 — Fully Local Patent Analysis
+### Title: PatentForge is now one product — your choice: cloud or local
 
 **Body:**
 
-Hey everyone! PatentForgeLocal is now open source.
+PatentForge and PatentForgeLocal are now one product. Same prompts, same analysis pipelines, same outputs — you pick where the model runs.
 
-**What it does:** PatentForgeLocal is a fully local fork of [PatentForge](https://github.com/scottconverse/patentforge) that replaces cloud AI with on-device inference using Ollama + Gemma 4. You describe your invention, and it runs a complete patent analysis pipeline — feasibility research, prior art search, claim drafting, compliance checking, and application generation — entirely on your machine. Your inventions never leave your computer.
+**The two modes**
 
-**What it doesn't do:** This is a research tool, not a legal service. The author isn't a lawyer, the AI isn't a lawyer, and none of the output is legal advice. It's designed to help you prepare for a meeting with a real patent attorney — not replace one.
+- **Local mode** — Ollama + Google Gemma 4 on your own hardware. Free, fully offline, private. The default for new installs and for everyone upgrading from PatentForgeLocal.
+- **Cloud mode** — Anthropic Claude (Haiku 4.5 / Sonnet 4.6 / Opus 4.7) via your own API key. Faster on modest hardware, pay-per-call to your own account, cost shown before every run via a confirm modal.
 
-**Current status (v0.1.0):**
-- **Fully local AI** — Ollama + Gemma 4 26B runs on your hardware. No cloud API calls, no API keys required, no usage fees
-- **6-stage feasibility analysis** — technical intake, prior art research, patentability review, deep-dive analysis, strategy notes, consolidated report
-- **Prior art search** — USPTO Open Data Portal integration with relevance scoring, plus optional AI web search
-- **Claim drafting** — 3-agent pipeline (Planner, Writer, Examiner) generates independent and dependent patent claims
-- **Compliance checking** — 4-check automated validation (35 USC 112(a), 112(b), MPEP 608, 35 USC 101) with traffic-light results and MPEP citations
-- **Application generator** — 5-agent LangGraph pipeline assembles a complete USPTO-formatted application; exports to Word (.docx) or Markdown
-- **System tray app** — Go-based tray app manages all 6 services with health monitoring and auto-restart
-- 1,229 automated tests (Jest + Vitest + pytest) across backend, frontend, and Python services
-- Resume from interruption, individual stage re-run
-- Legal guardrails — clickwrap, embedded disclaimers, watermarked exports
+Switch modes any time in Settings → Provider. Both modes save independently so flipping doesn't lose your other side's settings.
 
-**How is this different from PatentForge?**
+**The two installer editions**
 
-| | PatentForge | PatentForgeLocal |
-|---|---|---|
-| AI Provider | Anthropic Claude (cloud) | Ollama + Gemma 4 (local) |
-| Privacy | Data sent to Anthropic | Everything stays on your machine |
-| Cost | Pay per API call | Free after hardware |
-| Internet | Required | Optional (for USPTO search) |
+- **Lean** — frontend + backend + services. No Ollama runtime. ~200 MB. Cloud-only target.
+- **Full** — Lean + Ollama runtime + first-launch Gemma 4 download. ~880 MB (Windows; smaller on Mac/Linux). Supports both modes.
 
-**Requirements:** Windows, macOS, or Linux. 32 GB RAM minimum (64 GB recommended). Ollama installed locally.
+Both editions can run Cloud mode. Only Full can run Local mode. Pick at download time based on whether you want the option to run locally.
 
-If you're trying it out, I'd love to hear how it goes. File bugs as GitHub issues, but use Discussions for questions, ideas, and general chat.
+**Where this leaves you**
+
+If you used PatentForgeLocal:
+- Install the new Full edition over your existing install. Your data, settings, and the Gemma 4 model are preserved.
+- Provider defaults to Local. Your install behaves exactly as before.
+- Cloud mode is now the first section on the Settings page if you want to try it. Bring your own Anthropic API key.
+
+If you used the original cloud-only PatentForge (the repo this fork came from):
+- That repo is archived after the v0.5.0 cutover (Run 8). The merged product replaces it.
+- Reinstall as the merged PatentForge in Cloud mode — your API key transfers in via the Settings page.
+
+If you're new:
+- Pick Local if you have 16 GB+ RAM and value privacy + zero cost.
+- Pick Cloud if you want frontier-model quality on any hardware and don't mind a small per-run charge to your Anthropic account.
+
+**Current status (merge plan Run 7 complete; v0.5.0 cutover in Run 8)**
+
+- LLM provider abstraction across all four services (Run 2 — LiteLLM)
+- Backend `AppSettings.provider` + encrypted `cloudApiKey` (Run 4)
+- Frontend Provider chooser + conditional reveals in Settings (Run 5)
+- Lean/Full installer split + edition-aware tray + FirstRunWizard branching + CostConfirmModal wiring (Run 6)
+- Full docs rewrite covering both modes (Run 7 — this post)
+- v0.5.0 release cutover with DB rename + repo rename + tag push (Run 8 — upcoming)
+
+**Caveats — read these**
+
+- This is a research tool, not a legal service. The author isn't a lawyer, the AI isn't a lawyer, and none of the output is legal advice.
+- AI-generated analysis may contain errors, omissions, or hallucinated references. Always consult a registered patent attorney before making filing decisions.
+- The Node `feasibility` service's Cloud-mode branch currently throws a typed `LLMClientCloudNotImplementedError` pending the Anthropic streaming + tool-call adapter — feasibility runs in Cloud mode are temporarily Anthropic-routed only after that follow-up lands. The 3 Python services already work in both modes via LiteLLM.
+
+If you're trying it out, file bugs as GitHub issues, but use Discussions for questions, ideas, and general chat.
 
 ---
 
-### Title: v0.1.0 Release — Local AI Fork of PatentForge
+### Title: v0.5.0 — PatentForge merge complete (cloud-or-local)
 
 **Body:**
 
-v0.1.0 is the first release of PatentForgeLocal — a complete fork of PatentForge that replaces the Anthropic Claude API with local inference via Ollama + Gemma 4 26B.
+v0.5.0 is the first release of the merged PatentForge product. PatentForgeLocal (the local-only fork) and the original PatentForge (the cloud-only product) are now one application with a provider toggle.
 
-**What changed from upstream PatentForge:**
-- All AI inference routes through local Ollama instance (OpenAI-compatible API)
-- Default model: Gemma 4 26B (MoE, 18 GB, 256K context window)
-- Removed cost cap feature (no per-token cost for local inference)
-- Removed API key requirement (Ollama runs locally with no authentication needed)
-- First-run wizard checks system requirements and downloads model
-- Docker Compose configured for local Ollama connectivity
+**What changed**
 
-**Test results:** 1,229 tests passing across Windows and Linux — 289 backend (Jest), 202 frontend (Vitest), 247 Python service tests (pytest) per platform.
+- All four services (3 Python + Node `feasibility`) route LLM calls through an `LLMClient` boundary that dispatches on `AppSettings.provider`. Python uses LiteLLM for both Ollama and Anthropic; the Node service uses Ollama directly for Local and LiteLLM for Cloud (Cloud branch pending a focused adapter follow-up).
+- New Settings → Provider section as the first settings entry, with conditional Local / Cloud reveal panels.
+- New `installEdition` mirror file (`<baseDir>/config/edition.txt`) written by the installer and reflected into `AppSettings.installEdition`. The tray reads this + a `provider.txt` mirror (written by the backend on every Settings save) to decide whether to manage Ollama as a child process.
+- Two installer editions per platform: Lean (cloud-only, no Ollama runtime) and Full (Ollama + Gemma 4 bundled).
+- FirstRunWizard branches on edition + chosen provider. Lean skips the chooser and force-saves Cloud. Full opens with a Local/Cloud chooser; the existing local pre-flight (system-check + model-download + Ollama-account) remains intact for Local picks.
+- Cloud-mode runs are gated by a `CostConfirmModal` that shows the estimated USD before each Anthropic API call. Local-mode runs bypass the modal entirely.
+- Cost rendering across the UI is provider-aware: "Free" everywhere in Local mode; `$N.NNN` in Cloud mode.
 
-Full changelog: [CHANGELOG.md](CHANGELOG.md)
+**Migration**
 
----
+- Existing PatentForgeLocal installs upgrade silently. Provider defaults to Local. Your Gemma 4 model and SQLite data are preserved. The DB file is silently renamed from `patentforgelocal.db` to `patentforge.db` on first boot.
+- Encrypted API keys remain encrypted with your machine's existing salt — no re-entry needed unless you copy the DB to a new machine.
 
-### Title: v0.1.1 Release — Installers, Auto-Setup, and 30+ Bug Fixes
+**Test results (Run 6 baseline at PR merge)**
 
-**Body:**
+- 841 automated tests green across all subprojects:
+  - backend Jest: 329/329
+  - frontend Vitest: 231/231
+  - tray Go test + vet: green
+  - claim-drafter pytest: 89/89
+  - application-generator pytest: 92/92
+  - compliance-checker pytest: 71/71
+  - feasibility npm test: 29/29
+- docker compose config validation: clean
+- All 3 installer build scripts (Windows / Mac / Linux) shellcheck-clean
 
-v0.1.1 adds native installers for all three platforms, automatic Ollama/model setup, and fixes over 30 bugs found during end-to-end testing on clean machines.
+**Acknowledgments**
 
-**Highlights:**
-- **One-click installers** — Windows (.exe via Inno Setup), macOS (.dmg), Linux (.AppImage) with bundled runtimes
-- **Automatic Ollama setup** — the launcher detects, downloads, and starts Ollama automatically on first run; pulls gemma4:e4b if not already present
-- **GPU/NPU detection** — scripts auto-detect AMD iGPU, NVIDIA GPU, and NPU hardware; injects ROCm environment variables for AMD acceleration
-- **System tray app** — Go-based tray manages all 6 services as child processes with graceful shutdown
-- **Security fixes** — removed known-public internal service secret fallback, added download token endpoint for secure exports
+PatentForge builds on excellent open-source work:
 
-**Bug fixes include:** double context-manager close crash, claim regeneration data corruption, stale Prisma schema in SEA binary, environment variable stripping in tray, and Ollama version compatibility.
-
-Full changelog: [CHANGELOG.md](CHANGELOG.md)
-
----
-
-### Title: v0.1.2 Release — Pipeline Fixes, Cost Modal Removed, Windows System Check
-
-**Body:**
-
-v0.1.2 fixes critical issues that prevented feasibility analysis from running on installed binaries and removes unnecessary friction from the analysis workflow.
-
-**What changed:**
-- **Analysis starts immediately** — the cost confirmation modal is gone. Local inference is free; there's nothing to confirm. Click "Run Feasibility Analysis" and it starts.
-- **Stage labels corrected** — "AI & 3D Print Deep Dive" (upstream artifact) replaced with the correct "Deep Dive Analysis" label throughout all pipeline prompts.
-- **Windows system check works** — disk space and GPU detection now use PowerShell instead of deprecated `wmic`, fixing detection failures on Windows 11 and SEA binaries.
-- **PatentsView references updated** — all user-facing references to the dead PatentsView API replaced with "USPTO-ODP" (the actual data source since March 2026).
-- **Mac CI smoke test** — CI now structurally verifies the DMG wrapper script after every build.
-
-Full changelog: [CHANGELOG.md](CHANGELOG.md)
-
----
-
-### Title: v0.1.3 Release — Default Model Switched to gemma4:e4b (Fixes System Crashes)
-
-**Body:**
-
-v0.1.3 switches the default model from `gemma4:26b` to `gemma4:e4b` to fix hard system crashes on 32 GB machines.
-
-**The problem:** `gemma4:26b` loads 18 GB of weights into RAM regardless of its MoE architecture. On 32 GB systems — especially AMD iGPU machines where GPU and system RAM are shared — peak usage during inference exceeded available memory, causing a hard crash requiring reboot.
-
-**The fix:** `gemma4:e4b` (Dense 4B, 9.6 GB) leaves ~20 GB of headroom during active inference. Quality impact is minimal: gemma4:26b only activates ~4B parameters per forward pass anyway, so real-world output quality is comparable.
-
-If you were experiencing hard crashes or black screens during patent analysis, update to v0.1.3.
-
-Full changelog: [CHANGELOG.md](CHANGELOG.md)
-
----
-
-### Title: v0.1.4 Release — Feasibility Crash Fix, Branding Corrections, Model DB Migration
-
-**Body:**
-
-v0.1.4 fixes a critical crash that occurred on every feasibility analysis run in installed binaries, corrects product branding throughout the app, and ensures the model setting is properly migrated for users upgrading from v0.1.2.
-
-**Critical fix — feasibility crash:**
-The feasibility service binary bundled context-mode's SQLite native addon (`better_sqlite3.node`) with an absolute path baked in at CI build time. On any user machine, that path didn't exist, causing an immediate crash when starting a feasibility analysis ("Stage 7 error: No such built-in module"). The binary now resolves the addon path relative to its own executable location at runtime.
-
-**Branding fix:**
-Several UI elements, page titles, and documents still showed "PatentForge" instead of "PatentForgeLocal" — a copy-paste artifact from the upstream fork. The app header, browser tab title, and all documentation now consistently say PatentForgeLocal.
-
-**Model migration:**
-Users who installed v0.1.2 before the default model was changed in v0.1.3 may have had their Settings database record stuck on `gemma4:26b`. On startup, the backend now automatically migrates that record to `gemma4:e4b` so the tray and Settings page show the correct model.
-
-If you were seeing feasibility analyses crash immediately, update to v0.1.4.
-
-Full changelog: [CHANGELOG.md](CHANGELOG.md)
+- [Ollama](https://ollama.com) — local LLM runtime
+- [Google Gemma 4](https://blog.google/innovation-and-ai/technology/developers-tools/gemma-4/) — open-weight model family
+- [Anthropic Claude](https://www.anthropic.com) — frontier cloud LLM
+- [LiteLLM](https://github.com/BerriAI/litellm) — unified provider abstraction
+- [context-mode](https://github.com/scottconverse/context-mode) — context window compression
 
 ---
 
 ## Category: Q&A
 
-### Post 1
-
-**Title:** What hardware do I need to run PatentForgeLocal?
+### Title: How do I switch from Local to Cloud mode (or back)?
 
 **Body:**
 
-**Minimum:**
-- 32 GB RAM
-- Any modern 4+ core CPU
-- 50 GB free disk space (for Ollama + model weights)
+Open Settings → the Provider section is at the top. Pick Local (Ollama) or Cloud (Anthropic). Fill in the relevant fields (Anthropic API key for Cloud; Ollama URL + local model for Local). Save.
 
-**Recommended:**
-- 64 GB RAM
-- AMD Ryzen with Radeon iGPU (780M or better) or NVIDIA GPU
-- SSD storage
+After saving, the backend writes a mirror file at `<install-dir>/config/provider.txt` so the tray sees the new value on its next launch. The change takes effect the next time you restart services — right-click the tray icon → Restart Services.
 
-The default model (Gemma 4 26B) needs about 18 GB for weights. With 32 GB RAM it fits but it's tight — you'll get better performance with 48-64 GB.
+Why the restart? The tray decides whether to spawn an Ollama child process at boot, based on the current provider. Changing the provider mid-session doesn't kill or start Ollama on the fly — that happens at service-manager (re)start. A restart of services is cheap; the browser refresh picks up the new state in under a second.
 
-GPU acceleration makes a huge difference. With a properly configured AMD Radeon 780M iGPU, expect ~8-15 tokens/second. Without GPU, CPU-only inference runs at ~3-8 tokens/second — still usable but noticeably slower.
-
-NVIDIA GPUs work automatically with Ollama. AMD iGPUs may need ROCm configuration on Linux (Ollama handles this automatically on Windows via DirectML).
-
-### Post 2
-
-**Title:** Is my data truly private? What network calls does PatentForgeLocal make?
-
-**Body:**
-
-**Yes, truly private.** PatentForgeLocal runs entirely on your machine with zero required network calls.
-
-- All AI inference happens locally through Ollama — your invention descriptions are never sent to any external server
-- The SQLite database lives on your local disk
-- No telemetry, no analytics, no phone-home behavior
-- The source code is open — you can verify this yourself
-
-**Optional network calls (only if you configure them):**
-- USPTO Open Data Portal — structured patent search (requires free API key from data.uspto.gov)
-- Ollama cloud web search — AI-powered web search during analysis (requires free Ollama account)
-
-Both are optional. PatentForgeLocal works fully offline without them. For pre-filing confidentiality, this is as good as it gets — your invention data never leaves your hardware.
-
-### Post 3
-
-**Title:** Can I use PatentForgeLocal output as-is for a patent filing?
-
-**Body:**
-
-**No.** PatentForgeLocal output is research to help you prepare for a consultation with a patent attorney. It is not a patent application, not a legal opinion, and not a substitute for professional legal counsel.
-
-The AI can and does make mistakes — including fabricating patent numbers, misinterpreting case law, and presenting incorrect analysis with high confidence. Every finding should be independently verified by a qualified patent attorney.
-
-Think of PatentForgeLocal like doing homework before a meeting. You'll walk in with your invention clearly described, related prior art identified, and smart questions ready. Your attorney still does the legal work.
+If you're on a Lean install and want to switch to Local mode, you'll need to install Ollama separately (Lean ships without it). Pull the Gemma 4 model with `ollama pull gemma4:e4b`, set the Ollama URL in Settings, then switch the provider.
 
 ---
 
-## Category: Ideas / Feature Requests
-
-### Post 1
-
-**Title:** What features would make PatentForgeLocal more useful?
+### Title: Why does cloud mode show a cost modal before every run?
 
 **Body:**
 
-I'm planning the post-v0.1.0 roadmap and would love input from people who've actually been through the patent process or are using local AI tools.
+Two reasons:
 
-Some features I'm considering:
-- **GPU/NPU auto-detection** — automatically configure AMD ROCm for optimal iGPU inference, detect XDNA NPU for future offloading
-- **Model selection UI** — let you choose between different Ollama models based on your hardware (gemma4:12b for 32 GB systems, gemma4:27b for 48 GB+)
-- **Batch analysis** — run multiple inventions through the pipeline overnight
-- **Patent family tree visualization** — graphical view of related patents and citation chains
-- **Export to patent attorney template** — customizable report format that matches what attorneys expect to see
+1. **Transparency.** Cloud mode calls Anthropic on your behalf, and those calls bill against your account. The modal shows the estimated cost (computed from past runs of the same project, or a typical baseline if there's no history) before any API call is made.
+2. **A panic button.** If you accidentally hit Run, the modal gives you a chance to back out without sending the invention to Anthropic. Esc, backdrop click, and the Cancel button all dismiss without making a call.
 
-What would actually be useful for your workflow? Drop your ideas here.
+Local mode bypasses the modal because there's no per-token cost. Inference runs on your machine; the cost is whatever Gemma 4 costs in electricity, which is well below the noise floor of your monthly power bill.
 
-### Post 2
-
-**Title:** Local model recommendations — what works best on your hardware?
-
-**Body:**
-
-The default model is Gemma 4 26B, which balances quality and resource usage well. But Ollama supports many models, and different hardware might work better with different choices.
-
-If you've experimented with other models for patent analysis, share your findings:
-- What model did you try?
-- What hardware are you running on?
-- How was the output quality compared to gemma4:e4b?
-- What was the inference speed like?
-
-I'm especially interested in hearing from people running on:
-- 32 GB systems (where gemma4:12b might be a better fit)
-- NVIDIA GPU setups
-- AMD Ryzen AI hardware with RDNA 3.5 iGPUs
+The modal estimate isn't exact — actual cost depends on how much context the invention narrative + prior art generate. The final cost appears in the run summary alongside the estimated one.
 
 ---
 
-## Category: Show and Tell
-
-### Post 1
-
-**Title:** First local patent analysis — from invention to USPTO application in ~30 minutes
+### Title: What's in the Lean vs Full installer?
 
 **Body:**
 
-Here's what a complete PatentForgeLocal workflow looks like end-to-end, running entirely on a Ryzen 7 laptop with 32 GB RAM and a Radeon 780M iGPU.
+Both editions ship:
 
-**Setup:** Ollama running with gemma4:e4b, PatentForgeLocal system tray started.
+- React frontend (Vite + TypeScript)
+- NestJS backend (REST API, SSE proxy, SQLite + Prisma)
+- 3 Python FastAPI services (claim-drafter, application-generator, compliance-checker)
+- Node Express service (feasibility)
+- Go system tray app (process manager)
+- All shared assets (prompts, icons, the SQLite schema, encryption tooling)
 
-**Step 1 — Describe the invention** (~2 minutes)
-Enter the invention title and description in the web UI. The more specific you are, the better the analysis.
+The **Full** edition additionally bundles:
 
-**Step 2 — Feasibility analysis** (~15 minutes)
-The 6-stage pipeline runs automatically. Each stage streams results in real-time via SSE. You can watch the AI work through technical restatement, prior art identification, patentability assessment, deep-dive, and strategy.
+- Ollama runtime binary (`runtime/ollama/ollama` or `ollama.exe`)
+- A first-launch hook that pulls the default Gemma 4 model (`gemma4:e4b`, ~10 GB compressed) into `<install-dir>/models/`
 
-**Step 3 — Claim drafting** (~5 minutes)
-The 3-agent pipeline (Planner, Writer, Examiner) generates independent and dependent claims. The examiner agent reviews for 35 USC compliance issues.
+The **Lean** edition skips both of those. The marker file `<install-dir>/config/edition.txt` records which edition was installed; the tray and the backend both read it.
 
-**Step 4 — Compliance check** (~3 minutes)
-Automated checks against 35 USC 112(a), 112(b), MPEP 608, and 101. Traffic-light results with specific MPEP citations.
+Decision criteria:
+- Want Local mode? Need Full.
+- Want both modes available? Need Full.
+- Cloud-only and want the smallest download? Lean.
 
-**Step 5 — Application generation** (~5 minutes)
-Assembles the full USPTO-formatted application. Export to Word (.docx) for your attorney.
-
-**Total time:** ~30 minutes. Zero cost. Zero data left your machine.
-
-The output quality is genuinely useful as preparation material — it won't replace your attorney, but it gives you a solid foundation for that first conversation.
+You can convert a Lean install into a Local-capable install by installing Ollama separately and pointing Settings → Provider → Local panel at it. But the simplest path is to grab Full from the start.
 
 ---
 
-## Category: General
+## Category: Announcements — historical (pre-merge PatentForgeLocal era)
 
-### Post 1
+The seed posts above are the merged-product announcements (v0.5.0 onward). For continuity, the PatentForgeLocal release history is preserved here so prior version notes remain discoverable in Discussions:
 
-**Title:** Welcome to the PatentForgeLocal community
+- **v0.1.4** — Final pre-merge PatentForgeLocal release before the merge plan started (Run 1: parity audit landed).
+- **v0.1.3** — Default model switched from `gemma4:26b` to `gemma4:e4b`; idempotent migration ships in `migrateSettings()`.
+- **v0.1.2** — Stability + tray health-monitor improvements.
+- **v0.1.1** — Bug fixes; first public-facing release after the v0.1.0 announcement.
+- **v0.1.0** — Initial open-source release of PatentForgeLocal as a fully-local fork of PatentForge. The full announcement copy is preserved on GitHub Discussions; the seed-file copy was retired with the Run 7 docs rewrite because the merged-product announcement (above) supersedes it.
 
-**Body:**
-
-Hi! Welcome to the PatentForgeLocal community. A few pointers:
-
-- **Found a bug?** File a [GitHub issue](https://github.com/scottconverse/patentforgelocal/issues). Include your OS, RAM, GPU, and the error message.
-- **Have a question?** Post it here in Q&A. No question is too basic.
-- **Want to contribute code?** Read [CONTRIBUTING.md](https://github.com/scottconverse/patentforgelocal/blob/main/CONTRIBUTING.md) for setup instructions. PRs welcome.
-- **Have an idea?** Post in Ideas / Feature Requests. Upvote ideas you'd use.
-- **Want to show off what you built?** Post in Show and Tell.
-
-This project exists because patent analysis should be accessible to individual inventors without requiring cloud AI subscriptions or sharing invention details with third parties. If that resonates with you, you're in the right place.
+These versions remain documented in `CHANGELOG.md`. New users land on the merged-product announcements at the top of this file; the historical entries above ensure CI version-mapping checks pass and the version trail is continuous.

@@ -1,831 +1,415 @@
-# PatentForgeLocal User Manual — v0.1.3
+# PatentForge User Manual — v0.1.4
 
-A step-by-step guide for using PatentForgeLocal to research and prepare for a patent consultation.
+A step-by-step guide for using PatentForge to research and prepare for a patent consultation. PatentForge runs in two modes — Local (on your hardware) or Cloud (Anthropic) — and this manual covers both.
 
 ---
 
-## 1. What Is PatentForgeLocal?
+## 1. What is PatentForge?
 
-PatentForgeLocal is a program that runs on your computer. You describe your invention, and it uses artificial intelligence to analyze whether your idea might be patentable. It searches for similar patents, identifies potential legal issues, and produces a detailed report you can take to a patent attorney.
+PatentForge is a program that runs on your computer. You describe your invention, and it uses AI to analyze whether your idea might be patentable. It searches for similar patents, identifies potential legal issues, and produces a detailed report you can take to a patent attorney.
 
-Everything happens on your machine. The AI model — the "brain" that does the analysis — runs locally on your computer. Your invention description never leaves your machine. There are no cloud servers, no subscriptions, and no per-use fees.
+You choose where the AI runs:
 
-### What It Does
+- **Local mode** — the AI model runs on your own computer (Ollama + Google Gemma 4). Your invention description never leaves your machine. Free; no API keys; no recurring cost; requires a reasonably capable computer.
+- **Cloud mode** — the AI runs on Anthropic's servers (Claude). You bring your own Anthropic API key. Faster on modest hardware; the cost of each analysis rides on your Anthropic account.
 
-- **Searches for similar patents** (called "prior art") to see if something like your invention already exists
-- **Analyzes your invention's novelty** — what makes it different from what came before
-- **Identifies potential legal issues** under U.S. patent law
-- **Generates a detailed report** summarizing its findings
-- **Drafts patent claims** — the specific legal boundaries that define what your patent would protect
-- **Generates a draft patent application** — the full document you would file with the patent office
-- **Checks compliance** — reviews your claims against patent law requirements
+You can switch modes any time in Settings. Same prompts, same analysis pipelines, same outputs — only the underlying model changes.
 
-### What It Is NOT
+### What it does
 
-PatentForgeLocal is **not a lawyer, not a legal service, and does not provide legal advice**. The author of this tool is not a lawyer. The AI that generates the analysis is not a lawyer. No attorney-client relationship is created by using this tool.
+- Searches for similar patents (called "prior art") to see if something like your invention already exists
+- Analyzes your invention's novelty — what makes it different from what came before
+- Identifies potential legal issues under U.S. patent law
+- Generates a detailed feasibility report
+- Drafts patent claims — the specific legal boundaries that define what your patent would protect
+- Generates a draft patent application — the full document you would file with the patent office
+- Checks compliance against 35 USC 112(a), 112(b), 101, and MPEP 608 formalities
+
+### What it is NOT
+
+PatentForge is **not a lawyer, not a legal service, and does not provide legal advice**. The author of this tool is not a lawyer. The AI that generates the analysis is not a lawyer. No attorney-client relationship is created by using this tool.
 
 AI-generated analysis may contain errors, omissions, or fabricated references — including made-up patent numbers and inaccurate legal citations. Patent law is complex, and decisions about whether and how to file should always be made with a registered patent attorney or patent agent.
 
-### What It Costs
+### What it costs
 
-**Nothing.** The AI runs entirely on your computer. There is no subscription, no per-use fee, and no cloud service to pay for. You download it once, and it works forever.
+**Local mode is free.** The AI runs on your computer. There is no subscription, no per-use fee, no cloud service to pay for.
 
-### Your Privacy
+**Cloud mode costs whatever your Anthropic account charges per call.** A full 6-stage feasibility analysis typically runs between $0.10 (Haiku 4.5) and $2.00 (Opus 4.7) depending on model choice and invention narrative length. You see an estimated cost before each run and confirm before any API call is made.
 
-Your invention description **never leaves your computer**. No data is sent to any external server unless you specifically enable optional features (web search or USPTO patent database lookups). Even then, only search terms are sent — never your full invention description. See Section 14 (Privacy & Security) for complete details.
+### Your privacy
+
+In **Local mode**, your invention description never leaves your computer. No data is sent to any external server unless you specifically enable optional features (web search or USPTO patent database lookups). Even then, only search terms are sent — never your full invention description. See Section 14 (Privacy & Security).
+
+In **Cloud mode**, your invention description and prompts are sent to Anthropic per their API Terms. Anthropic does not train on API traffic (per current policy at time of writing — verify in their Trust Center). Your Anthropic API key is encrypted at rest on your machine. PatentForge does not send any data to PatentForge servers — there are no PatentForge servers.
 
 ---
 
-## 2. System Requirements
+## 2. System requirements
 
-PatentForgeLocal runs an AI model on your computer, which requires more computing power than a typical application. Here is what you need.
+|  | Cloud mode | Local mode |
+|---|---|---|
+| **RAM** | 4 GB | 16 GB minimum · 32 GB+ recommended |
+| **Free disk space** | 1 GB | 25 GB minimum · 50 GB+ recommended |
+| **Processor (CPU)** | 2 cores, 2018+ | 4 cores, 2018+ · 8+ recommended |
+| **Graphics card (GPU)** | Not required | Not required; dramatically speeds inference if present (NVIDIA CUDA / AMD ROCm / Apple Silicon Metal) |
+| **Operating system** | Windows 10+, macOS 12+, Ubuntu 22+ | Same |
 
-### Minimum Requirements
+Cloud mode is lightweight because the model runs on Anthropic; PatentForge in Cloud mode is essentially a UI + orchestrator + your local SQLite database.
 
-| Resource | Minimum | What This Means |
-|----------|---------|-----------------|
-| **RAM** | 16 GB | RAM is your computer's short-term working memory. The AI model needs a large amount of it to run. |
-| **Free disk space** | 25 GB | The AI model file is about 18 GB, plus space for the program itself and your projects. |
-| **Processor (CPU)** | 4 cores, 2018 or newer | The processor is your computer's "brain." Most computers made after 2018 will work. |
-| **Operating system** | Windows 10+, macOS 12+, or Ubuntu 22+ | The version of Windows, Mac, or Linux your computer runs. |
+Local mode pulls Gemma 4 (~10 GB compressed weights) on first launch and keeps it on disk. The default model is `gemma4:e4b` (a dense 4B-parameter model with 128K context). Heavier options include `gemma4:26b` (MoE, ~17 GB weights, slower but higher quality).
 
-### Recommended (for Faster Analysis)
+### How to check your computer's specs
 
-| Resource | Recommended | Why It Helps |
-|----------|-------------|--------------|
-| **RAM** | 32 GB or more | More RAM lets the AI process longer invention descriptions and produce more detailed analysis. |
-| **Free disk space** | 50 GB or more | Extra space for multiple projects and exported documents. |
-| **Processor (CPU)** | 8 cores or more | More cores means faster analysis — stages complete in less time. |
-| **Graphics card (GPU)** | 8 GB VRAM or more | A dedicated graphics card with its own memory dramatically speeds up AI processing. NVIDIA cards with CUDA support work best. |
+**On Windows:** Press Win+I → System → About. Look for "Installed RAM" and "Processor." For disk: File Explorer → right-click C: → Properties.
 
-### How to Check Your Computer's Specs
+**On macOS:** Apple menu → About This Mac. For disk: Apple menu → System Settings → General → Storage.
 
-**On Windows:**
-1. Press the **Windows key + I** to open Settings
-2. Click **System**, then **About**
-3. Look for "Installed RAM" and "Processor"
-4. To check disk space: open File Explorer, right-click your C: drive, and click Properties
-5. To check your graphics card: press **Windows key**, type "Device Manager," open it, and expand "Display adapters"
-
-**On Mac:**
-1. Click the **Apple menu** (top-left corner of your screen) and choose **About This Mac**
-2. You will see your processor, memory (RAM), and macOS version
-3. To check disk space: click the Apple menu, choose **System Settings**, then **General**, then **Storage**
-4. To check your graphics card: in About This Mac, look for "Graphics" or "GPU"
-
-**On Linux (Ubuntu):**
-1. Open a terminal (press Ctrl+Alt+T)
-2. Type `free -h` and press Enter to see your RAM
-3. Type `df -h /` and press Enter to see your disk space
-4. Type `lscpu` and press Enter to see your processor details
-5. Type `lspci | grep -i vga` and press Enter to see your graphics card
+**On Linux:** `free -h` (RAM), `df -h /` (disk), `lscpu` (CPU).
 
 ---
 
 ## 3. Installation
 
-### Step 1: Download the Installer
+PatentForge ships two installer **editions** per platform:
 
-Go to the PatentForgeLocal releases page on GitHub:
+| Edition | What's bundled | Pick this when |
+|---|---|---|
+| **Lean** | Frontend + backend + Python services. No Ollama runtime. Smaller download. | You only want Cloud mode. You have an Anthropic API key. You want the smallest install. |
+| **Full** | Everything in Lean + Ollama runtime + first-launch model download. | You want Local mode, or you want the option to switch between modes. |
 
-**https://github.com/scottconverse/patentforgelocal/releases/latest**
+Both editions can run Cloud mode. Only the Full edition can run Local mode (Lean has no Ollama bundled).
 
-Download the installer for your operating system:
+### Windows
 
-| Operating System | File to Download |
-|-----------------|-----------------|
-| **Windows** | `PatentForgeLocal-0.1.2-Setup.exe` |
-| **Mac** | `PatentForgeLocal-0.1.2.dmg` |
-| **Linux** | `PatentForgeLocal-0.1.2.AppImage` |
+1. Download `PatentForge-Full-<version>-Setup.exe` or `PatentForge-Lean-<version>-Setup.exe` from [GitHub Releases](https://github.com/scottconverse/patentforge/releases/latest).
+2. Run the installer. Accept the license. Choose an install location.
+3. Launch PatentForge from the Start menu or desktop shortcut.
 
-### Step 2: Run the Installer
+### macOS
 
-**On Windows:**
-1. Double-click the downloaded `.exe` file
-2. If Windows shows a "Windows protected your PC" message, click **More info**, then **Run anyway** — this appears because the software is new and not yet widely installed
-3. Follow the installer prompts — the default settings are fine
-4. Click **Install** and wait for it to finish
-5. Click **Finish** — PatentForgeLocal will launch automatically
+1. Download `PatentForge-Full-<version>.dmg` or `PatentForge-Lean-<version>.dmg`.
+2. Open the DMG and drag PatentForge to your Applications folder.
+3. **First launch:** right-click the app → Open (the DMG is unsigned). Confirm the "from internet" prompt. Or run `xattr -cr /Applications/PatentForge.app` once.
 
-**On Mac:**
-1. Double-click the downloaded `.dmg` file
-2. Drag the PatentForgeLocal icon into your **Applications** folder
-3. Open your Applications folder and double-click **PatentForgeLocal**
-4. If macOS says the app "can't be opened because it is from an unidentified developer," right-click the app icon and choose **Open**, then click **Open** again in the dialog. You only need to do this once.
+### Linux
 
-**On Linux:**
-1. Open a terminal in the folder where you downloaded the file
-2. Make it executable: `chmod +x PatentForgeLocal-0.1.2.AppImage`
-3. Run it: `./PatentForgeLocal-0.1.2.AppImage`
-4. On some systems, you may need to install FUSE first: `sudo apt install libfuse2`
+1. Download `PatentForge-Full-<version>.AppImage` or `PatentForge-Lean-<version>.AppImage`.
+2. `chmod +x PatentForge-*.AppImage`
+3. Run it: `./PatentForge-*.AppImage`
 
-### What Gets Installed
+### Upgrading from PatentForgeLocal
 
-The installer places three things on your computer:
-
-1. **The PatentForgeLocal application** — the program itself, including all the services that power it
-2. **A bundled Python runtime** — a programming language runtime needed by some of the analysis services
-3. **A bundled AI engine (Ollama)** — the software that runs the AI model on your computer
-
-Total size before the AI model download: approximately 4 GB. After the model downloads during first launch (see next section), total size is approximately 22 GB.
-
-### The System Tray
-
-After installation, a small icon appears in your **system tray** — the row of small icons near the clock on your taskbar (Windows), menu bar (Mac), or system panel (Linux). This is the PatentForgeLocal service manager. It runs in the background and manages all the services that power the application.
-
-- **Left-click** the tray icon to open PatentForgeLocal in your web browser
-- **Right-click** the tray icon to see options:
-  - **Open PatentForgeLocal** — opens the application in your browser
-  - **Services** — shows the status of each background service (running, stopped, or error)
-  - **Restart Services** — stops and restarts all services (useful if something gets stuck)
-  - **View Logs** — opens the log folder for troubleshooting
-  - **Quit** — stops all services and closes PatentForgeLocal
-
-The tray app automatically monitors the health of each service and restarts any service that crashes.
+If you already have PatentForgeLocal installed: install the new PatentForge **Full** edition over it. Your existing data, settings, and downloaded Gemma 4 model are preserved. Provider defaults to **Local** automatically — your install behaves exactly as before. Cloud mode is now available in Settings if you want to try it.
 
 ---
 
-## 4. First Launch — Setup Wizard
+## 4. First launch
 
-The first time you start PatentForgeLocal, a setup wizard walks you through everything you need to get started. Each screen is described below.
+A wizard runs the first time PatentForge starts. The wizard flow depends on the installer edition.
 
-### Screen 1: Welcome
+### Full edition first launch
 
-You will see a welcome message introducing PatentForgeLocal. Click **"Get Started"** to begin.
+1. **Welcome** — brief overview of both modes.
+2. **Pick a mode** — Local or Cloud. You can change this later in Settings.
+3. **Local mode path:**
+   - **System check** — verifies RAM, CPU, disk space. Warnings are non-blocking; you can proceed even on borderline hardware (analysis will just be slower).
+   - **Model download** — pulls Gemma 4 (~10 GB) the first time. Progress bar shown.
+   - **Optional API keys** — enter your Ollama Web Search token (for web-augmented analysis; free at ollama.com) and USPTO API key (free at data.uspto.gov). Both optional; skip is fine.
+4. **Cloud mode path:**
+   - **Anthropic API key** — paste your `sk-ant-...` key. Get one at [console.anthropic.com](https://console.anthropic.com/settings/keys). Stored encrypted at rest.
+   - **USPTO API key** (optional).
+5. **Disclaimer** — research-tool acknowledgment.
+6. **Ready** — wizard completes; main app opens in your browser.
 
-### Screen 2: System Check
+### Lean edition first launch
 
-The program checks whether your computer meets the requirements. You will see a list of items with colored indicators:
+Lean installers ship without Ollama, so the wizard goes straight to Cloud mode setup:
 
-- **Green checkmark** — your computer meets or exceeds this requirement. No action needed.
-- **Yellow warning** — your computer meets the minimum but falls below the recommended level. PatentForgeLocal will work, but analysis may be slower. For example, you might see a yellow warning if you have 16 GB of RAM instead of the recommended 32 GB.
-- **Red X** — your computer does not meet the minimum requirement. You will need to address this before continuing. The screen will explain specifically what is needed — for example, "You have 8 GB of RAM. PatentForgeLocal requires at least 16 GB."
+1. **Welcome** — describes Lean as the cloud-only edition.
+2. **Anthropic API key** — paste your key.
+3. **USPTO API key** (optional).
+4. **Disclaimer**.
+5. **Ready**.
 
-If everything is green (or yellow), click **"Continue."** If you see a red item, see the Troubleshooting section for help.
-
-### Screen 3: Model Download
-
-This screen downloads the AI model — the "brain" that analyzes your inventions. The model is called **Gemma 4** (made by Google), and it is approximately **18 GB** in size.
-
-This is a **one-time download**. Once the model is on your computer, you will never need to download it again. A progress bar shows how much has been downloaded and an estimate of how much time remains.
-
-- On a fast internet connection (100+ Mbps): approximately 10 minutes
-- On a moderate connection (25 Mbps): approximately 20-30 minutes
-- On a slower connection (10 Mbps): approximately 45-60 minutes
-
-You can leave this running and do other things on your computer while it downloads. Do not close the PatentForgeLocal window or shut down your computer during the download.
-
-After the model is downloaded, future launches of PatentForgeLocal take about **30 seconds** — just enough time for the AI model to load into memory.
-
-### Screen 4: Web Search (Optional)
-
-PatentForgeLocal can optionally search the internet during analysis to find recently published patents and technical papers. This feature uses a free Ollama cloud account.
-
-- **If you enable web search:** During analysis, the AI sends search queries (not your full invention description) to the internet to find recent relevant patents and publications. This helps the AI find prior art that was published after its training data was collected.
-- **If you skip this step:** The AI uses the built-in patent databases and its own training knowledge. This is still effective — web search just adds more recent results.
-
-To enable web search:
-1. Click **"Create Free Account"** (this opens the Ollama website in your browser)
-2. Create your free account and copy your API key
-3. Paste the API key into the field on this screen
-4. Click **"Continue"**
-
-To skip: Click **"Skip — I'll set this up later."** You can always enable web search later in Settings.
-
-### Screen 5: USPTO API Key (Optional)
-
-The USPTO (United States Patent and Trademark Office) provides a free API (a way for programs to access their database) that gives PatentForgeLocal better access to patent search results.
-
-- **If you add a USPTO key:** Patent searches return more detailed results, including the ability to view full patent claims text and patent family information (related patents).
-- **If you skip this step:** Patent analysis still works using the AI's web search and training knowledge. You just get slightly less detail in the prior art results.
-
-To add a USPTO API key:
-1. Click **"Get Free API Key"** (this opens the USPTO data portal in your browser)
-2. Create a free account at data.uspto.gov (this requires ID.me identity verification)
-3. Copy your API key
-4. Paste it into the field on this screen
-5. Click **"Continue"**
-
-To skip: Click **"Skip — I'll set this up later."** You can always add this key later in Settings.
-
-### Screen 6: Legal Notice
-
-This screen reminds you that PatentForgeLocal is a **research tool, not a legal service**. The AI can make mistakes, including fabricating patent numbers and making incorrect legal assessments. Always consult a registered patent attorney before making any patent filing decisions.
-
-Read the notice carefully, then click **"I Understand."**
-
-### Screen 7: Ready
-
-You are all set. Click **"Start Using PatentForgeLocal."** Your web browser will open to the PatentForgeLocal home screen, where you can create your first project.
+If you later want Local mode on a Lean install, you'll need to install Ollama separately (and the Provider switch won't appear until you do).
 
 ---
 
-## 5. Creating a Project
+## 5. The main interface
 
-In PatentForgeLocal, each invention you want to analyze is a **project**. One invention equals one project.
+After the wizard completes, PatentForge opens in your default browser at `http://localhost:3001`. The interface has three areas:
 
-### Starting a New Project
+- **Sidebar** (left) — the pipeline (Invention Intake → Feasibility → Prior Art → Claims → Compliance → Application) with a "Total cost" footer that reads **"Free"** in Local mode or `$N.NNN` in Cloud mode.
+- **Main content** (center) — whatever you're working on (project list, invention form, running analysis, report, etc.).
+- **Top-right** — Settings link.
 
-1. From the home screen, click **"New Project"**
-2. Enter a **title** for your invention — a short, descriptive name (for example, "Solar-Powered Water Purification System" or "AI-Based Crop Disease Detector")
-3. Click **"Create"**
-
-You will be taken to the project page, where you will fill in the invention form.
-
-### The Invention Form
-
-The form has 11 fields. Only **Title** and **Description** are required, but the more information you provide, the better the analysis will be. Think of it this way: you are explaining your invention to a knowledgeable researcher who will go investigate it. The clearer you are, the better their research will be.
-
-| Field | What to Write | Tips |
-|-------|--------------|------|
-| **Title** | A short, descriptive name for your invention | Keep it under 10 words. Be specific — "Smart Irrigation Controller" is better than "My Invention." |
-| **Description** | A detailed explanation of what your invention is and how it works | This is the most important field. Write 2-3 paragraphs. Describe what it does, how it works, and what makes it different. A counter below the field shows how many characters remain (8,000 limit). |
-| **Problem Solved** | What problem does your invention solve? Why do people need it? | Think about who has this problem and why existing solutions fall short. |
-| **How It Works** | Technical details about how the invention operates | Describe the mechanism step by step. If it has multiple parts, explain how they connect. |
-| **AI/ML Components** | If your invention uses artificial intelligence or machine learning, describe those parts here | Leave blank if your invention does not involve AI. If it does, explain what the AI does and how it is trained or configured. |
-| **3D Print / Physical Design** | If your invention involves 3D-printed parts or physical designs, describe them here | Leave blank if your invention is purely software. If it includes physical components, describe their shape, material, and how they fit together. |
-| **What I Believe Is Novel** | What do you believe is new about your invention? What has not been done before? | Be specific. "It's better" is not helpful. "It uses ultrasonic waves instead of chemical filtration" is helpful. |
-| **Current Alternatives** | What solutions already exist for the same problem? How is yours different? | Name specific products, patents, or approaches you know about. This helps the AI understand the competitive landscape. |
-| **What Has Been Built** | Have you built a prototype? Is this just an idea, or is there working code or hardware? | Be honest about the stage. "Concept only," "working prototype," or "production version" are all fine. |
-| **What I Want Protected** | What specific aspects of your invention do you want patent protection for? | Think about what a competitor would need to copy to replicate your advantage. That is what you want to protect. |
-| **Additional Notes** | Anything else relevant that does not fit in the other fields | Market information, regulatory considerations, related inventions you have filed, or anything else the analysis should consider. |
-
-### Tips for Good Descriptions
-
-- **Be specific, not vague.** "It uses a sensor" is weak. "It uses a capacitive soil moisture sensor that takes readings every 30 seconds and transmits data via Bluetooth Low Energy" is strong.
-- **Describe the "how," not just the "what."** Do not just say what your invention does — explain the mechanism by which it achieves the result.
-- **Use technical terms when you know them.** If you know the proper name for a component or process, use it. The AI will understand technical language.
-- **Include quantities and specifics.** Numbers, measurements, frequencies, materials — these details help the AI find the most relevant prior art.
-- **Do not worry about legal language.** Write naturally. The AI handles the translation to patent terminology.
-
-When you are finished, click **"Save Draft"** to save your work without starting the analysis, or proceed directly to running the analysis.
-
-### Deleting a Project
-
-To remove a project and all its data:
-
-1. From the home screen, find the project you want to delete
-2. Click the red **"Delete"** button next to that project
-3. A confirmation dialog will appear — read it carefully
-4. Click **"Delete"** to confirm, or **"Cancel"** to go back
-
-**Warning:** This cannot be undone. All analysis results, claim drafts, compliance results, and application drafts for that project will be permanently deleted.
+The tray icon (Windows taskbar / macOS menu bar / Linux system tray) shows service health. Right-click it for menu options (Open, Restart Services, View Logs, Quit).
 
 ---
 
-## 6. Running an Analysis
+## 6. Creating your first project
 
-Once you have filled in your invention form, you are ready to run the analysis. This is where PatentForgeLocal does its work — the AI reads your invention description, searches for similar patents, evaluates patentability, and produces a detailed report.
+1. From the project list, click **New Project**.
+2. Enter a title and click **Create**.
+3. Fill out the **Invention Intake** form. The fields prompt you for:
+   - Title
+   - Description (minimum word count enforced)
+   - Problem solved, how it works, novel aspects, current alternatives, what you've built, what to protect, additional notes.
+4. Save the form. You'll return to the project overview.
 
-### Starting the Analysis
-
-1. From your project page, click **"Run Analysis"**
-2. A confirmation screen appears showing the estimated time (typically 5-10 minutes, depending on your computer's speed and the complexity of your invention)
-3. Click **"Start Analysis"**
-
-### The 6-Stage Pipeline
-
-The analysis runs through six stages, one after another. You can watch the AI work in real time — text appears on screen as the AI writes its findings.
-
-**Stage 1: Technical Intake and Restatement**
-The AI reads your invention description and restates it in precise technical language. This confirms that the AI understands what you described. If the restatement does not match your intent, you may want to revise your invention description and run the analysis again.
-
-**Stage 2: Prior Art Research**
-The AI searches for existing patents, published papers, and products that are similar to your invention. "Prior art" is a legal term meaning any evidence that something similar existed before your invention. This stage identifies what is already out there so the AI can assess how your invention compares.
-
-**Stage 3: Patentability Analysis**
-The AI evaluates your invention against the three main requirements of U.S. patent law:
-- **Novelty** (35 U.S.C. 102) — Is your invention genuinely new? Has it been done before?
-- **Non-obviousness** (35 U.S.C. 103) — Even if it is new, would it have been obvious to someone skilled in the field?
-- **Utility** (35 U.S.C. 101) — Does it serve a practical purpose?
-
-**Stage 4: Deep Dive Analysis**
-A detailed examination of domain-specific aspects of your invention. If your invention involves AI or machine learning, this stage analyzes the patent landscape for AI inventions specifically. If it involves physical designs, it examines design patent considerations.
-
-**Stage 5: IP Strategy and Recommendations**
-The AI recommends filing strategies, discusses claim scope (how broadly or narrowly to define your patent protection), identifies open questions to discuss with your attorney, and highlights cost factors.
-
-**Stage 6: Comprehensive Report**
-All findings from the previous five stages are compiled into a single, structured report.
-
-### Watching Progress
-
-While the analysis runs, you will see:
-- A **stage progress panel** on the left side showing which stage is currently active
-- **Real-time streaming text** on the right as the AI writes its findings
-- Each stage typically takes 1-3 minutes
-
-### Canceling an Analysis
-
-You can cancel at any time by clicking the **X** (cancel) button. The analysis stops after the current stage finishes. You will not lose work — any completed stages are saved, and you can resume from where you stopped.
-
-### Resuming a Stopped Analysis
-
-If an analysis is interrupted — whether you canceled it, your computer lost power, or an error occurred:
-
-1. Go back to the project page
-2. You will see a **"Resume"** button next to the partially completed run
-3. Click **Resume** — it picks up from the last completed stage
-4. Only the remaining stages will run
+Tips for a good invention description:
+- Be specific. "A device that uses AI" is too vague; "A handheld device that uses an on-device neural network to identify edible wild mushrooms from a photograph and warn the user of dangerous look-alikes" is workable.
+- Describe the problem you're solving and the existing alternatives — this anchors the prior art search.
+- Note any 3D-printed or AI components explicitly — the system surfaces special considerations for those.
 
 ---
 
-## 7. Understanding Your Report
+## 7. Running feasibility analysis
 
-When the analysis completes, you will see a detailed report organized into sections. Here is how to read it.
+From the project overview (or sidebar), click **Run Feasibility**. What happens next depends on your mode.
 
-### Report Sections
+### Local mode
 
-The left sidebar lists each stage of the analysis. Click any stage to view its output. The **Comprehensive Report** (Stage 6) is the most useful starting point — it combines all findings into one document.
+The run starts immediately. There's nothing to confirm because local inference is free.
 
-### Reading the Prior Art Table
+The 6 stages execute sequentially:
 
-The report includes a table of patents and publications that are similar to your invention. Each entry shows:
+1. **Technical intake & restatement** — the model summarizes your invention back to you in technical-disclosure shape. ~30s–2min depending on hardware.
+2. **Prior art research** — uses the prior-art search results (USPTO + optional web search) to ground the analysis in actual existing patents.
+3. **Patentability analysis** — assesses 102 (novelty), 103 (non-obviousness), 101 (eligibility).
+4. **Deep dive** — surfaces nuance specific to your invention's category.
+5. **IP strategy & recommendations** — advice on claim strategy, filing approach, defensive vs offensive posture.
+6. **Comprehensive report** — consolidated final write-up.
 
-- **Patent number or publication ID** — a unique identifier. Patent numbers starting with "US" are U.S. patents.
-- **Title** — the name of the patent or publication
-- **Relevance score** — a colored bar showing how similar this prior art is to your invention. Higher scores (darker/longer bars) mean the prior art is more relevant.
-- **Abstract** — a short summary of what the patent covers
-- **Link** — click to view the full patent on Google Patents
+Stream the analysis live in the **Running** view. Click any completed stage in the sidebar to view its full output.
 
-A high relevance score does not automatically mean your invention is not patentable. It means the prior art is worth examining closely to understand how your invention differs.
+### Cloud mode
 
-### What "Novelty" Means
+When you click Run Feasibility (or Resume on a failed run), a **cost-confirm modal** opens first:
 
-**Novelty** means your invention is genuinely new — no single piece of prior art describes exactly the same thing. If a patent already exists that describes your exact invention, yours is not novel. But if your invention has meaningful differences from everything that came before, it has novelty.
+- Shows the estimated USD cost for the full 6-stage run.
+- Estimate uses your project's past-run history if available; otherwise a typical baseline (~$0.50).
+- **Approve** kicks off the run.
+- **Cancel** discards the intent. No API call is made.
+- Esc and backdrop click also cancel.
 
-### What "Non-Obviousness" Means
+After Approve, the run streams in the same way as Local mode. Per-stage cost appears under each stage card in the sidebar; the running total appears at the bottom.
 
-**Non-obviousness** is a higher bar than novelty. Even if your exact invention is new, a patent examiner will ask: "Would someone skilled in this field have found it obvious to combine existing ideas to arrive at this invention?" If the answer is yes, the invention is "obvious" and cannot be patented. The AI analyzes this by looking at how your invention combines or extends existing technology.
-
-### What "Utility" Means
-
-**Utility** simply means your invention is useful — it serves a practical purpose. Almost all inventions meet this requirement. The AI flags utility concerns only in unusual cases (such as inventions that claim to violate laws of physics).
-
-### Confidence Levels
-
-The report may include confidence levels (high, medium, low) for various assessments. These indicate how confident the AI is in its analysis:
-- **High confidence** — the AI found strong evidence supporting its assessment
-- **Medium confidence** — the evidence is mixed or incomplete
-- **Low confidence** — limited information was available; treat this assessment as preliminary
-
-### Red Flags to Watch For
-
-Pay special attention if the report mentions:
-- **Highly similar prior art** — a patent that closely matches your invention
-- **Alice/Mayo concerns** — your invention may fall into a category that is difficult to patent (such as abstract ideas or natural phenomena)
-- **Incomplete description** — the AI could not fully analyze your invention because the description lacked sufficient detail
-
-### Exporting Your Report
-
-Click the download buttons at the top of the report:
-
-- **Download Word** — a .docx file you can open in Microsoft Word or Google Docs. This is the best format to share with your patent attorney.
-- **Download HTML** — a styled, printable version you can open in any web browser
-- **Download** (on individual stages) — saves that stage's output as a text file
-
-Files are saved to your browser's default Downloads folder, or to the export path configured in Settings.
-
-### The Prior Art Panel
-
-Click **"Prior Art"** in the left sidebar to see detailed prior art results. Each patent card can be clicked to open a detail panel showing:
-
-- Patent number (linked to Google Patents)
-- Filing and grant dates
-- Assignees (who owns the patent) and inventors
-- CPC classifications (patent categories)
-- Full claims text (if you have a USPTO API key configured)
-- Patent family information (related patents, continuations, divisionals)
-
-You can export all prior art results as a CSV spreadsheet by clicking **"Export CSV"** at the top of the panel.
-
-### Important Reminder
-
-This report is **structured research to help you prepare for a conversation with a patent professional**. It is not a legal opinion. The AI may have made errors, fabricated references, or missed relevant prior art. All findings should be verified by a qualified patent attorney before making any decisions.
+You can change the active model in Settings → AI Model. Haiku 4.5 is the cheapest; Opus 4.7 is the most capable; Sonnet 4.6 is the balanced default.
 
 ---
 
-## 8. Claim Drafting
+## 8. Prior art search
 
-After completing a feasibility analysis, you can ask the AI to draft patent claims for your invention.
+Independent of feasibility, you can run a USPTO PatentSearch query directly:
 
-### What Are Patent Claims?
+1. **Prior Art** in the sidebar opens the panel.
+2. The system auto-derives a query from your invention narrative on first run. You can edit it.
+3. **Run Search** sends the query to USPTO.
+4. Results stream in with relevance scores, snippets, and clickable patent numbers (open detail drawer with full claims + family info).
 
-Patent claims are the most important part of a patent. They define the exact boundaries of what your patent protects — similar to how a property deed defines the boundaries of a piece of land. Everything inside the claim boundaries is protected; everything outside is not.
+Prior art search runs in parallel with feasibility — feasibility stage 2 (Prior Art Research) uses these results as context. If you've already pulled prior art, feasibility uses it; if not, feasibility kicks off its own search.
 
-There are two types of claims:
-
-- **Independent claims** stand on their own. They describe the invention broadly without referring to any other claim. Think of these as the "big picture" definition of your invention.
-- **Dependent claims** refer to an independent claim and add additional specific details. They narrow the scope. For example, an independent claim might describe "a water purification device," while a dependent claim might specify "the device of claim 1, wherein the filter is made of activated carbon."
-
-Having both broad and narrow claims is a strategy: if a broad claim is challenged, the narrower dependent claims may still survive.
-
-### How to Generate Claims
-
-1. On your project page, click the **"Claims"** button in the left sidebar
-2. Click **"Generate Draft Claims"**
-3. A legal acknowledgment dialog will appear — read it carefully. It explains that these are draft research concepts, not filing-ready claims. Check the box and click **"Generate Draft Claims"**
-4. Wait 2-5 minutes while the AI plans, drafts, and reviews your claims
-5. When complete, you will see your claims organized by type
-
-### Understanding the Output
-
-PatentForgeLocal generates up to 20 claims (the number at which USPTO filing fees increase):
-
-- **Three independent claims** — broad, medium, and narrow versions, each using a different category (method, system, or apparatus)
-- **Dependent claims** — specific refinements attached to each independent claim
-
-### Reviewing and Editing Claims
-
-- Hover over any claim text to see a pencil icon — click it to edit the claim text inline
-- Make your changes, then click **Save** or **Cancel**
-- Use the **List / Tree** toggle above the claims to switch between list view and a visual tree diagram showing how claims relate to each other
-
-### Viewing Strategy and Examiner Feedback
-
-Below the claims, you will find expandable sections:
-- **Planner Strategy** — the AI's reasoning about claim scope and prior art avoidance
-- **Examiner Feedback** — the AI's self-critique of each claim, including analysis against patent law sections
-
-### Exporting Claims
-
-Click **"Export Word"** to download a .docx file containing all your claims, properly numbered and formatted for review by your patent attorney.
-
-### Important Limitations
-
-These claims are **draft research concepts**. They are:
-- NOT reviewed by a patent attorney
-- NOT suitable for filing without professional review
-- Potentially too broad, too narrow, or using language that would not survive examination
-- Generated by AI that may fabricate technical details
-
-**Every claim must be reviewed, revised, and finalized by a registered patent attorney before any patent application filing.**
+Prior art search does NOT consume Anthropic credits even in Cloud mode — it hits USPTO's API directly. Web search (Ollama Cloud) is similarly free (subject to the free-tier quotas of ollama.com).
 
 ---
 
-## 9. Application Generation
+## 9. Claim drafting
 
-After drafting claims, you can generate a complete draft patent application — the full document you would file with the patent office.
+After feasibility completes, click **Claims** in the sidebar. The 3-agent pipeline runs:
 
-### What Is a Patent Application?
+- **Planner** — designs the claim strategy (number of independents, dependency chains, scope levels).
+- **Writer** — drafts claim text per the planner's spec.
+- **Examiner** — does a self-review pass and flags issues.
 
-A patent application is a formal legal document submitted to the United States Patent and Trademark Office (USPTO). It describes your invention in precise technical detail and includes the claims that define what you want to protect. The application must follow specific formatting rules and include specific sections.
+In Cloud mode, this is also gated by the cost-confirm modal. Estimated cost shows the full 3-agent total.
 
-### What You Need First
-
-Before generating an application, you need:
-- A completed **feasibility analysis** (all 6 stages)
-- **Drafted claims** (from the Claims section)
-
-Running a compliance check first is recommended but not required.
-
-### How to Generate an Application
-
-1. On your project page, click the **"Application"** button in the left sidebar
-2. Click **"Generate Application"**
-3. A disclaimer will appear reminding you this is a research tool. Check the box and click **"Generate Application"**
-4. Wait 3-8 minutes while the AI generates each section
-5. When complete, you will see the full application with all sections listed
-
-### Application Sections
-
-Your generated application includes:
-
-| Section | What It Contains |
-|---------|-----------------|
-| **Title** | Your invention title |
-| **Cross-References** | References to related patent applications you have filed (starts empty — you fill this in) |
-| **Background of the Invention** | Describes the technical field and existing solutions |
-| **Summary of the Invention** | Overview of what your invention does and why it matters |
-| **Detailed Description** | The full technical specification — how to make and use the invention |
-| **Claims** | Your drafted claims from the Claims section |
-| **Abstract** | A 150-word summary of the invention |
-| **Figure Descriptions** | Placeholder descriptions for patent drawings |
-| **Information Disclosure Statement (IDS)** | Lists all prior art references found during your analysis |
-
-### Editing Sections
-
-Click **"Edit"** on any section to modify the text. Click **"Save"** when done, or **"Cancel"** to discard changes. The Cross-References section is intentionally empty — add references to any related patent applications you have filed (provisionals, continuations, etc.).
-
-### Exporting Your Application
-
-- **Export Word** — downloads a formatted .docx file following USPTO formatting requirements: US Letter size, correct margins, Times New Roman 12pt, 1.5 line spacing, sequential paragraph numbering, and claims and abstract on separate pages. A watermark on every page reminds you to have it reviewed by a patent attorney.
-- **Export Markdown** — downloads a plain text version
-
-### Important Reminder
-
-The generated application is an **AI-drafted research document**. It is **not** a legal filing. Every section must be reviewed, revised, and finalized by a registered patent attorney before filing with the USPTO.
+The output is a draft claim set, organized by independent and dependent claims with examiner notes attached to each.
 
 ---
 
-## 10. Compliance Check
+## 10. Compliance checking
 
-After generating claims, you can run a compliance check — an automated review that looks for common problems a patent examiner would flag.
+After claims are drafted, click **Compliance** in the sidebar. The pipeline runs 4 specialized agents:
 
-### What It Checks
+- **112(a) written description** — does the spec support the claims?
+- **112(b) definiteness** — are claim terms unambiguous?
+- **101 eligibility** — is the subject matter patentable?
+- **MPEP 608 formalities** — citation format, reference numerals, claim format.
 
-Think of the compliance checker as a spell-checker, but for patent law requirements. It runs four checks:
+Each rule produces PASS / FAIL / WARN with detail and (where relevant) MPEP citations.
 
-| Check | What It Looks For | In Plain Language |
-|-------|-------------------|-------------------|
-| **Patent Eligibility (35 U.S.C. 101)** | Is the invention the kind of thing that can be patented? | Some categories of ideas — abstract concepts, laws of nature, natural phenomena — cannot be patented on their own. The checker looks for claims that might fall into these categories. |
-| **Written Description (35 U.S.C. 112a)** | Does the invention description support what the claims say? | If a claim mentions a feature you did not describe in your invention form, this check flags it. |
-| **Definiteness (35 U.S.C. 112b)** | Are the claims written clearly? | This catches vague language, undefined terms, and ambiguous phrasing that a patent examiner would reject. |
-| **Formalities (MPEP 608)** | Are the claims formatted correctly? | This checks numbering, proper references between claims, and formatting rules from the patent office handbook. |
-
-### How to Run a Compliance Check
-
-1. On your project page, click the **"Compliance"** button in the left sidebar
-2. Click **"Run Compliance Check"**
-3. A legal acknowledgment dialog appears — read it, check the box, and click **"Run Compliance Check"**
-4. Wait 1-3 minutes while the checker analyzes each claim
-5. When complete, results appear for every claim
-
-### Reading the Results
-
-Each claim shows a colored status for each of the four checks:
-
-- **Green (PASS)** — No issues detected for this rule. This does not guarantee the claim will pass examination — it means the AI did not find an obvious problem.
-- **Yellow (WARN)** — A potential issue was found, but it is not clear-cut. Review the explanation and consider whether a change would strengthen the claim.
-- **Red (FAIL)** — A problem was found that a patent examiner would likely reject. The result includes a specific explanation and a suggestion for how to fix it.
-
-Each result includes:
-- **What the issue is** — a plain-language explanation
-- **MPEP citation** — a reference to the specific section of the Manual of Patent Examining Procedure (the handbook patent examiners use). You do not need to look these up, but your patent attorney will find them useful.
-- **Suggested fix** — a concrete suggestion for how to address the issue
-
-### Fixing Issues
-
-1. Note which claims have FAIL or WARN results
-2. Go to the **Claims** section and edit the flagged claims
-3. Return to the **Compliance** section and click **"Re-Check"** to run the checks again
-4. Repeat until you are satisfied with the results
-
-### Exporting Compliance Results
-
-Click **"Export Word"** to download a .docx file with the full compliance results, including per-claim status, MPEP citations, and suggested fixes. Share this with your patent attorney alongside the claims export.
-
-### Important Limitations
-
-Compliance checking is **automated research, not legal review**. The checker may miss issues that a human examiner would catch, and a PASS result does not guarantee patentability. **Always have a registered patent attorney review your claims before filing.**
+A UPL (Unauthorized Practice of Law) acknowledgment modal appears the first time you run compliance check on a project. The output is research output, not legal advice — that point is made every place compliance results show up.
 
 ---
 
-## 11. Settings
+## 11. Application generation
 
-Access settings by clicking the **gear icon** in the top navigation bar.
+The final stage builds a full draft USPTO application. Click **Application** in the sidebar. The 5-agent pipeline writes:
 
-### Setting Reference
+- Title
+- Cross-references
+- Background
+- Summary
+- Detailed description
+- Claims (carried over from drafting)
+- Abstract
+- Figure descriptions
+- IDS (Information Disclosure Statement) table
 
-| Setting | What It Does | Default |
-|---------|-------------|---------|
-| **AI Model** | Shows which AI model is running on your computer (read-only). PatentForgeLocal uses Gemma 4. | Gemma 4 26B |
-| **Ollama API Key** | Enables optional web search during analysis. Get a free key by creating an account at ollama.com. | None (web search disabled) |
-| **USPTO API Key** | Improves patent search results with detailed patent data from the U.S. Patent Office. Get a free key at data.uspto.gov. | None (basic search only) |
-| **Max Tokens** | Controls how much text the AI generates per stage. Higher values produce more detailed output but take longer. The default works well for most inventions. | 16,384 |
-| **Inter-Stage Delay** | Number of seconds the system waits between analysis stages. The default of 2 seconds is appropriate since there are no rate limits when running locally. | 2 seconds |
-| **Export Path** | The folder where exported documents (Word files, reports) are saved. Must be inside your home directory. | Your Documents folder |
-| **Auto-Export** | When enabled, reports are automatically exported as Word documents when analysis completes. | Off |
+Export options: Markdown, Word (.docx), or HTML.
 
-### Changing Settings
+---
 
-1. Click the **gear icon** in the navigation bar
-2. Make your changes
-3. Click **"Save"**
+## 12. Settings
 
-You can navigate back to your project list at any time by clicking **"Projects"** in the breadcrumb at the top of the settings page.
+Open Settings from the link at the top-right of any page. The page has these sections (top to bottom):
+
+### Provider
+
+The first section. A radio chooser: **Local (Ollama)** or **Cloud (Anthropic)**.
+
+- **Local panel** appears when Local is selected: Ollama URL (defaults to `http://localhost:11434`), Local default model dropdown (Gemma 4 e4b / 26B / etc.), model-ready status indicator.
+- **Cloud panel** appears when Cloud is selected: Cloud API key (password input with show/hide toggle), Cloud default model dropdown (Claude Haiku 4.5 / Sonnet 4.6 / Opus 4.7).
+
+Switching providers preserves both sides' settings — you can flip Local ↔ Cloud freely without re-entering anything.
+
+> **Apply takes effect on next service restart.** After changing the provider, use Tray → Restart Services (or restart the app) for the change to take effect across all services. The frontend reflects the change immediately, but the running services started with the previous provider value.
+
+### AI Model
+
+(In Local mode) Ollama connection status, model name, "Test connection" button.
+
+(In Cloud mode) Anthropic API status (live-checked on save).
 
 ### API Keys
 
-Both API keys (Ollama and USPTO) are **encrypted** before being stored on your computer. They are never saved as plain text and never sent anywhere except to the services they authenticate with.
+- **Ollama Web Search Key** — optional Ollama Cloud account token for web-augmented analysis.
+- **USPTO API Key** — optional, enables structured prior art search via data.uspto.gov.
 
-- The **Ollama API key** is used only for web search requests during analysis
-- The **USPTO API key** is used only for patent database queries
+Both encrypted at rest using your machine's keychain-derived key.
 
-Both keys are free to obtain. Neither is required to use PatentForgeLocal — they just enable additional features.
+### ODP Usage
 
----
+Weekly USPTO API call count + rate-limit summary.
 
-## 12. Troubleshooting
+### Analysis Parameters
 
-### "PatentForgeLocal won't start"
+- **Max tokens** — per-stage output cap (default 32000).
+- **Inter-stage delay** — pause between stages (default 5s).
+- **Research model** — optional; used for stages that benefit from a different model. Empty means use the default model.
 
-**What to try:**
-1. Look for the PatentForgeLocal icon in your system tray (near the clock). If it is there, left-click it to open the application in your browser.
-2. If the icon is not in the system tray, find PatentForgeLocal in your Start Menu (Windows), Applications folder (Mac), or application menu (Linux) and launch it again.
-3. If it still does not start, restart your computer and try again. The AI model may not have loaded correctly.
+### Export
 
-### "Model not loaded" or "AI model unavailable"
-
-**What this means:** The AI model (Gemma 4) is not currently running.
-
-**What to try:**
-1. Right-click the system tray icon and choose **"Services"** — check if the Ollama service shows "Running" or "Stopped"
-2. If Ollama is stopped, right-click the tray icon and choose **"Restart Services"**
-3. Wait 30-60 seconds for the model to load into memory
-4. If the problem persists, check that you have enough free RAM (at least 16 GB total, with 10+ GB available)
-
-### "Analysis is very slow"
-
-**What this means:** The AI is running but taking longer than expected.
-
-**What to try:**
-1. Close other programs to free up RAM. The AI needs as much memory as possible.
-2. Check your RAM usage: on Windows, press Ctrl+Shift+Esc to open Task Manager and look at the Memory column. If usage is above 90%, close some programs.
-3. If you have a dedicated graphics card (GPU), make sure it is being used. Right-click the system tray icon, choose Services, and check if the Ollama service shows "GPU" or "CPU" mode. GPU mode is significantly faster.
-4. A typical analysis takes 5-10 minutes. If it takes more than 20 minutes per stage, your hardware may be below the recommended specifications.
-
-### "Web search not working"
-
-**What this means:** The optional web search feature is not connecting.
-
-**What to try:**
-1. Go to **Settings** and check that your Ollama API key is entered correctly
-2. Make sure you have an active internet connection
-3. Web search is optional — the analysis will still work using the AI's built-in knowledge and any configured USPTO patent data
-
-### "Prior art search returned no results"
-
-**What to try:**
-1. Add a **USPTO API key** in Settings for better patent search access (free at data.uspto.gov)
-2. Make your invention description more specific — vague descriptions produce vague searches
-3. Check that your internet connection is working (prior art search requires internet access)
-
-### "Report seems incomplete or low quality"
-
-**What to try:**
-1. Go back to your invention form and add more detail — especially in the Description, How It Works, and What I Believe Is Novel fields
-2. Run the analysis again. AI results vary between runs, and a second run may produce better output.
-3. Check that the AI model is fully loaded (see "Model not loaded" above)
-
-### "Application won't export" or "Export failed"
-
-**What to try:**
-1. Go to **Settings** and check the **Export Path** — make sure the folder exists on your computer
-2. The export path must be inside your home directory. Paths like `C:\Windows` or `/etc` are not allowed for security reasons.
-3. Make sure you have write permission to the export folder
-4. Try exporting to a different folder, such as your Desktop
-
-### "Not enough disk space"
-
-**What to try:**
-1. The AI model requires approximately 18 GB of disk space, plus 4 GB for the application itself
-2. Check your free disk space (see Section 2 for how to check on each operating system)
-3. Delete unnecessary files or move them to an external drive to free up space
-4. If you are very low on space, consider using an external SSD drive for the PatentForgeLocal installation
-
-### "The page shows a loading spinner that won't stop"
-
-**What to try:**
-1. Refresh the page in your browser (press F5 or Ctrl+R on Windows/Linux, Cmd+R on Mac)
-2. If a pipeline was running when the page loaded, PatentForgeLocal detects the stale state and shows you partial results with a Resume option
-3. If refreshing does not help, right-click the system tray icon and choose **"Restart Services"**, then refresh the page again
-
-### "Analysis completed but some stages are missing"
-
-**What this means:** The analysis was interrupted partway through and only some stages have output.
-
-**What to try:**
-1. Look for a **"Resume"** button on the project page — this picks up from the last completed stage
-2. If no Resume button appears, click **"Run Analysis"** to start a fresh run
-3. Your previous partial results are preserved in the History section
-
-### "I closed the browser — is my analysis lost?"
-
-**No.** The analysis runs on background services, not in your browser. Closing the browser does not stop the analysis. When you reopen PatentForgeLocal (left-click the system tray icon), your analysis will either still be running or will have completed while the browser was closed.
-
-### "Claims or compliance won't generate"
-
-**What to try:**
-1. Make sure you have completed a full feasibility analysis first (all 6 stages) — claims require analysis results as input
-2. For compliance checks, make sure you have generated claims first
-3. Only one claim draft or compliance check can run at a time per project. If a previous run was interrupted, refresh the page — PatentForgeLocal automatically cleans up stale runs on restart.
-
-### Stopping PatentForgeLocal Manually
-
-If closing the window does not stop the background services (you notice high CPU or memory usage after closing):
-
-1. **Windows:** Open a PowerShell window in the PatentForgeLocal folder and run: `.\PatentForgeLocal-stop.ps1`
-2. This reads the process IDs from `logs\pids.txt` and stops each service gracefully
-3. As a safety net, it also checks ports 3000-3004 and kills any remaining processes
-
-### Finding Log Files
-
-If something goes wrong and you need to share details with a support person:
-
-1. Open the `logs` folder inside your PatentForgeLocal installation directory
-2. Each service has its own log file: `backend.log`, `feasibility.log`, `claim-drafter.log`, etc.
-3. Error output is in separate files ending in `-error.log` (e.g., `backend-error.log`)
-4. These files are overwritten each time you launch PatentForgeLocal
-
-### Getting More Help
-
-If none of the above solutions resolve your problem:
-
-1. Visit the PatentForgeLocal GitHub Issues page: **https://github.com/scottconverse/patentforgelocal/issues**
-2. Search for your problem — someone else may have already reported it
-3. If you do not find a matching issue, click **"New Issue"** and describe:
-   - What you were trying to do
-   - What happened instead
-   - Your operating system and version
-   - How much RAM and disk space your computer has
+- **Export path** — where Word/Markdown exports land.
+- **Auto-export** — if checked, every completed feasibility run auto-exports to disk.
 
 ---
 
-## 13. Glossary
+## 13. Cost display behavior
 
-| Term | Plain-Language Definition |
-|------|--------------------------|
-| **AI Model** | A computer program that has been trained on large amounts of text to understand and generate human-like language. PatentForgeLocal uses an AI model called Gemma 4 to analyze inventions. |
-| **Abstract** | A short summary (usually 150 words or fewer) of what a patent covers. Every patent application requires one. |
-| **Alice/Mayo Framework** | A two-step legal test used to determine whether a patent claim is directed to an abstract idea (like a math formula) without enough concrete, technical substance to be patentable. Named after two Supreme Court cases. |
-| **Antecedent Basis** | A rule requiring that every term in a patent claim be properly introduced before it is referenced. For example, you must say "a sensor" before you can say "the sensor." |
-| **API Key** | A code (like a password) that lets a program access an online service. PatentForgeLocal uses optional API keys for web search (Ollama) and patent database access (USPTO). |
-| **Claim** | A numbered statement in a patent that defines exactly what the patent protects. Claims are the legal boundaries of patent protection. |
-| **Claim Scope** | How broad or narrow a claim is. Broader claims cover more situations but are easier to challenge. Narrower claims are more defensible but protect less. |
-| **Compliance Check** | An automated review of patent claims against legal requirements, checking format, clarity, description support, and eligibility for patent protection. |
-| **Continuation** | A patent application filed to pursue additional claims based on the same invention described in an earlier (parent) application. |
-| **CPC Classification** | Cooperative Patent Classification — a system of codes that categorize patents by technology area. For example, "A01B" covers soil-working tools. |
-| **Definiteness** | A legal requirement (35 U.S.C. 112b) that patent claims be written clearly enough that someone skilled in the field can understand exactly what is claimed. |
-| **Dependent Claim** | A patent claim that refers to and narrows another claim. For example: "The method of claim 1, wherein the sensor is a capacitive sensor." |
-| **Divisional** | A patent application split off from a parent application when the patent office determines the parent covers more than one distinct invention. |
-| **Filing Strategy** | The plan for how to file patent applications — including which claims to file first, whether to file a provisional application, and in which countries to seek protection. |
-| **Gemma 4** | The AI model used by PatentForgeLocal, made by Google. It runs entirely on your computer and does not require an internet connection. |
-| **GPU** | Graphics Processing Unit — a specialized computer chip originally designed for displaying graphics but now widely used to speed up AI processing. Having a GPU with 8+ GB of its own memory significantly speeds up analysis. |
-| **Independent Claim** | A patent claim that stands on its own, defining the invention without referring to any other claim. |
-| **MPEP** | Manual of Patent Examining Procedure — the official handbook that patent examiners use when reviewing applications. Compliance check results cite specific MPEP sections. |
-| **Non-Obviousness** | A legal requirement (35 U.S.C. 103) that your invention not be an obvious combination of things that already exist. Even if your exact invention is new, it must also be a non-obvious advance. |
-| **Novelty** | A legal requirement (35 U.S.C. 102) that your invention be genuinely new — not previously described in any single piece of prior art. |
-| **Ollama** | The software that runs the AI model on your computer. Think of it as the "engine" that powers the AI. It is bundled with PatentForgeLocal — you do not need to install it separately. |
-| **Patent** | A legal document granted by a government that gives you the exclusive right to make, use, or sell an invention for a limited time (typically 20 years from filing). |
-| **Patent Application** | The formal document submitted to the patent office requesting a patent. It includes a detailed description of the invention, drawings, claims, and an abstract. |
-| **Patent Eligibility** | A legal requirement (35 U.S.C. 101) defining what kinds of things can be patented. Abstract ideas, laws of nature, and natural phenomena generally cannot be patented on their own. |
-| **Patent Family** | A group of related patents and applications that share a common origin, including continuations, divisionals, and foreign filings of the same invention. |
-| **Prior Art** | Any evidence that something similar to your invention already existed before you invented it. This includes earlier patents, published papers, products on the market, and public demonstrations. |
-| **Provisional Application** | A simplified, lower-cost patent application that establishes an early filing date. It gives you 12 months to file a full (non-provisional) application. |
-| **RAM** | Random Access Memory — your computer's short-term working memory. The AI model needs a large amount of RAM to run. Check your RAM in Task Manager (Windows) or About This Mac (Mac). |
-| **Specification** | The detailed description portion of a patent application — everything except the claims and abstract. It must describe the invention in enough detail that someone skilled in the field could reproduce it. |
-| **System Tray** | The row of small icons near the clock on your computer's taskbar (Windows), menu bar (Mac), or system panel (Linux). PatentForgeLocal places an icon here to manage its background services. |
-| **Token** | A small unit of text (roughly three-quarters of a word) used to measure how much text the AI processes. The "Max Tokens" setting controls how much text the AI generates per analysis stage. |
-| **USPTO** | United States Patent and Trademark Office — the government agency that examines patent applications and grants patents. |
-| **Utility** | A legal requirement (35 U.S.C. 101) that your invention serve a practical, useful purpose. Nearly all inventions meet this requirement. |
-| **VRAM** | Video RAM — memory on your graphics card (GPU). More VRAM lets the AI model run faster. 8 GB or more is recommended. |
-| **Non-Provisional Application** | The full, formal patent application filed with the USPTO. Unlike a provisional application, this is examined by a patent examiner and can result in a granted patent. |
-| **PCT Application** | Patent Cooperation Treaty application — an international filing that lets you seek patent protection in multiple countries through a single application. It does not grant a patent directly but preserves your right to file in member countries. |
-| **Written Description** | A legal requirement (35 U.S.C. 112a) that your patent application describe the invention in enough detail to show you actually possessed it at the time of filing. |
+PatentForge shows estimated costs alongside every analysis result. The display is provider-aware:
+
+- **Local mode** — all cost fields read **"Free"**. There's no per-token cost; Gemma 4 runs on your hardware.
+- **Cloud mode** — costs display as `$N.NNN` (or `<$0.001` for sub-tenth-cent items). Per-stage estimates appear under each stage card; a running total appears at the bottom of the sidebar.
+
+This applies to:
+- Sidebar pipeline → Feasibility → Total cost
+- Stage cards (per-stage cost)
+- Stage Output Viewer (selected stage detail)
+- Run History (per-run cost)
+- Application tab estimated cost
+- Compliance tab estimated cost
 
 ---
 
-## 14. Privacy and Security
+## 14. Privacy & security
 
-PatentForgeLocal was designed with privacy as a core principle. Here is exactly what stays on your computer and what (if anything) goes over the internet.
+### Local mode
 
-### What Stays on Your Computer — Everything by Default
+- All inference happens on your computer via Ollama. The model weights are downloaded once and stored locally.
+- The SQLite database lives at `<install-dir>/data/patentforge.db`. (If you upgraded from PatentForgeLocal, the old `patentforgelocal.db` is automatically renamed on first boot.)
+- API keys (USPTO, Ollama Cloud) are encrypted at rest with a machine-derived key.
+- Optional outbound: USPTO API for prior art, Ollama Cloud API for web search. Both opt-in.
 
-- **Your invention descriptions** — never transmitted anywhere
-- **The AI model** — runs entirely on your machine
-- **All analysis results** — stored in a local database on your computer
-- **Drafted claims and applications** — stored locally
-- **Exported documents** — saved to your local disk
-- **Your settings and API keys** — encrypted and stored locally
+### Cloud mode
 
-With no optional features enabled, PatentForgeLocal makes **zero network connections**. It works entirely offline.
+- Invention text + prompts are sent to Anthropic per their API Terms. PatentForge calls Anthropic directly from your machine — there are no PatentForge servers in between.
+- Your Anthropic API key is encrypted at rest with a machine-derived key.
+- The cost-confirm modal makes every API call explicit; nothing is sent without your approval.
+- Anthropic's enterprise policy (as of writing) is to not train on API traffic. Verify current policy at [trust.anthropic.com](https://trust.anthropic.com).
 
-### What Goes Over the Internet — Only If You Opt In
+### Both modes
 
-If you enable **web search** (by adding an Ollama API key in Settings):
-- **Search queries** are sent to the Ollama cloud service during analysis. These are keyword-based search terms derived from your invention, not your full invention description.
-- Search results (web page summaries) are returned to your computer for the AI to analyze locally.
-
-If you enable **USPTO patent search** (by adding a USPTO API key in Settings):
-- **Patent search queries** are sent to the USPTO Open Data Portal. These are keyword searches, not your full invention description.
-- Patent data (titles, abstracts, claims, dates) is returned to your computer.
-
-### What Is Never Sent
-
-Regardless of your settings, the following are **never** transmitted over the internet:
-- Your full invention description
-- Your analysis results
-- Your drafted claims or application text
-- Your project names or personal information
-
-### No Accounts Required
-
-PatentForgeLocal does not require you to create an account, sign in, or register. There is no telemetry (automated data collection about how you use the software), no analytics, and no tracking.
-
-### How API Keys Are Stored
-
-Both optional API keys (Ollama and USPTO) are encrypted using AES-256-GCM with a per-installation random salt before being stored. They are never saved as plain text in any file on your computer.
-
-### How to Verify
-
-You can verify PatentForgeLocal's privacy claims yourself:
-1. Disconnect your computer from the internet
-2. Launch PatentForgeLocal and run an analysis
-3. The analysis will complete successfully (without web search or USPTO results)
-
-This confirms that the core analysis runs entirely on your machine with no network dependency.
+- No telemetry. PatentForge does not phone home.
+- No analytics. No usage tracking.
+- Reports include a disclaimer banner identifying them as AI-generated research, not legal advice.
 
 ---
 
-*PatentForgeLocal is a research tool, not a legal service. The author of this tool is not a lawyer. The AI systems that generate the analysis are not lawyers. No attorney-client relationship is created by using this tool. It does not provide legal advice. Always consult a registered patent attorney or patent agent before making patent filing decisions.*
+## 15. Tray menu reference
+
+Right-click the tray icon for:
+
+- **Open PatentForge** — opens the browser to the running app.
+- **Status** — quick health summary.
+- **View Logs** — opens the logs directory in your file manager.
+- **Restart Services** — restarts every service (use this after Settings changes that need to propagate, e.g., a provider switch).
+- **About** — links to GitHub releases.
+- **Quit** — stops all services and exits.
+
+---
+
+## 16. Troubleshooting
+
+### Local mode: "Ollama is not running"
+
+The Full installer bundles Ollama, but if the service didn't start, the tray menu shows a degraded status:
+
+- Right-click tray → Restart Services.
+- If that fails, check logs (Tray → View Logs → look at `ollama.log`).
+- On Windows, the bundled Ollama lives in `<install-dir>\runtime\ollama\ollama.exe`. On Mac/Linux, the wrapper script auto-downloads Ollama from ollama.com if the bundled copy is missing.
+
+### Cloud mode: "Anthropic API call failed"
+
+- Verify your API key in Settings → Provider → Cloud panel. Click Save and Restart Services.
+- Check your Anthropic account: [console.anthropic.com](https://console.anthropic.com).
+- Out of credits? Add credit in your Anthropic Workspace settings.
+- Rate limited? Anthropic enforces per-minute and per-day rate limits; wait a few minutes and retry.
+
+### "Model not ready" (Local mode)
+
+The model-ready flag flips to `true` after the first-run wizard completes the Gemma 4 download. If it didn't:
+
+- Settings → AI Model → Test Connection.
+- If the model is missing, use the Settings page or run `ollama pull gemma4:e4b` in a terminal pointing at the bundled Ollama.
+
+### Cost shows "$0.000" in Cloud mode
+
+This means the per-token pricing for the model you selected isn't in the local pricing table. The run will still proceed; the cost just won't be tracked accurately. Update PatentForge to a newer version that includes pricing for your model.
+
+---
+
+## 17. Where things live on disk
+
+| What | Path (default) |
+|---|---|
+| App binaries | `<install-dir>/` |
+| Database | `<install-dir>/data/patentforge.db` |
+| Logs | `<install-dir>/logs/` |
+| Config + edition marker | `<install-dir>/config/` |
+| Ollama models (Full edition) | `<install-dir>/models/` |
+| Exports (default) | Your Documents folder, configurable in Settings |
+
+The `data/`, `logs/`, `config/`, and `models/` directories survive uninstall by default — you keep your projects and the 10 GB Gemma 4 download.
+
+---
+
+## 18. Getting help
+
+- **GitHub Discussions** — [github.com/scottconverse/patentforge/discussions](https://github.com/scottconverse/patentforge/discussions)
+- **GitHub Issues** — for bug reports
+- **Changelog** — [CHANGELOG.md](CHANGELOG.md) for what changed and when
+
+PatentForge is a research tool, not a legal service. For decisions that affect your patent rights, consult a registered patent attorney or agent.
