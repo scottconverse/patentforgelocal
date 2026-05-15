@@ -7,7 +7,58 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
-### Added
+### Added (merge plan Run 4 — Prisma provider routing)
+
+- **`AppSettings` schema extended with provider routing fields** in `backend/prisma/schema.prisma`:
+  - `provider` (String, default `"LOCAL"`) — the LLM provider choice. SQLite has no native enum support (Prisma P1012), so the safety lives across three layers: a TypeScript union type (`Provider = "LOCAL" | "CLOUD"` in `backend/src/settings/provider.types.ts`) catches typos at compile time, the DTO's `@IsIn(PROVIDERS)` validator rejects bad values at the HTTP boundary, and the SQLite `CHECK ("provider" IN ('LOCAL', 'CLOUD'))` constraint rejects writes at the runtime DB layer.
+  - `cloudApiKey` (String, default `""`) — Anthropic API key, encrypted at rest using the existing `encryption.ts` pattern (AES-256-GCM with machine-derived key + stored salt).
+  - `cloudDefaultModel` (String, default `"claude-haiku-4-5-20251001"`) — preserves the user's cloud model choice independently of `localDefaultModel`, so switching providers doesn't clobber the unused side.
+  - `localDefaultModel` (String, default `"gemma4:e4b"`) — same idea for Ollama.
+
+- **Idempotent additive migration for existing installs** (`backend/src/prisma/prisma.service.ts:migrateSettings()`):
+  - `ALTER TABLE "AppSettings" ADD COLUMN` for each of the four new columns, each wrapped in try/catch — duplicate-column errors are expected on every boot after the first and are NOT actual failures.
+  - Defensive `UPDATE` backfill: sets `provider='LOCAL'` on any row where the column ended up empty (defensive against exotic SQLite versions where `ADD COLUMN` defaults don't backfill).
+  - `ALTER TABLE "AppSettings" DROP COLUMN "ollamaApiKey"` — wrapped in try/catch so subsequent boots are no-ops. Decision #15: Ollama doesn't authenticate, this field was a local-fork artifact.
+
+- **`backend/src/settings/provider.types.ts`** — new file. Exports `Provider` union, `PROVIDERS` const array, `isProvider()` runtime type guard, `DEFAULT_PROVIDER` constant. Used by both the DTO validator (`@IsIn(PROVIDERS)`) and the service layer (`isProvider()` defends against non-HTTP call paths).
+
+- **`SettingsService` provider routing** (`backend/src/settings/settings.service.ts`):
+  - `getSettings()` returns the new fields with `cloudApiKey` decrypted (consistent with the existing pattern for `usptoApiKey`). The frontend handles display masking. A defensive `isProvider()` guard normalizes any garbage DB value back to `DEFAULT_PROVIDER`.
+  - `updateSettings()` accepts `provider`, `cloudApiKey`, `cloudDefaultModel`, `localDefaultModel`. `provider` is validated both by the DTO `@IsIn` decorator (HTTP boundary) AND by the runtime `isProvider()` guard (defense in depth for direct service-to-service calls). `cloudApiKey` is encrypted before persistence.
+  - Deprecated `ollamaApiKey` field on the DTO is logged-and-ignored for one-cycle back-compat with older clients. The persistence layer no longer sees it (the column was dropped in the migration).
+
+- **17 new backend Jest tests** across `backend/src/settings/settings.service.spec.ts` (11) and `backend/src/prisma/prisma.service.spec.ts` (6, plus 1 regression). Coverage: provider dispatch in get/update, cloudApiKey encryption round-trip, defensive isProvider guard, deprecated ollamaApiKey silent-ignore + warning, usptoApiKey regression, ALTER TABLE issuance and ordering, CHECK constraint enforcement, idempotent re-run handling for duplicate-column and no-such-column errors, gemma4:26b → gemma4:e4b migration regression. Total backend test count: **303** (was 286).
+
+### Changed
+
+- **`UpdateSettingsDto`** (`backend/src/settings/dto/update-settings.dto.ts`) — new optional fields `provider` / `cloudApiKey` / `cloudDefaultModel` / `localDefaultModel`. `ollamaApiKey` retained with `@deprecated` tag for one-cycle back-compat; service logs a warning when received and silently ignores it.
+
+### Removed
+
+- **`AppSettings.ollamaApiKey` column** — Ollama doesn't authenticate; the field was a vestigial PatentForgeLocal-fork artifact. Existing installs have it dropped via the idempotent migration step.
+
+### Migration notes (Run 4)
+
+- Fully backward-compatible for existing PatentForgeLocal installs. The migration is additive: existing rows get `provider='LOCAL'` automatically, preserving the user's prior choice (they installed PatentForgeLocal precisely because they wanted local). The `ollamaApiKey` drop is safe — the field was never actually used (Ollama is unauthenticated by default).
+- Fresh installs land directly in the new schema via the inline `SCHEMA_SQL` constant in `prisma.service.ts`.
+- No version bump in this run — entries accumulate under `[Unreleased]` until Run 8 (cutover + v0.5.0).
+
+### Verification (Run 4)
+
+- backend Jest: **303/303** in 22.9s (+17 from Run 2's 286)
+- frontend Vitest: **201/201** in 11.1s (no frontend changes — pure regression check)
+- claim-drafter pytest: **89/89** in 7.4s (regression)
+- application-generator pytest: **92/92** in 6.1s (regression)
+- compliance-checker pytest: **71/71** in 5.5s (regression)
+- feasibility npm test: **29/29** in 24.1s (regression)
+- `docker compose config --quiet`: exit 0
+- `docker compose build`: all 5 service images built successfully
+
+Total: **785 automated tests green** across 4 services + 2 web tiers.
+
+---
+
+### Added (merge plan Run 2 — LiteLLM provider abstraction)
 
 - **LLM provider abstraction** — all four services (three Python + Node `feasibility`) now route LLM calls through an `LLMClient` boundary that dispatches on a new `provider` setting:
   - **LOCAL** → Ollama via OpenAI-compatible API (existing behavior; backward-compatible default for every existing install).
