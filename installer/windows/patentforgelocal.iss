@@ -1,6 +1,16 @@
 ; PatentForgeLocal Windows Installer
 ; Built with Inno Setup 6.x
 ; https://jrsoftware.org/ishelp/
+;
+; Edition: pass /dEdition=Lean to ISCC to produce the cloud-only artifact
+; (skips runtime/ollama bundling, writes Lean to config/edition.txt). When
+; omitted the build defaults to Full and keeps the pre-merge behavior.
+#ifndef Edition
+  #define Edition "Full"
+#endif
+#if Edition != "Full" && Edition != "Lean"
+  #error Edition must be "Full" or "Lean"
+#endif
 
 #define MyAppName "PatentForgeLocal"
 #define MyAppVersion "0.1.4"
@@ -19,7 +29,7 @@ AppUpdatesURL={#MyAppURL}
 DefaultDirName={autopf}\{#MyAppName}
 DefaultGroupName={#MyAppName}
 OutputDir=..\..\build
-OutputBaseFilename=PatentForgeLocal-{#MyAppVersion}-Setup
+OutputBaseFilename=PatentForgeLocal-{#Edition}-{#MyAppVersion}-Setup
 Compression=lzma2/max
 SolidCompression=yes
 WizardStyle=modern
@@ -55,8 +65,16 @@ Source: "..\..\patentforgelocal-feasibility-native\*"; DestDir: "{app}\patentfor
 ; Portable Python 3.12
 Source: "..\..\runtime\python\*"; DestDir: "{app}\runtime\python"; Flags: ignoreversion recursesubdirs createallsubdirs
 
-; Ollama runtime (portable, bundled)
+; Ollama runtime (portable, bundled) — Full edition only.
+; Lean ships without it; the tray reads config/edition.txt at startup and
+; skips Ollama lifecycle management when this is absent.
+#if Edition == "Full"
 Source: "..\..\runtime\ollama\*"; DestDir: "{app}\runtime\ollama"; Flags: ignoreversion recursesubdirs createallsubdirs skipifsourcedoesntexist
+#endif
+
+; Edition marker — tray + backend read this to decide whether to manage
+; the local Ollama process and whether to render Local-mode UI panels.
+Source: "..\marker\edition-{#Edition}.txt"; DestDir: "{app}\config"; DestName: "edition.txt"; Flags: ignoreversion
 
 ; Python services
 Source: "..\..\services\claim-drafter\src\*"; DestDir: "{app}\services\claim-drafter\src"; Flags: ignoreversion recursesubdirs createallsubdirs
