@@ -1,11 +1,44 @@
 # Changelog
 
-All notable changes to PatentForgeLocal will be documented in this file.
+All notable changes to PatentForge will be documented in this file. (Previously named PatentForgeLocal; the merged product is one repo named PatentForge as of v0.5.0.)
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
-and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html). 
+and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
+
+### Added (merge plan Run 7 — Docs rewrite for the merged product)
+
+- **`README.md`** rewritten from "fully local, no API needed" to **"Your choice: cloud or local."** Mode-neutral feature list; new "Local mode vs Cloud mode" comparison; Lean/Full installer split documented; provider-aware architecture diagram showing the `LLMClient` boundary; PatentForgeLocal upgrade path documented.
+- **`USER-MANUAL.md`** rewritten to cover both modes end-to-end. New sections: dual-mode system requirements, Lean/Full installer selection, FirstRunWizard flows per edition (with Cloud-mode cost-confirm modal walkthrough), Settings → Provider section reference, cost-display behavior ("Free" / `$N.NNN`), migration notes for upgraders, where data lives on disk, troubleshooting for both modes.
+- **`ARCHITECTURE.md`** rewritten to document the provider-as-plugin-layer pattern: LLMClient boundary (Run 2), `AppSettings.provider` + `installEdition` (Runs 4 + 6), three-layer safety pattern (TS union + DTO `@IsIn` + SQLite CHECK), cross-process marker files (`edition.txt`, `provider.txt`), the `ShouldStartOllama(edition, provider)` predicate, the 6-service topology with conditional Ollama, frontend provider awareness, Python service structure, tray boot sequence, data flow for a feasibility run, security at-rest + in-transit, open follow-ups.
+- **`docs/index.html`** landing-page rewrite: new hero copy ("Patent analysis your way — run locally or in the cloud"), Local-vs-Cloud comparison table, Lean/Full editions in the quick-start, LLMClient boundary highlighted in the architecture section, provider-aware architecture cards listing both Ollama and Anthropic as external dependencies.
+- **`DISCUSSIONS-SEED.md`** rewrite: pinned announcement reframed for the merged product, v0.5.0 release post draft, Q&A entries covering mode switching, cost-modal behavior, and Lean-vs-Full installer choice.
+- **Frontend in-app branding rename** — last residual `PatentForgeLocal` strings replaced with `PatentForge` across `Layout.tsx`, `DisclaimerModal.tsx`, `ModelDownload.tsx`, `SystemCheck.tsx`, `disclaimer.ts`, `markdown.ts`, plus the `Layout.test.tsx` fixture. DisclaimerModal copy now describes both modes rather than asserting all processing is local. SystemCheck's hard-fail panel points users at Cloud mode in Settings instead of the now-merged upstream PatentForge repo.
+- **Regenerated `PatentForge-Architecture.docx`** from the new `ARCHITECTURE.md` via pandoc.
+- **Regenerated `README-FULL.pdf`** from the new `README.md` via `pandoc --pdf-engine=xelatex`.
+
+### Changed (Run 7)
+
+- All user-facing copy uses the merged product name **PatentForge** without the "Local" suffix. The wizard already shipped this rename in Run 6; this run finishes the surrounding surfaces.
+- Architecture diagrams now show the `LLMClient` boundary between services and the LLM provider, with both Ollama and Anthropic as terminal nodes.
+- Disclaimer text is mode-aware: Local mode states inference stays on the machine; Cloud mode states prompts go to Anthropic per their API terms, with the local-side API-key encryption noted.
+
+### Migration notes (Run 7)
+
+Docs-only run. No schema changes. No behavior changes. Existing installs see no functional difference — the changes here are user-readable documentation and in-app copy.
+
+Versions stay at `0.1.4` (backend / frontend / feasibility) and `0.1.0` (Python services). Run 8 bumps everything to `0.5.0` and ships as a release.
+
+### Verification (Run 7)
+
+- frontend Vitest: **231/231** (regression — Layout test fixture updated for `PatentForge`)
+- frontend `tsc --noEmit`: 5 pre-existing baseline errors (handoff Discovered finding #2), zero new
+- pandoc DOCX regeneration: produced `PatentForge-Architecture.docx`
+- pandoc PDF regeneration (xelatex via MiKTeX): produced `README-FULL.pdf`
+- Cross-suite regression captured in iter 8 of the run log (backend / frontend / tray / Python services / feasibility / docker compose / installer scripts).
+
+---
 
 ### Added (merge plan Run 6 — Installer split + first-run wizard branching + Run 5.5 fold-ins)
 

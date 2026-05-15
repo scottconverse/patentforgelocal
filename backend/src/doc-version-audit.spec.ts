@@ -182,30 +182,39 @@ describe('Current Version Features Are Documented', () => {
 // ═══════════════════════════════════════════════════════════════════════════
 
 describe('Architecture Documentation', () => {
-  it('README.md lists all service ports (3000, 3001, 3002, 8080)', () => {
+  // Run 7 rewrite: frontend is now served by the backend on :3000; the
+  // previous standalone frontend :8080 mention was removed when the docs
+  // were updated to reflect actual port assignments (see tray Config struct).
+  it('README.md lists current service ports (3000–3005)', () => {
     const readme = readFile('README.md');
     expect(readme).toContain('3000');
     expect(readme).toContain('3001');
     expect(readme).toContain('3002');
-    expect(readme).toContain('8080');
+    expect(readme).toContain('3003');
+    expect(readme).toContain('3004');
+    expect(readme).toContain('3005');
   });
 
-  it('docs/index.html architecture shows all services', () => {
+  it('docs/index.html architecture shows current service ports', () => {
     const html = readFile('docs/index.html').toLowerCase();
     expect(html).toContain('3000');
     expect(html).toContain('3001');
     expect(html).toContain('3002');
-    expect(html).toContain('8080');
+    expect(html).toContain('3003');
+    expect(html).toContain('3004');
+    expect(html).toContain('3005');
   });
 
-  it('docs/index.html describes six-service architecture', () => {
+  it('docs/index.html describes the federated service architecture', () => {
     const html = readFile('docs/index.html').toLowerCase();
+    // Run 7 rewrite uses "Six-service federated architecture" lowercase becomes "six-service"
     expect(html).toContain('six-service');
   });
 
-  it('docs/index.html mentions privacy or local processing', () => {
+  it('docs/index.html covers both Local and Cloud modes', () => {
     const html = readFile('docs/index.html').toLowerCase();
     expect(html).toContain('local');
+    expect(html).toContain('cloud');
   });
 
   it('USER-MANUAL.md has troubleshooting section', () => {

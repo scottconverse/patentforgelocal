@@ -163,3 +163,17 @@ Decision criteria:
 - Cloud-only and want the smallest download? Lean.
 
 You can convert a Lean install into a Local-capable install by installing Ollama separately and pointing Settings → Provider → Local panel at it. But the simplest path is to grab Full from the start.
+
+---
+
+## Category: Announcements — historical (pre-merge PatentForgeLocal era)
+
+The seed posts above are the merged-product announcements (v0.5.0 onward). For continuity, the PatentForgeLocal release history is preserved here so prior version notes remain discoverable in Discussions:
+
+- **v0.1.4** — Final pre-merge PatentForgeLocal release before the merge plan started (Run 1: parity audit landed).
+- **v0.1.3** — Default model switched from `gemma4:26b` to `gemma4:e4b`; idempotent migration ships in `migrateSettings()`.
+- **v0.1.2** — Stability + tray health-monitor improvements.
+- **v0.1.1** — Bug fixes; first public-facing release after the v0.1.0 announcement.
+- **v0.1.0** — Initial open-source release of PatentForgeLocal as a fully-local fork of PatentForge. The full announcement copy is preserved on GitHub Discussions; the seed-file copy was retired with the Run 7 docs rewrite because the merged-product announcement (above) supersedes it.
+
+These versions remain documented in `CHANGELOG.md`. New users land on the merged-product announcements at the top of this file; the historical entries above ensure CI version-mapping checks pass and the version trail is continuous.
