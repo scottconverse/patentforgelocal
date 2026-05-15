@@ -18,19 +18,43 @@ type Manager struct {
 	services []*Service
 	ctx      context.Context
 	cancel   context.CancelFunc
+
+	// edition + provider snapshot from disk markers at construction time.
+	// Read here so OllamaEnabled() and StartAll() agree on the same view.
+	edition  config.Edition
+	provider string
 }
 
-// NewManager creates a Manager with all 6 PatentForgeLocal services configured.
+// NewManager creates a Manager with all PatentForgeLocal services configured.
+// The service list includes Ollama as service-0 only when the install edition
+// AND the user's provider selection both require local inference (Full + LOCAL).
+// Lean installs and CLOUD-mode users on Full installs get a 5-service list
+// with no Ollama lifecycle to manage.
 func NewManager(cfg *config.Config) *Manager {
 	ctx, cancel := context.WithCancel(context.Background())
 	m := &Manager{
-		cfg:    cfg,
-		ctx:    ctx,
-		cancel: cancel,
+		cfg:      cfg,
+		ctx:      ctx,
+		cancel:   cancel,
+		edition:  config.ReadEdition(cfg.BaseDir),
+		provider: config.ReadProviderMarker(cfg.BaseDir),
 	}
 	m.services = m.buildServices()
 	return m
 }
+
+// OllamaEnabled reports whether this Manager is configured to manage Ollama.
+// Used by callers (e.g. the model-pull goroutine in cmd/tray/main.go) that
+// need to skip Ollama-specific work in Lean / CLOUD-mode installs.
+func (m *Manager) OllamaEnabled() bool {
+	return config.ShouldStartOllama(m.edition, m.provider)
+}
+
+// Edition exposes the edition snapshot read at construction time.
+func (m *Manager) Edition() config.Edition { return m.edition }
+
+// Provider exposes the provider snapshot read at construction time.
+func (m *Manager) Provider() string { return m.provider }
 
 // buildServices constructs the 6 Service structs with correct commands,
 // paths, environment variables, and health endpoints.
@@ -57,18 +81,21 @@ func (m *Manager) buildServices() []*Service {
 		ollamaCmd = filepath.Join(baseDir, "runtime", "ollama", "ollama.exe")
 	}
 
-	// 0. Ollama — Local AI inference server (starts first)
-	ollamaEnv := append(copyEnv(baseEnv), m.cfg.OllamaEnv()...)
-
-	ollama := &Service{
-		Name:      "ollama",
-		Command:   ollamaCmd,
-		Args:      []string{"serve"},
-		WorkDir:   baseDir,
-		Port:      m.cfg.PortOllama,
-		HealthURL: fmt.Sprintf("http://127.0.0.1:%d/api/tags", m.cfg.PortOllama),
-		Env:       ollamaEnv,
-		LogFile:   filepath.Join(logsDir, "ollama.log"),
+	// 0. Ollama — Local AI inference server (starts first), conditionally
+	// included based on install edition + active provider. See OllamaEnabled.
+	var ollama *Service
+	if m.OllamaEnabled() {
+		ollamaEnv := append(copyEnv(baseEnv), m.cfg.OllamaEnv()...)
+		ollama = &Service{
+			Name:      "ollama",
+			Command:   ollamaCmd,
+			Args:      []string{"serve"},
+			WorkDir:   baseDir,
+			Port:      m.cfg.PortOllama,
+			HealthURL: fmt.Sprintf("http://127.0.0.1:%d/api/tags", m.cfg.PortOllama),
+			Env:       ollamaEnv,
+			LogFile:   filepath.Join(logsDir, "ollama.log"),
+		}
 	}
 
 	// Service URLs for cross-service communication
@@ -91,6 +118,10 @@ func (m *Manager) buildServices() []*Service {
 		fmt.Sprintf("CLAIM_DRAFTER_URL=%s", claimDrafterURL),
 		fmt.Sprintf("APPLICATION_GENERATOR_URL=%s", appGeneratorURL),
 		fmt.Sprintf("COMPLIANCE_CHECKER_URL=%s", complianceURL),
+		// Run 6: backend mirrors AppSettings.provider into <ConfigDir>/provider.txt
+		// and reads <ConfigDir>/edition.txt → AppSettings.installEdition.
+		// Telling backend the path explicitly avoids fragile DATABASE_URL parsing.
+		fmt.Sprintf("PATENTFORGE_CONFIG_DIR=%s", m.cfg.ConfigDir),
 	)
 
 	backend := &Service{
@@ -168,7 +199,11 @@ func (m *Manager) buildServices() []*Service {
 		LogFile:   filepath.Join(logsDir, "compliance-checker.log"),
 	}
 
-	return []*Service{ollama, backend, feasibility, claimDrafter, appGenerator, complianceChecker}
+	all := []*Service{backend, feasibility, claimDrafter, appGenerator, complianceChecker}
+	if ollama != nil {
+		all = append([]*Service{ollama}, all...)
+	}
+	return all
 }
 
 // buildBaseEnv returns the full parent environment for child processes.
