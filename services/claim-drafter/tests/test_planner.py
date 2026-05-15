@@ -1,10 +1,10 @@
 """
 Tests for the Planner agent.
-Mocks the OpenAI SDK (Ollama-compatible) to verify state transitions and prompt construction.
+Mocks call_llm_with_retry (the LiteLLM boundary) to verify state transitions
+and prompt construction.
 """
 
 from unittest.mock import AsyncMock, patch, MagicMock
-import asyncio
 import pytest
 
 from src.agents.planner import run_planner, _load_prompt
@@ -52,7 +52,7 @@ REVISION_NEEDED: NO"""
 
 
 def _make_mock_response(text: str, prompt_tokens: int = 100, completion_tokens: int = 200):
-    """Create a mock OpenAI chat completion response."""
+    """Create a mock OpenAI/LiteLLM chat completion response."""
     mock_message = MagicMock()
     mock_message.content = text
     mock_choice = MagicMock()
@@ -76,13 +76,8 @@ class TestPlannerAgent:
             default_model="gemma4:e4b",
         )
 
-        with patch("src.agents.planner.openai") as mock_openai:
-            mock_client = AsyncMock()
-            mock_client.chat.completions.create = AsyncMock(
-                return_value=_make_mock_response(MOCK_STRATEGY),
-            )
-            mock_openai.AsyncOpenAI.return_value = mock_client
-
+        with patch("src.agents.planner.call_llm_with_retry", new_callable=AsyncMock) as mock_call:
+            mock_call.return_value = _make_mock_response(MOCK_STRATEGY)
             result = await run_planner(state)
 
         assert result.step == "plan_complete"
@@ -102,17 +97,11 @@ class TestPlannerAgent:
             research_model="gemma4:12b",
         )
 
-        with patch("src.agents.planner.openai") as mock_openai:
-            mock_client = AsyncMock()
-            mock_client.chat.completions.create = AsyncMock(
-                return_value=_make_mock_response(MOCK_STRATEGY),
-            )
-            mock_openai.AsyncOpenAI.return_value = mock_client
-
+        with patch("src.agents.planner.call_llm_with_retry", new_callable=AsyncMock) as mock_call:
+            mock_call.return_value = _make_mock_response(MOCK_STRATEGY)
             await run_planner(state)
 
-            # Verify the research model was used, not the default
-            call_kwargs = mock_client.chat.completions.create.call_args.kwargs
+            call_kwargs = mock_call.call_args.kwargs
             assert call_kwargs["model"] == "gemma4:12b"
 
     @pytest.mark.asyncio
@@ -124,16 +113,11 @@ class TestPlannerAgent:
             research_model="",
         )
 
-        with patch("src.agents.planner.openai") as mock_openai:
-            mock_client = AsyncMock()
-            mock_client.chat.completions.create = AsyncMock(
-                return_value=_make_mock_response(MOCK_STRATEGY),
-            )
-            mock_openai.AsyncOpenAI.return_value = mock_client
-
+        with patch("src.agents.planner.call_llm_with_retry", new_callable=AsyncMock) as mock_call:
+            mock_call.return_value = _make_mock_response(MOCK_STRATEGY)
             await run_planner(state)
 
-            call_kwargs = mock_client.chat.completions.create.call_args.kwargs
+            call_kwargs = mock_call.call_args.kwargs
             assert call_kwargs["model"] == "gemma4:e4b"
 
     @pytest.mark.asyncio
@@ -144,18 +128,14 @@ class TestPlannerAgent:
             ollama_url="http://127.0.0.1:11434",
         )
 
-        with patch("src.agents.planner.openai") as mock_openai:
-            mock_client = AsyncMock()
-            mock_client.chat.completions.create = AsyncMock(
-                return_value=_make_mock_response(MOCK_STRATEGY),
-            )
-            mock_openai.AsyncOpenAI.return_value = mock_client
-
+        with patch("src.agents.planner.call_llm_with_retry", new_callable=AsyncMock) as mock_call:
+            mock_call.return_value = _make_mock_response(MOCK_STRATEGY)
             await run_planner(state)
 
-            call_kwargs = mock_client.chat.completions.create.call_args.kwargs
-            # Messages: [system, user] — user is at index 1
-            user_msg = call_kwargs["messages"][1]["content"]
+            call_kwargs = mock_call.call_args.kwargs
+            # Messages passed to LLMClient is just the user message ([0]).
+            # System is a separate kwarg, prepended inside LLMClient.
+            user_msg = call_kwargs["messages"][0]["content"]
             assert "My special widget invention" in user_msg
             assert "US9999" in user_msg
 
@@ -166,13 +146,8 @@ class TestPlannerAgent:
             ollama_url="http://127.0.0.1:11434",
         )
 
-        with patch("src.agents.planner.openai") as mock_openai:
-            mock_client = AsyncMock()
-            mock_client.chat.completions.create = AsyncMock(
-                side_effect=Exception("Connection refused"),
-            )
-            mock_openai.AsyncOpenAI.return_value = mock_client
-
+        with patch("src.agents.planner.call_llm_with_retry", new_callable=AsyncMock) as mock_call:
+            mock_call.side_effect = Exception("Connection refused")
             result = await run_planner(state)
 
         assert result.error is not None

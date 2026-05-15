@@ -1,6 +1,7 @@
 """
 Tests for the Examiner agent.
-Mocks OpenAI SDK (Ollama-compatible) to verify state transitions and revision flag detection.
+Mocks call_llm_with_retry (the LiteLLM boundary) to verify state transitions
+and revision flag detection.
 """
 
 from unittest.mock import AsyncMock, patch, MagicMock
@@ -56,13 +57,8 @@ class TestExaminerAgent:
             ollama_url="http://127.0.0.1:11434",
         )
 
-        with patch("src.agents.examiner.openai") as mock_openai:
-            mock_client = AsyncMock()
-            mock_client.chat.completions.create = AsyncMock(
-                return_value=_make_mock_response(MOCK_FEEDBACK_NO_REVISION),
-            )
-            mock_openai.AsyncOpenAI.return_value = mock_client
-
+        with patch("src.agents.examiner.call_llm_with_retry", new_callable=AsyncMock) as mock_call:
+            mock_call.return_value = _make_mock_response(MOCK_FEEDBACK_NO_REVISION)
             result = await run_examiner(state)
 
         assert result.step == "examine_complete"
@@ -79,13 +75,8 @@ class TestExaminerAgent:
             ollama_url="http://127.0.0.1:11434",
         )
 
-        with patch("src.agents.examiner.openai") as mock_openai:
-            mock_client = AsyncMock()
-            mock_client.chat.completions.create = AsyncMock(
-                return_value=_make_mock_response(MOCK_FEEDBACK_WITH_REVISION),
-            )
-            mock_openai.AsyncOpenAI.return_value = mock_client
-
+        with patch("src.agents.examiner.call_llm_with_retry", new_callable=AsyncMock) as mock_call:
+            mock_call.return_value = _make_mock_response(MOCK_FEEDBACK_WITH_REVISION)
             result = await run_examiner(state)
 
         assert result.step == "examine_complete"
@@ -101,18 +92,14 @@ class TestExaminerAgent:
             ollama_url="http://127.0.0.1:11434",
         )
 
-        with patch("src.agents.examiner.openai") as mock_openai:
-            mock_client = AsyncMock()
-            mock_client.chat.completions.create = AsyncMock(
-                return_value=_make_mock_response(MOCK_FEEDBACK_NO_REVISION),
-            )
-            mock_openai.AsyncOpenAI.return_value = mock_client
-
+        with patch("src.agents.examiner.call_llm_with_retry", new_callable=AsyncMock) as mock_call:
+            mock_call.return_value = _make_mock_response(MOCK_FEEDBACK_NO_REVISION)
             await run_examiner(state)
 
-            call_kwargs = mock_client.chat.completions.create.call_args.kwargs
-            # Messages include system + user; user message has the prior art
-            user_msg = call_kwargs["messages"][1]["content"]
+            call_kwargs = mock_call.call_args.kwargs
+            # Messages passed to LLMClient is just the user message ([0]).
+            # System is a separate kwarg, prepended inside LLMClient.
+            user_msg = call_kwargs["messages"][0]["content"]
             assert "US5555" in user_msg
             assert "Claims here." in user_msg
 
@@ -124,13 +111,8 @@ class TestExaminerAgent:
             ollama_url="http://127.0.0.1:11434",
         )
 
-        with patch("src.agents.examiner.openai") as mock_openai:
-            mock_client = AsyncMock()
-            mock_client.chat.completions.create = AsyncMock(
-                side_effect=Exception("Connection refused"),
-            )
-            mock_openai.AsyncOpenAI.return_value = mock_client
-
+        with patch("src.agents.examiner.call_llm_with_retry", new_callable=AsyncMock) as mock_call:
+            mock_call.side_effect = Exception("Connection refused")
             result = await run_examiner(state)
 
         assert result.error is not None
@@ -145,16 +127,11 @@ class TestExaminerAgent:
             default_model="gemma4:e4b",
         )
 
-        with patch("src.agents.examiner.openai") as mock_openai:
-            mock_client = AsyncMock()
-            mock_client.chat.completions.create = AsyncMock(
-                return_value=_make_mock_response(MOCK_FEEDBACK_NO_REVISION),
-            )
-            mock_openai.AsyncOpenAI.return_value = mock_client
-
+        with patch("src.agents.examiner.call_llm_with_retry", new_callable=AsyncMock) as mock_call:
+            mock_call.return_value = _make_mock_response(MOCK_FEEDBACK_NO_REVISION)
             await run_examiner(state)
 
-            call_kwargs = mock_client.chat.completions.create.call_args.kwargs
+            call_kwargs = mock_call.call_args.kwargs
             assert call_kwargs["model"] == "gemma4:e4b"
 
 

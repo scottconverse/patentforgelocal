@@ -5,7 +5,7 @@ Flow: background → summary → detailed_description → abstract → figures �
 """
 
 from __future__ import annotations
-from typing import Callable
+from typing import Callable, Literal
 
 from langgraph.graph import StateGraph, END
 
@@ -37,8 +37,10 @@ async def finalize(state: GraphState) -> GraphState:
             text = text[1:]
         return text
 
-    # Clear ollama_url from state after pipeline completes — no downstream access needed.
+    # Scrub connection URLs and credentials from state after pipeline completes.
     state.ollama_url = ""
+    state.base_url = ""
+    state.api_key = ""
     state.background = clean_section(state.background)
     state.summary = clean_section(state.summary)
     state.detailed_description = clean_section(state.detailed_description)
@@ -88,8 +90,17 @@ async def run_application_pipeline(
     research_model: str = "",
     max_tokens: int = 32000,
     on_step: Callable[[str, str], None] | None = None,
+    provider: Literal["LOCAL", "CLOUD"] = "LOCAL",
+    api_key: str = "",
+    base_url: str = "",
 ) -> ApplicationGenerateResult:
-    """Run the full application generation pipeline."""
+    """Run the full application generation pipeline.
+
+    Args:
+        provider: "LOCAL" → Ollama, "CLOUD" → Anthropic (default LOCAL for backward compat).
+        api_key: CLOUD only — Anthropic API key.
+        base_url: LOCAL only — Ollama host root. Falls back to `ollama_url` if empty.
+    """
 
     ids_table = format_ids_table(prior_art_results)
     cross_references = build_cross_references(
@@ -106,6 +117,9 @@ async def run_application_pipeline(
         prior_art_context=prior_art_context,
         claims_text=claims_text,
         spec_language=spec_language,
+        provider=provider,
+        api_key=api_key,
+        base_url=base_url,
         ollama_url=ollama_url,
         default_model=default_model,
         research_model=research_model,
