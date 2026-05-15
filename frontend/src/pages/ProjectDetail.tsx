@@ -1,7 +1,8 @@
 import { useState, useEffect, useCallback } from 'react';
 import { useParams, useNavigate, Link } from 'react-router-dom';
 import { api } from '../api';
-import type { FeasibilityStage, InventionInput } from '../types';
+import type { FeasibilityStage, InventionInput, Provider } from '../types';
+import { isProvider } from '../types';
 import CostConfirmModal from '../components/CostConfirmModal';
 import { useProjectDetail, ViewMode } from '../hooks/useProjectDetail';
 import { useRunHistory } from '../hooks/useRunHistory';
@@ -114,6 +115,26 @@ export default function ProjectDetail() {
       abortRef.current?.abort();
     };
   }, [abortRef]);
+
+  // Active provider — read once when this page mounts so child components can
+  // render LOCAL ("Free") vs CLOUD ($N.NN) cost displays per decision #12.
+  // null until settings load; child components default to CLOUD-like formatting
+  // when no provider is passed.
+  const [currentProvider, setCurrentProvider] = useState<Provider | null>(null);
+  useEffect(() => {
+    let cancelled = false;
+    api.settings
+      .get()
+      .then((s: any) => {
+        if (!cancelled && isProvider(s.provider)) setCurrentProvider(s.provider);
+      })
+      .catch(() => {
+        /* non-fatal — components fall back to default dollar formatting */
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, []);
 
   // ── Cost confirm modal — gates CLOUD-mode feasibility runs ──
   // LOCAL mode bypasses the modal (no per-token cost). CLOUD mode shows the
@@ -259,6 +280,7 @@ export default function ProjectDetail() {
           complianceStatus={complianceStatus}
           applicationStatus={applicationStatus}
           descriptionError={descriptionError}
+          provider={currentProvider ?? undefined}
           onViewModeChange={setViewMode}
           onRunFeasibility={() => runFeasibilityWithCheck()}
           onResume={() => resumeWithCheck()}
@@ -353,6 +375,7 @@ export default function ProjectDetail() {
               onLoadHistoricalRun={handleLoadHistoricalRun}
               onRunFeasibility={() => runFeasibilityWithCheck()}
               onBack={() => setViewMode('overview')}
+              provider={currentProvider ?? undefined}
             />
           )}
 
@@ -387,6 +410,7 @@ export default function ProjectDetail() {
                   Array.isArray(claimDraftStatus.claims) &&
                   claimDraftStatus.claims.length > 0
                 }
+                provider={currentProvider ?? undefined}
               />
             </ContentPanel>
           )}
@@ -401,6 +425,7 @@ export default function ProjectDetail() {
                   Array.isArray(claimDraftStatus.claims) &&
                   claimDraftStatus.claims.length > 0
                 }
+                provider={currentProvider ?? undefined}
               />
             </ContentPanel>
           )}
@@ -410,6 +435,7 @@ export default function ProjectDetail() {
               stage={selectedStage}
               projectTitle={project.title}
               onBack={() => setViewMode('report')}
+              provider={currentProvider ?? undefined}
             />
           )}
         </main>

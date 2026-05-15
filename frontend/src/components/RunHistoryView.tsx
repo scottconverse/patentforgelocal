@@ -1,4 +1,4 @@
-import { FeasibilityRunSummary } from '../types';
+import type { FeasibilityRunSummary, Provider } from '../types';
 import { formatCost } from '../utils/format';
 
 interface RunHistoryViewProps {
@@ -6,6 +6,8 @@ interface RunHistoryViewProps {
   onLoadHistoricalRun: (version: number) => void;
   onRunFeasibility: () => void;
   onBack: () => void;
+  /** Active provider for cost rendering — LOCAL displays "Free" per decision #12. */
+  provider?: Provider;
 }
 
 export default function RunHistoryView({
@@ -13,6 +15,7 @@ export default function RunHistoryView({
   onLoadHistoricalRun,
   onRunFeasibility,
   onBack,
+  provider,
 }: RunHistoryViewProps) {
   return (
     <div className="space-y-3">
@@ -48,7 +51,11 @@ export default function RunHistoryView({
             </div>
             <div className="text-xs text-gray-500 mt-1 space-x-3">
               {run.completedAt && <span>{new Date(run.completedAt).toLocaleString()}</span>}
-              {run.totalCostUsd > 0 && <span className="text-amber-500">{formatCost(run.totalCostUsd)}</span>}
+              {provider === 'LOCAL' ? (
+                <span className="text-amber-500">Free</span>
+              ) : run.totalCostUsd > 0 ? (
+                <span className="text-amber-500">{formatCost(run.totalCostUsd, provider)}</span>
+              ) : null}
             </div>
           </div>
           <div className="flex items-center gap-3">

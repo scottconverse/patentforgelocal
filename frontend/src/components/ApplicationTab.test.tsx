@@ -115,7 +115,24 @@ describe('ApplicationTab', () => {
     });
     render(<ApplicationTab projectId="test" hasClaims={true} />);
     await waitFor(() => {
-      expect(screen.getByText('$0.85')).toBeTruthy();
+      // Run 6 fold-in: formatCost uses 3-decimal canonical format (formerly inline toFixed(2))
+      expect(screen.getByText('$0.850')).toBeTruthy();
     });
+  });
+
+  it('shows "Free" instead of dollars when provider=LOCAL', async () => {
+    const { api } = await import('../api');
+    (api.application.getLatest as any).mockResolvedValue({
+      status: 'COMPLETE',
+      estimatedCostUsd: 0.85,
+      background: 'Text',
+      claims: '1. A method.',
+    });
+    render(<ApplicationTab projectId="test" hasClaims={true} provider="LOCAL" />);
+    await waitFor(() => {
+      expect(screen.getByText('Free')).toBeTruthy();
+    });
+    expect(screen.queryByText('$0.85')).toBeNull();
+    expect(screen.queryByText('$0.850')).toBeNull();
   });
 });
