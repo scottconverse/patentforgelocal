@@ -3,10 +3,8 @@
 from __future__ import annotations
 from pathlib import Path
 
-import openai
-
 from ..models import GraphState
-from ..retry import call_ollama_with_retry
+from ..llm_client import LLMSettings, call_llm_with_retry
 
 PROMPTS_DIR = Path(__file__).parent.parent / "prompts"
 
@@ -20,6 +18,14 @@ def _load_prompt() -> str:
     if prompt_path.exists():
         return common + prompt_path.read_text(encoding="utf-8")
     return common + "Generate the Brief Description of the Drawings."
+
+
+def _settings_from_state(state: GraphState) -> LLMSettings:
+    return LLMSettings(
+        provider=state.provider,
+        api_key=state.api_key,
+        base_url=state.base_url or state.ollama_url,
+    )
 
 
 async def run_figures(state: GraphState) -> GraphState:
@@ -38,10 +44,9 @@ async def run_figures(state: GraphState) -> GraphState:
 
 Generate the Brief Description of the Drawings. Create 3-8 placeholder figure descriptions."""
 
-    client = openai.AsyncOpenAI(base_url=f"{state.ollama_url}/v1", api_key="ollama")
     try:
-        response = await call_ollama_with_retry(
-            client,
+        response = await call_llm_with_retry(
+            _settings_from_state(state),
             model=model,
             max_tokens=4000,
             system=prompt,

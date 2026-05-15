@@ -32,9 +32,16 @@ OLLAMA_HOST = os.environ.get("OLLAMA_HOST", "http://127.0.0.1:11434")
 
 def resolve_ollama_url(request_url: str) -> str:
     # Prefer the explicitly-configured URL from Settings (passed in the request body).
-    # Fall back to the OLLAMA_HOST environment variable only when no URL was provided
-    # in the request.
+    # Fall back to the OLLAMA_HOST environment variable only when no URL was provided.
     return request_url or OLLAMA_HOST
+
+
+def resolve_base_url(request_base_url: str, request_ollama_url: str) -> str:
+    """Resolve LOCAL provider base_url: explicit base_url wins, ollama_url is the
+    backward-compat fallback, env var is the final fallback."""
+    if request_base_url:
+        return request_base_url
+    return resolve_ollama_url(request_ollama_url)
 
 
 api_key_header = APIKeyHeader(name="X-Internal-Secret", auto_error=False)
@@ -112,14 +119,12 @@ KEEPALIVE_INTERVAL_SECONDS = 20
 
 @app.post("/generate", dependencies=[Depends(verify_internal_secret)])
 async def generate_application(request: ApplicationGenerateRequest):
-    # Import here to avoid circular import at module load (graph.py imports models which is fine,
-    # but graph.py also imports agents which import prompts — all must exist)
+    # Import here to avoid circular import at module load
     from .graph import run_application_pipeline
 
     prior_art_context = _build_prior_art_context(request)
 
     # Queue bridges the sync on_step callback to the async event_stream generator.
-    # Each item is either a dict (SSE event) or None (sentinel signaling completion).
     queue: asyncio.Queue = asyncio.Queue()
 
     def on_step(node_name: str, step: str):
@@ -140,6 +145,9 @@ async def generate_application(request: ApplicationGenerateRequest):
                 prior_art_results=request.prior_art_results,
                 claims_text=request.claims_text,
                 spec_language=request.spec_language,
+                provider=request.settings.provider,
+                api_key=request.settings.api_key,
+                base_url=resolve_base_url(request.settings.base_url, request.settings.ollama_url),
                 ollama_url=resolve_ollama_url(request.settings.ollama_url),
                 default_model=request.settings.default_model,
                 research_model=request.settings.research_model,
@@ -185,6 +193,9 @@ async def generate_application_sync(request: ApplicationGenerateRequest):
         prior_art_results=request.prior_art_results,
         claims_text=request.claims_text,
         spec_language=request.spec_language,
+        provider=request.settings.provider,
+        api_key=request.settings.api_key,
+        base_url=resolve_base_url(request.settings.base_url, request.settings.ollama_url),
         ollama_url=resolve_ollama_url(request.settings.ollama_url),
         default_model=request.settings.default_model,
         research_model=request.settings.research_model,
