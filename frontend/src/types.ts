@@ -63,7 +63,31 @@ export interface FeasibilityStage {
   estimatedCostUsd?: number;
 }
 
+/**
+ * LLM provider routing — see `provider.types.ts` in the backend for the
+ * three-layer-safety pattern (TS union + DTO @IsIn + SQLite CHECK).
+ */
+export type Provider = 'LOCAL' | 'CLOUD';
+
+export const PROVIDERS: readonly Provider[] = ['LOCAL', 'CLOUD'] as const;
+
+export function isProvider(value: unknown): value is Provider {
+  return typeof value === 'string' && (PROVIDERS as readonly string[]).includes(value);
+}
+
 export interface AppSettings {
+  // Provider routing (added in merge plan Run 4 backend, Run 5 frontend)
+  provider: Provider;
+  cloudApiKey: string;
+  cloudDefaultModel: string;
+  localDefaultModel: string;
+
+  // Legacy / general
+  // `ollamaApiKey` was repurposed pre-Run-4 as the Ollama-Cloud Web Search
+  // token (distinct from local-Ollama auth). The Run 4 backend dropped the
+  // column on a misreading of the field's purpose. The frontend keeps the
+  // type field present so existing read paths don't crash; a follow-up issue
+  // restores the column with a clearer name (e.g. `ollamaWebSearchApiKey`).
   ollamaApiKey: string;
   ollamaModel: string;
   ollamaUrl: string;
