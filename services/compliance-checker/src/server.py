@@ -1,5 +1,5 @@
 """
-PatentForgeLocal Compliance Checker — FastAPI server.
+PatentForge Compliance Checker — FastAPI server.
 
 Endpoints:
   GET  /health          — Service health check with prompt hashes

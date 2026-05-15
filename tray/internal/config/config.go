@@ -1,4 +1,4 @@
-// Package config handles PatentForgeLocal configuration loading and generation.
+// Package config handles PatentForge configuration loading and generation.
 // On first run it creates config/.env with a generated service secret,
 // database URL, and default settings.
 package config
@@ -12,7 +12,7 @@ import (
 	"strings"
 )
 
-// Config holds all PatentForgeLocal runtime configuration.
+// Config holds all PatentForge runtime configuration.
 type Config struct {
 	BaseDir   string
 	DataDir   string
@@ -36,7 +36,7 @@ type Config struct {
 	ModelsDir   string // <baseDir>/models
 }
 
-// Load reads or creates the PatentForgeLocal configuration.
+// Load reads or creates the PatentForge configuration.
 // If config/.env does not exist, it generates one with secure defaults.
 func Load(baseDir string) (*Config, error) {
 	cfg := &Config{

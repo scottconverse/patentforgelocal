@@ -131,12 +131,14 @@ class TestDocxExport:
         assert "PAGE" in footer_xml
 
     def test_footer_disclaimer_text(self):
-        """Footer should contain the PatentForgeLocal disclaimer."""
+        """Footer should contain the PatentForge disclaimer (v0.5.0 merged-product rebrand)."""
         result = export_docx(_sample_request())
         doc = _load_docx(result)
         section = doc.sections[0]
         footer_text = "\n".join(p.text for p in section.footer.paragraphs)
-        assert "PatentForgeLocal" in footer_text
+        assert "PatentForge" in footer_text
+        # Defensive: ensure we didn't accidentally leave the old brand string
+        assert "PatentForgeLocal" not in footer_text
 
     def test_watermark_in_header(self):
         """Header should contain draft warning banner text."""

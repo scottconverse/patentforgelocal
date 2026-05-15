@@ -1,5 +1,5 @@
 """
-PatentForgeLocal Application Generator — FastAPI server.
+PatentForge Application Generator — FastAPI server.
 
 Endpoints:
   GET  /health           — Health check with prompt hashes
@@ -84,7 +84,7 @@ async def health():
     return {
         "status": "ok",
         "service": "patentforge-application-generator",
-        "version": "0.6.0",
+        "version": "0.5.0",
         "promptHashes": _compute_prompt_hashes(),
     }
 

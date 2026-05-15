@@ -1,4 +1,4 @@
-// Package services manages PatentForgeLocal child process lifecycle.
+// Package services manages PatentForge child process lifecycle.
 package services
 
 import (

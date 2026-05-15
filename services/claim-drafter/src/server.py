@@ -1,5 +1,5 @@
 """
-PatentForgeLocal Claim Drafter — FastAPI server.
+PatentForge Claim Drafter — FastAPI server.
 
 Endpoints:
   GET  /health          — Service health check with prompt hashes

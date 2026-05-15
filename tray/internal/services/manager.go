@@ -12,7 +12,7 @@ import (
 	"github.com/scottconverse/patentforgelocal/tray/internal/config"
 )
 
-// Manager owns and orchestrates the lifecycle of all PatentForgeLocal services.
+// Manager owns and orchestrates the lifecycle of all PatentForge services.
 type Manager struct {
 	cfg      *config.Config
 	services []*Service
@@ -25,7 +25,7 @@ type Manager struct {
 	provider string
 }
 
-// NewManager creates a Manager with all PatentForgeLocal services configured.
+// NewManager creates a Manager with all PatentForge services configured.
 // The service list includes Ollama as service-0 only when the install edition
 // AND the user's provider selection both require local inference (Full + LOCAL).
 // Lean installs and CLOUD-mode users on Full installs get a 5-service list
