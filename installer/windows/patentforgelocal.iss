@@ -12,8 +12,8 @@
   #error Edition must be "Full" or "Lean"
 #endif
 
-#define MyAppName "PatentForgeLocal"
-#define MyAppVersion "0.1.4"
+#define MyAppName "PatentForge"
+#define MyAppVersion "0.5.0"
 #define MyAppPublisher "Scott Converse"
 #define MyAppURL "https://scottconverse.github.io/patentforgelocal/"
 #define MyAppExeName "patentforgelocal-tray.exe"

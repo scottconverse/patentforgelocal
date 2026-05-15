@@ -6,6 +6,7 @@ import { ValidationPipe } from '@nestjs/common';
 import helmet from 'helmet';
 import { AppModule } from './app.module';
 import { AuthGuard } from './auth.guard';
+import { migrateDbFileIfNeeded } from './db-migrate';
 
 /**
  * Validate required environment configuration at startup.
@@ -64,7 +65,7 @@ function validateEnvironment(): void {
 
   // Fatal errors — stop the process
   if (errors.length > 0) {
-    console.error('\n✖ PatentForgeLocal backend failed to start due to missing configuration:\n');
+    console.error('\n✖ PatentForge backend failed to start due to missing configuration:\n');
     for (const e of errors) {
       console.error(`  • ${e}\n`);
     }
@@ -75,6 +76,11 @@ function validateEnvironment(): void {
 
 async function bootstrap() {
   validateEnvironment();
+
+  // PatentForgeLocal → PatentForge merge: rename the legacy DB file in place
+  // and update DATABASE_URL before PrismaClient is constructed (which happens
+  // when AppModule is initialized). Fail-soft per Decision #8.
+  migrateDbFileIfNeeded();
 
   const app = await NestFactory.create(AppModule);
 
@@ -95,7 +101,7 @@ async function bootstrap() {
   if (process.env.NODE_ENV !== 'production') {
     app.getHttpAdapter().get('/', (_req, res) => {
       res.json({
-        service: 'PatentForgeLocal API',
+        service: 'PatentForge API',
         version: require('../package.json').version,
         status: 'running',
         docs: 'All endpoints are prefixed with /api/. See /api/health for a health check.',
@@ -153,7 +159,7 @@ async function bootstrap() {
 
   const port = parseInt(process.env.PORT || '3000', 10);
   await app.listen(port);
-  console.log(`PatentForgeLocal backend running on http://localhost:${port}`);
+  console.log(`PatentForge backend running on http://localhost:${port}`);
 }
 
 bootstrap();

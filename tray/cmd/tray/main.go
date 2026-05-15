@@ -18,7 +18,7 @@ import (
 )
 
 var (
-	version    = "0.1.0"
+	version    = "0.5.0"
 	cfg        *config.Config
 	mgr        *services.Manager
 	healthMon  *services.HealthMonitor
@@ -51,7 +51,7 @@ func main() {
 		os.Exit(1)
 	}
 	defer logCleanup()
-	logger.Println("PatentForgeLocal tray starting...")
+	logger.Println("PatentForge tray starting...")
 
 	// Load or generate configuration
 	cfg, err = config.Load(baseDir)
@@ -73,17 +73,17 @@ func onReady() {
 	} else {
 		systray.SetIcon(assets.IconPNG)
 	}
-	systray.SetTitle("PatentForgeLocal")
-	systray.SetTooltip("PatentForgeLocal — Starting...")
+	systray.SetTitle("PatentForge")
+	systray.SetTooltip("PatentForge — Starting...")
 
 	// Menu items
-	mOpen := systray.AddMenuItem("Open PatentForgeLocal", "Open in browser")
+	mOpen := systray.AddMenuItem("Open PatentForge", "Open in browser")
 	mStatus = systray.AddMenuItem("Status: Starting...", "")
 	mStatus.Disable()
 	systray.AddSeparator()
 	mLogs := systray.AddMenuItem("View Logs", "Open logs directory")
 	mRestart := systray.AddMenuItem("Restart Services", "Restart all services")
-	mAbout := systray.AddMenuItem(fmt.Sprintf("About PatentForgeLocal v%s", version), "")
+	mAbout := systray.AddMenuItem(fmt.Sprintf("About PatentForge v%s", version), "")
 	systray.AddSeparator()
 	mQuit := systray.AddMenuItem("Quit", "Stop all services and exit")
 
@@ -107,7 +107,7 @@ func onReady() {
 			} else if !available {
 				logger.Printf("Model %s not found — starting pull...", cfg.OllamaModel)
 				mStatus.SetTitle("Status: Downloading model...")
-				systray.SetTooltip("PatentForgeLocal — Downloading model...")
+				systray.SetTooltip("PatentForge — Downloading model...")
 				if err := ollamaMgr.PullModel(); err != nil {
 					logger.Printf("Failed to start model pull: %v", err)
 				}
@@ -136,7 +136,7 @@ func onReady() {
 		// Begin background health monitoring
 		healthMon = services.NewHealthMonitor(mgr, logger, func(status string) {
 			mStatus.SetTitle(fmt.Sprintf("Status: %s", status))
-			systray.SetTooltip(fmt.Sprintf("PatentForgeLocal — %s", status))
+			systray.SetTooltip(fmt.Sprintf("PatentForge — %s", status))
 		})
 		healthMon.Start()
 		// Open browser once all services are ready
@@ -160,7 +160,7 @@ func onReady() {
 			case <-mRestart.ClickedCh:
 				go func() {
 					mStatus.SetTitle("Status: Restarting...")
-					systray.SetTooltip("PatentForgeLocal — Restarting...")
+					systray.SetTooltip("PatentForge — Restarting...")
 					if healthMon != nil {
 						healthMon.Stop()
 					}
@@ -173,7 +173,7 @@ func onReady() {
 					updateStatus()
 					healthMon = services.NewHealthMonitor(mgr, logger, func(status string) {
 						mStatus.SetTitle(fmt.Sprintf("Status: %s", status))
-						systray.SetTooltip(fmt.Sprintf("PatentForgeLocal — %s", status))
+						systray.SetTooltip(fmt.Sprintf("PatentForge — %s", status))
 					})
 					healthMon.Start()
 				}()
@@ -189,7 +189,7 @@ func onReady() {
 }
 
 func onExit() {
-	logger.Println("PatentForgeLocal shutting down...")
+	logger.Println("PatentForge shutting down...")
 	if healthMon != nil {
 		healthMon.Stop()
 	}
@@ -205,7 +205,7 @@ func updateStatus() {
 	}
 	status := mgr.OverallStatus()
 	mStatus.SetTitle(fmt.Sprintf("Status: %s", status))
-	systray.SetTooltip(fmt.Sprintf("PatentForgeLocal — %s", status))
+	systray.SetTooltip(fmt.Sprintf("PatentForge — %s", status))
 }
 
 func openBrowser(url string) error {
@@ -244,7 +244,7 @@ func getLogsDir() string {
 	exe, err := os.Executable()
 	if err != nil {
 		if home, homeErr := os.UserHomeDir(); homeErr == nil {
-			return filepath.Join(home, "PatentForgeLocal", "logs")
+			return filepath.Join(home, "PatentForge", "logs")
 		}
 		return "."
 	}

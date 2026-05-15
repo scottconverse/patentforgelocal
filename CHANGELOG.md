@@ -7,6 +7,42 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.5.0] - 2026-05-15
+
+The merged-product release. PatentForgeLocal (the local-only fork) and the original PatentForge (the cloud-only product) are now one application called **PatentForge**. Pick Local mode (Ollama + Gemma 4 on your hardware) or Cloud mode (Anthropic Claude via your own API key) at install time and switch any time in Settings.
+
+### Added (merge plan Run 8 — v0.5.0 release cutover)
+
+- Every version surface in the repo bumped to **0.5.0**: backend / frontend / feasibility `package.json`, all 3 Python services' `pyproject.toml`, all 3 FastAPI `version=` constructor args, `tray/cmd/tray/main.go` `version` constant, `installer/windows/patentforgelocal.iss` `MyAppVersion`, README h1, USER-MANUAL h1, ARCHITECTURE version line, `docs/index.html` version mention. Lens 7 (Version-Surface) audit gates this.
+- **Silent DB-rename startup hook** in `backend/src/prisma/prisma.service.ts`: if `patentforgelocal.db` exists in the DATABASE_URL parent directory AND `patentforge.db` does not, rename it. Logs the migration; fail-soft on errors. Existing PatentForgeLocal installs upgrade transparently.
+- Residual `PatentForgeLocal` brand strings in service code (FastAPI titles, tray About menu, installer `MyAppName`) replaced with `PatentForge` — the frontend was rebranded in Run 7; this run finishes the service-side strings.
+- **Release-comms artifact** drafted at `.pipeline-cw/2026-05-15-0903-release-v0.5.0/discussion-post.md` per Lens 8 (Release-Comms).
+
+### Migration notes (Run 8)
+
+- **DB rename is silent and automatic.** On first boot post-upgrade, the backend renames `patentforgelocal.db → patentforge.db` in the existing data directory. Your projects, settings, and encrypted API keys carry over without re-entry. If the rename errors (file lock, perms), the backend logs a warning and creates a fresh `patentforge.db` — in that edge case, restore the old `patentforgelocal.db` manually or re-import your projects.
+- **Repo rename and upstream-repo archive are operator-driven.** This PR doesn't execute them. After merge, the operator renames `scottconverse/patentforgelocal → scottconverse/patentforge` in GitHub repo settings, then archives the original `scottconverse/patentforge` (cloud-only) repo. Both actions preserve issue history and inbound links via GitHub's automatic redirect behavior.
+- **Cleanroom verification (full live stack with real Ollama + Anthropic API) is operator-driven.** All per-subproject tests (841 total) pass in the autonomous-run environment; the live-stack run is a pre-cutover operator step.
+
+### Verification (Run 8)
+
+- backend Jest: 329/329
+- backend `tsc --noEmit`: clean
+- frontend Vitest: 231/231
+- frontend `tsc --noEmit`: 5 pre-existing baseline errors, zero new
+- tray `go test ./...`: green
+- tray `go vet ./...` + `go build ./...`: clean
+- claim-drafter pytest: 89/89
+- application-generator pytest: 92/92
+- compliance-checker pytest: 71/71
+- feasibility npm test: 29/29
+- `docker compose config --quiet`: exit 0
+- 3 installer scripts `bash -n`: syntax-clean
+
+**Total: 841 automated tests green** (unchanged from Runs 6/7 baseline — this run is version-bump + DB-hook + branding tail).
+
+---
+
 ### Added (merge plan Run 7 — Docs rewrite for the merged product)
 
 - **`README.md`** rewritten from "fully local, no API needed" to **"Your choice: cloud or local."** Mode-neutral feature list; new "Local mode vs Cloud mode" comparison; Lean/Full installer split documented; provider-aware architecture diagram showing the `LLMClient` boundary; PatentForgeLocal upgrade path documented.

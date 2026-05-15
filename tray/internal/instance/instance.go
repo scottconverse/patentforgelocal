@@ -1,4 +1,4 @@
-// Package instance provides single-instance enforcement for PatentForgeLocal.
+// Package instance provides single-instance enforcement for PatentForge.
 // It uses a PID-based lockfile to prevent multiple copies from running.
 package instance
 
@@ -11,7 +11,8 @@ import (
 )
 
 // Lock acquires a single-instance lock for the application.
-// It creates a lockfile containing the current PID at <baseDir>/patentforgelocal.lock.
+// It creates a lockfile containing the current PID at <baseDir>/patentforgelocal.lock
+// (filename preserved across the v0.5.0 rename so upgrades keep working).
 //
 // If a lockfile already exists and the referenced process is still alive,
 // it returns an error. If the process is dead, it removes the stale lockfile
@@ -26,7 +27,7 @@ func Lock(baseDir string) (func(), error) {
 		pidStr := strings.TrimSpace(string(data))
 		if pid, parseErr := strconv.Atoi(pidStr); parseErr == nil {
 			if isProcessAlive(pid) {
-				return nil, fmt.Errorf("PatentForgeLocal is already running (PID %d)", pid)
+				return nil, fmt.Errorf("PatentForge is already running (PID %d)", pid)
 			}
 		}
 		// Stale lockfile — remove it
